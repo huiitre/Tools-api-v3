@@ -3,18 +3,14 @@ FROM eclipse-temurin:21-jdk AS build
 
 WORKDIR /app
 
-# Copie des fichiers Maven Wrapper
 COPY mvnw .
 COPY mvnw.cmd .
 COPY .mvn .mvn
-
-# Copie de la config Maven & du code
 COPY pom.xml .
 COPY src ./src
 
-# Build du projet
 RUN chmod +x mvnw
-RUN ./mvnw -q -e -DskipTests package
+RUN ./mvnw -DskipTests package
 
 # --- Runtime stage ---------------------------------------------------------
 FROM eclipse-temurin:21-jre-alpine
