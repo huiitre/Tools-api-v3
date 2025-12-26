@@ -1,6 +1,6 @@
 package fr.huiitre.tools.infrastructure.security.password;
 
-import fr.huiitre.tools.application.auth.PasswordHasher;
+import fr.huiitre.tools.application.core.auth.PasswordHasher;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 public class BCryptPasswordHasher implements PasswordHasher {
