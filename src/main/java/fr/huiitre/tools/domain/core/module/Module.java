@@ -30,7 +30,7 @@ public class Module {
     public Long getId() {
       return this.id;
     }
-    public void setId(Long value) {
+    void setId(Long value) {
       this.id = value;
     }
 

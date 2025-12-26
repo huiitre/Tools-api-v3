@@ -1,22 +1,22 @@
 package fr.huiitre.tools.application.core.user.ports;
 
-import fr.huiitre.tools.application.core.auth.Authprovider;
+import fr.huiitre.tools.application.core.auth.AuthProvider;
 
 public interface UserAuthProviderRepository {
 
     boolean existsByProviderAndProviderUserId(
-        Authprovider provider,
+        AuthProvider provider,
         String providerUserId
     );
 
     boolean existsByUserIdAndProvider(
         Long userId,
-        Authprovider provider
+        AuthProvider provider
     );
 
     void save(
         Long userId,
-        Authprovider provider,
+        AuthProvider provider,
         String providerUserId,
         String providerEmail
     );

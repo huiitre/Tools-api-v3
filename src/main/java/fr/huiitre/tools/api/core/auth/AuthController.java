@@ -14,12 +14,12 @@ import fr.huiitre.tools.api.core.auth.dto.LoginRequest;
 import fr.huiitre.tools.api.core.auth.dto.LoginResponse;
 import fr.huiitre.tools.api.core.auth.dto.RegisterRequest;
 import fr.huiitre.tools.api.core.auth.dto.RegisterResponse;
-import fr.huiitre.tools.application.core.auth.Authprovider;
-import fr.huiitre.tools.application.core.auth.RegisterUserCommand;
-import fr.huiitre.tools.application.core.auth.RegisterUserUseCase;
+import fr.huiitre.tools.application.core.auth.AuthProvider;
 import fr.huiitre.tools.application.core.auth.exception.UserNotFoundException;
 import fr.huiitre.tools.application.core.auth.login.LoginUserCommand;
-import fr.huiitre.tools.application.core.auth.login.LoginUserUseCase;
+import fr.huiitre.tools.application.core.auth.login.usecase.LoginUserUseCase;
+import fr.huiitre.tools.application.core.auth.register.usecase.RegisterUserCommand;
+import fr.huiitre.tools.application.core.auth.register.usecase.RegisterUserUseCase;
 import fr.huiitre.tools.application.core.user.ports.UserRepository;
 import fr.huiitre.tools.domain.core.user.User;
 import fr.huiitre.tools.infrastructure.security.JwtProvider;
@@ -218,7 +218,7 @@ public class AuthController {
 
         RegisterUserCommand command =
             new RegisterUserCommand(
-                Authprovider.PASSWORD,
+                AuthProvider.PASSWORD,
                 request.getEmail(),
                 request.getPassword(),
                 request.getName()

@@ -1,14 +1,16 @@
-package fr.huiitre.tools.application.core.auth;
+package fr.huiitre.tools.application.core.auth.register.usecase;
+
+import fr.huiitre.tools.application.core.auth.AuthProvider;
 
 public class RegisterUserCommand {
 
-    private final Authprovider provider;
+    private final AuthProvider provider;
     private final String email;
     private final String password;
     private final String name;
 
     public RegisterUserCommand(
-        Authprovider provider,
+        AuthProvider provider,
         String email,
         String password,
         String name
@@ -19,7 +21,7 @@ public class RegisterUserCommand {
         this.name = name;
     }
 
-    public Authprovider getProvider() {
+    public AuthProvider getProvider() {
         return provider;
     }
 

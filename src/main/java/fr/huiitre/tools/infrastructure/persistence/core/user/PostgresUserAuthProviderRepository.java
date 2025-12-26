@@ -13,7 +13,7 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import fr.huiitre.tools.application.core.auth.Authprovider;
+import fr.huiitre.tools.application.core.auth.AuthProvider;
 import fr.huiitre.tools.infrastructure.persistence.common.AbstractPostgresRepository;
 
 public class PostgresUserAuthProviderRepository extends AbstractPostgresRepository implements UserAuthProviderRepository {
@@ -27,7 +27,7 @@ public class PostgresUserAuthProviderRepository extends AbstractPostgresReposito
     @Override
     public boolean existsByUserIdAndProvider(
         Long userId,
-        Authprovider provider
+        AuthProvider provider
     ) {
         final String sql = """
             SELECT 1
@@ -58,7 +58,7 @@ public class PostgresUserAuthProviderRepository extends AbstractPostgresReposito
 
     @Override
     public boolean existsByProviderAndProviderUserId(
-        Authprovider provider,
+        AuthProvider provider,
         String providerUserId
     ) {
         final String sql = """
@@ -90,7 +90,7 @@ public class PostgresUserAuthProviderRepository extends AbstractPostgresReposito
     @Override
     public void save(
         Long userId,
-        Authprovider provider,
+        AuthProvider provider,
         String providerUserId,
         String providerEmail
     ) {

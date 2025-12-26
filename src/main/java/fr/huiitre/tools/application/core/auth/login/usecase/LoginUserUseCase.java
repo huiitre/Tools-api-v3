@@ -1,11 +1,12 @@
-package fr.huiitre.tools.application.core.auth.login;
+package fr.huiitre.tools.application.core.auth.login.usecase;
 
 import org.springframework.stereotype.Service;
 
-import fr.huiitre.tools.application.core.auth.Authprovider;
+import fr.huiitre.tools.application.core.auth.AuthProvider;
 import fr.huiitre.tools.application.core.auth.PasswordHasher;
 import fr.huiitre.tools.application.core.auth.exception.InvalidCredentialsException;
 import fr.huiitre.tools.application.core.auth.exception.UserDisabledException;
+import fr.huiitre.tools.application.core.auth.login.LoginUserCommand;
 import fr.huiitre.tools.application.core.user.ports.UserAuthProviderRepository;
 import fr.huiitre.tools.application.core.user.ports.UserCredentialsRepository;
 import fr.huiitre.tools.application.core.user.ports.UserRepository;
@@ -58,7 +59,7 @@ public class LoginUserUseCase {
         boolean hasPasswordProvider =
             userAuthProviderRepository.existsByUserIdAndProvider(
                 user.getId(),
-                Authprovider.PASSWORD
+                AuthProvider.PASSWORD
             );
 
         if (!hasPasswordProvider) {

@@ -1,6 +1,6 @@
 package fr.huiitre.tools.application.core.auth;
 
-public enum Authprovider {
+public enum AuthProvider {
     PASSWORD,
     GOOGLE,
     GITHUB
