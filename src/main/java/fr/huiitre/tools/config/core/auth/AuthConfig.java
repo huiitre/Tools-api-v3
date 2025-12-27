@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import fr.huiitre.tools.application.core.auth.PasswordHasher;
-import fr.huiitre.tools.application.core.auth.register.usecase.RegisterUserUseCase;
+import fr.huiitre.tools.application.core.auth.register.command.RegisterUserUseCase;
 import fr.huiitre.tools.application.core.role.ports.RoleRepository;
 import fr.huiitre.tools.application.core.role.ports.UserRoleRepository;
 import fr.huiitre.tools.application.core.user.ports.UserAuthProviderRepository;
@@ -42,20 +42,18 @@ public class AuthConfig {
 
     @Bean
     public RegisterUserUseCase registerUserUseCase(
-        UserRepository userRepository,
-        UserCredentialsRepository userCredentialsRepository,
-        UserAuthProviderRepository userAuthProviderRepository,
-        UserRoleRepository userRoleRepository,
-        RoleRepository roleRepository,
-        PasswordHasher passwordHasher
-    ) {
+            UserRepository userRepository,
+            UserCredentialsRepository userCredentialsRepository,
+            UserAuthProviderRepository userAuthProviderRepository,
+            UserRoleRepository userRoleRepository,
+            RoleRepository roleRepository,
+            PasswordHasher passwordHasher) {
         return new RegisterUserUseCase(
-            userRepository,
-            userCredentialsRepository,
-            userAuthProviderRepository,
-            userRoleRepository,
-            roleRepository,
-            passwordHasher
-        );
+                userRepository,
+                userCredentialsRepository,
+                userAuthProviderRepository,
+                userRoleRepository,
+                roleRepository,
+                passwordHasher);
     }
 }

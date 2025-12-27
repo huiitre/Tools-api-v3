@@ -1,5 +1,7 @@
 package fr.huiitre.tools.application.core.module.ports;
 
+import java.util.Optional;
+
 import fr.huiitre.tools.domain.core.module.Module;
 
 public interface ModuleRepository {
@@ -9,4 +11,8 @@ public interface ModuleRepository {
     void delete(Module module);
 
     void update(Module module);
+
+    Optional<Module> findById(Long id);
+
+    boolean existsByCode(String code);
 }

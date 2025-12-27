@@ -9,14 +9,13 @@ public class User {
     private final String email;
     private final UserType userType;
     private boolean active;
-    private final LocalDateTime createdAt;
+    private LocalDateTime createdAt;
 
     public User(String name, String email, UserType userType) {
         this.name = name;
         this.email = email;
         this.userType = userType;
         this.active = false;
-        this.createdAt = LocalDateTime.now();
     }
 
     public Long getId() {
@@ -49,5 +48,9 @@ public class User {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

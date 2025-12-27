@@ -1,66 +1,125 @@
 package fr.huiitre.tools.domain.core.module;
 
+import java.time.LocalDateTime;
+
 public class Module {
-    private Long id;
-    private final String code;
-    private final String name;
-    private final String description;
-    private boolean active;
-    private final java.time.LocalDateTime createdAt;
-    private java.time.LocalDateTime updatedAt;
+	private Long id;
+	private String code;
+	private String name;
+	private String description;
+	private Boolean active;
+	private LocalDateTime createdAt;
+	private LocalDateTime updatedAt;
 
-    public Module(
-        Long id,
-        String code,
-        String name,
-        String description,
-        boolean active,
-        java.time.LocalDateTime createdAt,
-        java.time.LocalDateTime updatedAt
-    ) {
-        this.id             = id;
-        this.code           = code;
-        this.name           = name;
-        this.description    = description;
-        this.active         = active;
-        this.createdAt      = createdAt;
-        this.updatedAt      = updatedAt;
+	public Module(
+		String code,
+		String name,
+		String description
+	) {
+		this.code = code;
+		this.name = name;
+		this.description = description;
+	}
+
+	public static Module create(
+		String code,
+		String name,
+		String description
+	) {
+		if (code == null || code.isBlank())
+            throw new IllegalArgumentException("CODE_REQUIRED");
+
+        if (name == null || name.isBlank())
+            throw new IllegalArgumentException("NAME_REQUIRED");
+
+        if (description == null || description.isBlank())
+            throw new IllegalArgumentException("DESCRIPTION_REQUIRED");
+
+		Module module = new Module(code, name, description);
+
+		module.setActive(false);
+
+		return module;
+	}
+
+	public void update(
+		String code,
+		String name,
+		String description,
+		Boolean active
+	) {
+		if (code != null) {
+            this.code = validateCode(code);
+        }
+
+        if (name != null) {
+            this.name = validateName(name);
+        }
+
+        if (description != null) {
+            this.description = description;
+        }
+
+		if (active != null) {
+			this.active = active;
+		}
+	}
+
+	private static String validateCode(String code) {
+        if (code.isBlank()) {
+            throw new IllegalArgumentException("CODE_INVALID");
+        }
+        return code;
     }
 
-    public Long getId() {
-      return this.id;
-    }
-    void setId(Long value) {
-      this.id = value;
-    }
-
-    public String getCode() {
-      return this.code;
+    private static String validateName(String name) {
+        if (name.isBlank()) {
+            throw new IllegalArgumentException("NAME_INVALID");
+        }
+        return name;
     }
 
-    public String getName() {
-      return this.name;
-    }
+	public Long getId() {
+		return this.id;
+	}
 
-    public String getDescription() {
-      return this.description;
-    }
+	public Long setId(Long id) {
+		return this.id = id;
+	}
 
-    public boolean getActive() {
-      return this.active;
-    }
-    public void setActive(boolean value) {
-      this.active = value;
-    }
+	public String getCode() {
+		return this.code;
+	}
 
-    public java.time.LocalDateTime getCreatedAt() {
-      return this.createdAt;
-    }
+	public String getName() {
+		return this.name;
+	}
 
-    public java.time.LocalDateTime getUpdatedAt() {
-      return this.updatedAt;
-    }
-    public void setUpdatedAt(java.time.LocalDateTime value) {
-      this.updatedAt = value;
-    }
+	public String getDescription() {
+		return this.description;
+	}
+
+	public boolean getActive() {
+		return this.active;
+	}
+
+	public void setActive(boolean value) {
+		this.active = value;
+	}
+
+	public LocalDateTime getCreatedAt() {
+		return this.createdAt;
+	}
+
+	public void setCreatedAt(LocalDateTime createdAt) {
+		this.createdAt = createdAt;
+	}
+
+	public LocalDateTime getUpdatedAt() {
+		return this.updatedAt;
+	}
+
+	public void setUpdatedAt(LocalDateTime value) {
+		this.updatedAt = value;
+	}
 }

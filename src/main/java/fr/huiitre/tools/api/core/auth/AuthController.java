@@ -16,10 +16,10 @@ import fr.huiitre.tools.api.core.auth.dto.RegisterRequest;
 import fr.huiitre.tools.api.core.auth.dto.RegisterResponse;
 import fr.huiitre.tools.application.core.auth.AuthProvider;
 import fr.huiitre.tools.application.core.auth.exception.UserNotFoundException;
-import fr.huiitre.tools.application.core.auth.login.LoginUserCommand;
+import fr.huiitre.tools.application.core.auth.login.command.LoginUserCommand;
 import fr.huiitre.tools.application.core.auth.login.usecase.LoginUserUseCase;
+import fr.huiitre.tools.application.core.auth.register.command.RegisterUserUseCase;
 import fr.huiitre.tools.application.core.auth.register.usecase.RegisterUserCommand;
-import fr.huiitre.tools.application.core.auth.register.usecase.RegisterUserUseCase;
 import fr.huiitre.tools.application.core.user.ports.UserRepository;
 import fr.huiitre.tools.domain.core.user.User;
 import fr.huiitre.tools.infrastructure.security.JwtProvider;
@@ -27,22 +27,24 @@ import fr.huiitre.tools.infrastructure.security.SecurityCookieProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
+@Tag(name = "Core - Auth")
 @RestController
 @RequestMapping("/auth")
 public class AuthController {
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     private final JwtProvider jwtProvider;
     private final SecurityCookieProperties cookieProperties;
     private final RegisterUserUseCase registerUserUseCase;
     private final LoginUserUseCase loginUserUseCase;
     private final UserRepository userRepository;
-
-    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     public AuthController(
         JwtProvider jwtProvider,
@@ -58,34 +60,34 @@ public class AuthController {
         this.userRepository = userRepository;
     }
 
-    /* ===============================
-       LOGIN (TEMPORAIRE / TECHNIQUE)
-       =============================== */
+    /*
+     * ===============================
+     * LOGIN (TEMPORAIRE / TECHNIQUE)
+     * ===============================
+     */
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(
-        @Valid @RequestBody LoginRequest request,    
-        HttpServletResponse response
-    ) {
+            @Valid @RequestBody LoginRequest request,
+            HttpServletResponse response) {
 
-        //* Récupère les crédentials */
+        // * Récupère les crédentials */
         LoginUserCommand command = new LoginUserCommand(request.getEmail(), request.getPassword());
-        
-        //* on exécute la logique de login */
+
+        // * on exécute la logique de login */
         User user = loginUserUseCase.execute(command);
 
-        //* génère le token */
+        // * génère le token */
         String accessToken = jwtProvider.generateAccessToken(
-            user.getId().toString(),
-            buildAccessClaims(user)
-        );
+                user.getId().toString(),
+                buildAccessClaims(user));
 
         String refreshToken = jwtProvider.generateRefreshToken(user.getId().toString());
 
-        //* Cookie HttpOnly pour le refresh token */
+        // * Cookie HttpOnly pour le refresh token */
         Cookie refreshCookie = new Cookie("refresh_token", refreshToken);
         refreshCookie.setHttpOnly(true);
-        refreshCookie.setSecure(cookieProperties.isSecure());          // HTTPS only (OK derrière proxy)
-        refreshCookie.setPath("/api/v3/auth");  // limité à l’auth
+        refreshCookie.setSecure(cookieProperties.isSecure()); // HTTPS only (OK derrière proxy)
+        refreshCookie.setPath("/api/v3/auth"); // limité à l’auth
         refreshCookie.setMaxAge(7 * 24 * 3600); // 7 jours
         refreshCookie.setAttribute("SameSite", "Strict");
 
@@ -95,14 +97,15 @@ public class AuthController {
         return ResponseEntity.ok(new LoginResponse(accessToken));
     }
 
-    /* ===============================
-       REFRESH TOKEN
-       =============================== */
+    /*
+     * ===============================
+     * REFRESH TOKEN
+     * ===============================
+     */
     @PostMapping("/refresh")
     public Map<String, String> refresh(
-        HttpServletRequest request,
-        HttpServletResponse response
-    ) {
+            HttpServletRequest request,
+            HttpServletResponse response) {
 
         try {
 
@@ -110,9 +113,8 @@ public class AuthController {
 
             if (cookies == null) {
                 logger.warn(
-                    "AUTH_REFRESH_FAILURE ip={} reason=NO_COOKIE",
-                    request.getRemoteAddr()
-                );
+                        "AUTH_REFRESH_FAILURE ip={} reason=NO_COOKIE",
+                        request.getRemoteAddr());
                 throw new UserNotFoundException("Utilisateur introuvable");
             }
 
@@ -126,9 +128,8 @@ public class AuthController {
 
             if (refreshToken == null) {
                 logger.warn(
-                    "AUTH_REFRESH_FAILURE ip={} reason=NO_REFRESH_TOKEN",
-                    request.getRemoteAddr()
-                );
+                        "AUTH_REFRESH_FAILURE ip={} reason=NO_REFRESH_TOKEN",
+                        request.getRemoteAddr());
                 throw new UserNotFoundException("Utilisateur introuvable");
             }
 
@@ -137,8 +138,8 @@ public class AuthController {
             Long userId = Long.parseLong(claims.getSubject());
 
             User user = userRepository
-                .findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("Utilisateur introuvable"));
+                    .findById(userId)
+                    .orElseThrow(() -> new UserNotFoundException("Utilisateur introuvable"));
 
             if (!user.isActive()) {
                 throw new UserNotFoundException("Utilisateur désactivé");
@@ -158,39 +159,37 @@ public class AuthController {
 
             // 3. Génération du nouvel access token
             String newAccessToken = jwtProvider.generateAccessToken(
-                user.getId().toString(),
-                buildAccessClaims(user)
-            );
+                    user.getId().toString(),
+                    buildAccessClaims(user));
 
             logger.info(
-                "AUTH_REFRESH_SUCCESS user={} ip={}",
-                user.getId().toString(),
-                request.getRemoteAddr()
-            );
+                    "AUTH_REFRESH_SUCCESS user={} ip={}",
+                    user.getId().toString(),
+                    request.getRemoteAddr());
 
             return Map.of("accessToken", newAccessToken);
 
         } catch (ExpiredJwtException e) {
 
             logger.warn(
-                "AUTH_REFRESH_FAILURE ip={} reason=REFRESH_EXPIRED",
-                request.getRemoteAddr()
-            );
+                    "AUTH_REFRESH_FAILURE ip={} reason=REFRESH_EXPIRED",
+                    request.getRemoteAddr());
             throw e;
 
         } catch (JwtException | IllegalArgumentException e) {
 
             logger.warn(
-                "AUTH_REFRESH_FAILURE ip={} reason=REFRESH_INVALID",
-                request.getRemoteAddr()
-            );
+                    "AUTH_REFRESH_FAILURE ip={} reason=REFRESH_INVALID",
+                    request.getRemoteAddr());
             throw e;
         }
     }
 
-    /* ===============================
-       LOGOUT
-       =============================== */
+    /*
+     * ===============================
+     * LOGOUT
+     * ===============================
+     */
     @PostMapping("/logout")
     public void logout(HttpServletRequest request, HttpServletResponse response) {
 
@@ -202,40 +201,37 @@ public class AuthController {
         deleteRefreshCookie.setAttribute("SameSite", "Strict");
 
         logger.info(
-        "AUTH_LOGOUT ip={} userAgent={}",
-            request.getRemoteAddr(),
-            request.getHeader("User-Agent")
-        );
+                "AUTH_LOGOUT ip={} userAgent={}",
+                request.getRemoteAddr(),
+                request.getHeader("User-Agent"));
 
         response.addCookie(deleteRefreshCookie);
     }
 
-    /* ===============================
-       REGISTER
-       =============================== */
+    /*
+     * ===============================
+     * REGISTER
+     * ===============================
+     */
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
 
-        RegisterUserCommand command =
-            new RegisterUserCommand(
+        RegisterUserCommand command = new RegisterUserCommand(
                 AuthProvider.PASSWORD,
                 request.getEmail(),
                 request.getPassword(),
-                request.getName()
-            );
+                request.getName());
 
         User user = registerUserUseCase.execute(command);
 
         return ResponseEntity.ok(
-            new RegisterResponse("REGISTER_SUCCESS", "Inscription réussie.")
-        );
+                new RegisterResponse("REGISTER_SUCCESS", "Inscription réussie."));
     }
 
     private Map<String, Object> buildAccessClaims(User user) {
         return Map.of(
-            "tokenType", "ACCESS",
-            "userType", user.getUserType().name(),
-            "isActive", user.isActive()
-        );
+                "tokenType", "ACCESS",
+                "userType", user.getUserType().name(),
+                "isActive", user.isActive());
     }
 }

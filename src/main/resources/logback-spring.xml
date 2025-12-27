@@ -132,7 +132,7 @@
 	</logger>
 
 	<!-- Auth API (login / refresh) -->
-	<logger name="fr.huiitre.tools.api.auth" level="INFO" additivity="false">
+	<logger name="fr.huiitre.tools.api.core.auth" level="INFO" additivity="false">
 		<appender-ref ref="CONSOLE" />
 		<appender-ref ref="AUTH_FILE" />
 	</logger>

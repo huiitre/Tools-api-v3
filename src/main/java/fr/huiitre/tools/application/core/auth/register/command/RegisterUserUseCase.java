@@ -1,12 +1,14 @@
-package fr.huiitre.tools.application.core.auth.register.usecase;
+package fr.huiitre.tools.application.core.auth.register.command;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import fr.huiitre.tools.application.core.auth.AuthProvider;
 import fr.huiitre.tools.application.core.auth.PasswordHasher;
 import fr.huiitre.tools.application.core.auth.exception.RegisterException;
+import fr.huiitre.tools.application.core.auth.register.usecase.RegisterUserCommand;
 import fr.huiitre.tools.application.core.role.ports.RoleRepository;
 import fr.huiitre.tools.application.core.role.ports.UserRoleRepository;
 import fr.huiitre.tools.application.core.user.ports.UserAuthProviderRepository;
@@ -17,6 +19,7 @@ import fr.huiitre.tools.domain.core.role.UserRole;
 import fr.huiitre.tools.domain.core.user.User;
 import fr.huiitre.tools.domain.core.user.UserType;
 
+@Service
 @Transactional
 public class RegisterUserUseCase {
 
@@ -30,13 +33,12 @@ public class RegisterUserUseCase {
     private final PasswordHasher passwordHasher;
 
     public RegisterUserUseCase(
-        UserRepository userRepository,
-        UserCredentialsRepository userCredentialsRepository,
-        UserAuthProviderRepository userAuthProviderRepository,
-        UserRoleRepository userRoleRepository,
-        RoleRepository roleRepository,
-        PasswordHasher passwordHasher
-    ) {
+            UserRepository userRepository,
+            UserCredentialsRepository userCredentialsRepository,
+            UserAuthProviderRepository userAuthProviderRepository,
+            UserRoleRepository userRoleRepository,
+            RoleRepository roleRepository,
+            PasswordHasher passwordHasher) {
         this.userRepository = userRepository;
         this.userCredentialsRepository = userCredentialsRepository;
         this.userAuthProviderRepository = userAuthProviderRepository;
@@ -55,44 +57,40 @@ public class RegisterUserUseCase {
             throw new RegisterException("NAME_REQUIRED");
         }
 
-        boolean alreadyExists =
-            userAuthProviderRepository.existsByProviderAndProviderUserId(
+        boolean alreadyExists = userAuthProviderRepository.existsByProviderAndProviderUserId(
                 AuthProvider.PASSWORD,
-                command.getEmail()
-            );
+                command.getEmail());
 
         if (alreadyExists) {
             throw new RegisterException("EMAIL_ALREADY_REGISTERED");
         }
 
         User user = new User(
-            command.getName(),
-            command.getEmail(),
-            UserType.HUMAN
-        );
+                command.getName(),
+                command.getEmail(),
+                UserType.HUMAN);
 
         userRepository.save(user);
 
         String passwordHash = passwordHasher.hash(command.getPassword());
 
         userCredentialsRepository.save(
-            user.getId(),
-            passwordHash
-        );
+                user.getId(),
+                passwordHash);
 
         userAuthProviderRepository.save(
-            user.getId(),
-            AuthProvider.PASSWORD,
-            command.getEmail(), // provider_user_id (PASSWORD = email)
-            command.getEmail()  // provider_email
+                user.getId(),
+                AuthProvider.PASSWORD,
+                command.getEmail(), // provider_user_id (PASSWORD = email)
+                command.getEmail() // provider_email
         );
 
-        //* ajout du rôle pour le nouvel utilisateur */
+        // * ajout du rôle pour le nouvel utilisateur */
         Role role = roleRepository.findByCode("USER")
-            .orElseThrow(() -> new IllegalStateException("DEFAULT_ROLE_USER_NOT_CONFIGURED"));
+                .orElseThrow(() -> new IllegalStateException("DEFAULT_ROLE_USER_NOT_CONFIGURED"));
 
         UserRole userRole = new UserRole(user.getId(), role.getId());
-        
+
         userRoleRepository.save(userRole);
 
         return user;
