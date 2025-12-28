@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Optional;
 
 import javax.sql.DataSource;
@@ -170,6 +171,49 @@ public class PostgresModuleRepository extends AbstractPostgresRepository impleme
             }
         } catch (SQLException e) {
             throw sqlError("Failed to check existence of module by code", e);
+        }
+    }
+
+    public List<Module> findAll() {
+        final String sql = """
+            SELECT id, name, description, code, is_active, created_at, updated_at
+            FROM tools_core.module
+        """;
+
+        try {
+            Connection conn = openConnection();
+            try (
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery();
+            ) {
+                List<Module> modules = new java.util.ArrayList<>();
+
+                while (rs.next()) {
+                    Module module = new Module(
+                        rs.getString("code"),
+                        rs.getString("name"),
+                        rs.getString("description")
+                    );
+
+                    // champs techniques
+                    module.setId(rs.getLong("id"));
+                    module.setActive(rs.getBoolean("is_active"));
+                    module.setCreatedAt(
+                        rs.getTimestamp("created_at").toLocalDateTime()
+                    );
+                    module.setUpdatedAt(
+                        rs.getTimestamp("updated_at") != null
+                            ? rs.getTimestamp("updated_at").toLocalDateTime()
+                            : null
+                    );
+
+                    modules.add(module);
+                }
+
+                return modules;
+            }
+        } catch (SQLException e) {
+            throw sqlError("Failed to retrieve all modules", e);
         }
     }
 }

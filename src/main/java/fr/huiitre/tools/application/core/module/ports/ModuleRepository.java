@@ -1,5 +1,6 @@
 package fr.huiitre.tools.application.core.module.ports;
 
+import java.util.List;
 import java.util.Optional;
 
 import fr.huiitre.tools.domain.core.module.Module;
@@ -15,4 +16,6 @@ public interface ModuleRepository {
     Optional<Module> findById(Long id);
 
     boolean existsByCode(String code);
+
+    List<Module> findAll();
 }

@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Optional;
 
 import javax.sql.DataSource;
@@ -12,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import fr.huiitre.tools.application.core.user_module.ports.UserModuleRoleRepository;
+import fr.huiitre.tools.application.core.user_module.view.UserModuleView;
 import fr.huiitre.tools.infrastructure.persistence.common.AbstractPostgresRepository;
 import fr.huiitre.tools.domain.core.user_module.UserModuleRole;
 
@@ -147,6 +149,65 @@ public class PostgresUserModuleRoleRepository extends AbstractPostgresRepository
             }
         } catch (SQLException e) {
             throw sqlError("Failed to update user module role", e);
+        }
+    }
+
+    @Override
+    public List<UserModuleView> findAllByUserId(Long userId) {
+        final String sql = """
+            SELECT
+                m.id,
+                m.code,
+                m.name,
+                m.description,
+                m.is_active,
+                m.created_at,
+                r.id AS role_id,
+                r.code AS role_code,
+                r.name AS role_name,
+                r.description AS role_description,
+                r.is_active AS role_is_active,
+                r.created_at AS role_created_at,
+                r.updated_at AS role_updated_at
+            FROM tools_core.user_module_role umr
+            INNER JOIN tools_core.module m ON m.id = module_id
+            INNER JOIN tools_core.role r ON r.id = umr.role_id
+            WHERE umr.user_id = ?
+        """;
+
+        try {
+            Connection conn = openConnection();
+            try (
+                PreparedStatement ps = conn.prepareStatement(sql);
+            ) {
+                ps.setLong(1, userId);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    List<UserModuleView> userModuleViews = new java.util.ArrayList<>();
+                    while (rs.next()) {
+                        UserModuleView userModuleView = new UserModuleView(
+                            rs.getLong("id"),
+                            rs.getString("code"),
+                            rs.getString("name"),
+                            rs.getString("description"),
+                            rs.getBoolean("is_active"),
+                            rs.getTimestamp("created_at").toLocalDateTime(),
+                            rs.getLong("role_id"),
+                            rs.getString("role_code"),
+                            rs.getString("role_name"),
+                            rs.getString("role_description"),
+                            rs.getBoolean("role_is_active"),
+                            rs.getTimestamp("role_created_at").toLocalDateTime(),
+                            rs.getTimestamp("role_updated_at").toLocalDateTime()
+                        );
+                        userModuleViews.add(userModuleView);
+                    }
+                    return userModuleViews;
+                }
+
+            }
+        } catch (SQLException e) {
+            throw sqlError("Failed to find all user module roles by user id", e);
         }
     }
 }

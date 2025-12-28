@@ -3,6 +3,7 @@ package fr.huiitre.tools.application.core.user_module.ports;
 import java.util.List;
 import java.util.Optional;
 
+import fr.huiitre.tools.application.core.user_module.view.UserModuleView;
 import fr.huiitre.tools.domain.core.user_module.UserModuleRole;
 
 public interface UserModuleRoleRepository {
@@ -16,4 +17,7 @@ public interface UserModuleRoleRepository {
     void deleteByModuleId(Long moduleId);
 
     void updateRoleId(UserModuleRole userModuleRole);
+
+    List<UserModuleView> findAllByUserId(Long userId);
+
 }
