@@ -1,0 +1,33 @@
+package fr.huiitre.tools.application.health.weight_log.command;
+
+import java.time.LocalDateTime;
+
+public class UpdateWeightLogCommand {
+    private final Double weight;
+    private final String notes;
+    private final LocalDateTime logDate;
+
+    public UpdateWeightLogCommand(
+        Double weight,
+        String notes,
+        LocalDateTime logDate
+    ) {
+        this.weight = weight;
+        this.notes = notes;
+        this.logDate = logDate;
+    }
+
+    public Double getWeight() {
+        return this.weight;
+    }
+
+
+    public String getNotes() {
+        return this.notes;
+    }
+
+
+    public LocalDateTime getLogDate() {
+        return this.logDate;
+    }
+}
