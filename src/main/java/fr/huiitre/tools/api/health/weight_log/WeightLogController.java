@@ -22,7 +22,10 @@ import fr.huiitre.tools.application.core.role.RoleCode;
 import fr.huiitre.tools.application.health.weight_log.command.CreateWeightLogCommand;
 import fr.huiitre.tools.application.health.weight_log.command.UpdateWeightLogCommand;
 import fr.huiitre.tools.application.health.weight_log.usecase.CreateWeightLogUseCase;
+import fr.huiitre.tools.application.health.weight_log.usecase.DeleteWeightLogUseCase;
+import fr.huiitre.tools.application.health.weight_log.usecase.GetAllMyWeightLogUseCase;
 import fr.huiitre.tools.application.health.weight_log.usecase.UpdateWeightLogUseCase;
+import fr.huiitre.tools.application.health.weight_log.view.WeightLogView;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -30,28 +33,29 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController
 @RequestMapping("/weight-logs")
 public class WeightLogController {
-    private static final Logger logger = LoggerFactory.getLogger(WeightLogController.class);
-
+    
     private final CreateWeightLogUseCase createWeightLogUseCase;
+    private final DeleteWeightLogUseCase deleteWeightLogUseCase;
     private final UpdateWeightLogUseCase updateWeightLogUseCase;
-    private final AuthenticatedUserProvider authenticatedUserProvider;
+    private final GetAllMyWeightLogUseCase getAllMyWeightLogUseCase;
 
     public WeightLogController(
         CreateWeightLogUseCase createWeightLogUseCase,
         UpdateWeightLogUseCase updateWeightLogUseCase,
-        AuthenticatedUserProvider authenticatedUserProvider
+        DeleteWeightLogUseCase deleteWeightLogUseCase,
+        GetAllMyWeightLogUseCase getAllMyWeightLogUseCase
     ) {
         this.createWeightLogUseCase = createWeightLogUseCase;
         this.updateWeightLogUseCase = updateWeightLogUseCase;
-        this.authenticatedUserProvider = authenticatedUserProvider;
+        this.deleteWeightLogUseCase = deleteWeightLogUseCase;
+        this.getAllMyWeightLogUseCase = getAllMyWeightLogUseCase;
     }
 
     @RequiredRole(RoleCode.USER)
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public void createWeightLog(@RequestBody CreateWeightLogCommand command) {
-        Long userId = authenticatedUserProvider.getUserId();
-        createWeightLogUseCase.execute(userId, command);
+        createWeightLogUseCase.execute(command);
     }
 
     @RequiredRole(RoleCode.USER)
@@ -61,7 +65,23 @@ public class WeightLogController {
         @PathVariable Long weightLogId,
         @RequestBody UpdateWeightLogCommand command
     ) {
-        Long userId = authenticatedUserProvider.getUserId();
-        updateWeightLogUseCase.execute(userId, weightLogId, command);
+        updateWeightLogUseCase.execute(weightLogId, command);
+    }
+
+    @RequiredRole(RoleCode.USER)
+    @DeleteMapping("/{weightLogId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteWeightLog(
+        @PathVariable Long weightLogId
+    ) {
+        deleteWeightLogUseCase.execute(
+            weightLogId
+        );
+    }
+
+    @RequiredRole(RoleCode.USER)
+    @GetMapping
+    public List<WeightLogView> getWeightLogs() {
+        return getAllMyWeightLogUseCase.execute();
     }
 }

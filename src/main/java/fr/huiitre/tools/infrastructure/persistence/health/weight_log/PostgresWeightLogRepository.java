@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import fr.huiitre.tools.application.health.weight_log.ports.WeightLogRepository;
+import fr.huiitre.tools.application.health.weight_log.view.WeightLogView;
 import fr.huiitre.tools.domain.health.weight_log.WeightLog;
 import fr.huiitre.tools.infrastructure.persistence.common.AbstractPostgresRepository;
 
@@ -105,6 +106,88 @@ public class PostgresWeightLogRepository extends AbstractPostgresRepository impl
             }
         } catch (SQLException e) {
             throw sqlError("Failed to find weight log by id", e);
+        }
+    }
+
+    @Override
+    public void delete(Long userId, Long weightLogId) {
+        final String sql = """
+            DELETE FROM tools_health.weight_log
+            WHERE user_id = ? AND id = ?
+        """;
+
+        try {
+            Connection conn = openConnection();
+            try (
+                PreparedStatement ps = conn.prepareStatement(sql);
+            ) {
+                ps.setLong(1, userId);
+                ps.setLong(2, weightLogId);
+
+                ps.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw sqlError("Failed to delete weight log", e);
+        }
+    }
+
+    @Override
+    public boolean existsById(Long userId, Long weightLogId) {
+        final String sql = """
+            SELECT 1
+            FROM tools_health.weight_log
+            WHERE user_id = ? AND id = ?
+        """;
+
+        try {
+            Connection conn = openConnection();
+            try (
+                PreparedStatement ps = conn.prepareStatement(sql);
+            ) {
+                ps.setLong(1, userId);
+                ps.setLong(2, weightLogId);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    return rs.next();
+                }
+            }
+        } catch (SQLException e) {
+            throw sqlError("Failed to check existence of weight log by id", e);
+        }
+    }
+
+    @Override
+    public List<WeightLogView> findAllByUserId(Long userId) {
+        final String sql = """
+            SELECT id, weight, logged_at, notes
+            FROM tools_health.weight_log
+            WHERE user_id = ?
+            ORDER BY logged_at DESC
+        """;
+
+        try {
+            Connection conn = openConnection();
+            try (
+                PreparedStatement ps = conn.prepareStatement(sql);
+            ) {
+                ps.setLong(1, userId);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    List<WeightLogView> weightLogs = new java.util.ArrayList<>();
+                    while (rs.next()) {
+                        WeightLogView weightLog = new WeightLogView(
+                            rs.getLong("id"),
+                            rs.getDouble("weight"),
+                            rs.getTimestamp("logged_at").toLocalDateTime(),
+                            rs.getString("notes")
+                        );
+                        weightLogs.add(weightLog);
+                    }
+                    return weightLogs;
+                }
+            }
+        } catch (SQLException e) {
+            throw sqlError("Failed to find all weight logs by user id", e);
         }
     }
 }

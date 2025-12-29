@@ -1,5 +1,6 @@
 package fr.huiitre.tools.application.health.weight_log.usecase;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -9,13 +10,12 @@ import fr.huiitre.tools.application.common.security.ports.AuthenticatedUserProvi
 import fr.huiitre.tools.application.common.security.usecase.SecuredUseCase;
 import fr.huiitre.tools.application.core.module.ModuleCode;
 import fr.huiitre.tools.application.core.role.RoleCode;
-import fr.huiitre.tools.application.health.weight_log.command.UpdateWeightLogCommand;
 import fr.huiitre.tools.application.health.weight_log.ports.WeightLogRepository;
-import fr.huiitre.tools.domain.health.weight_log.WeightLog;
+import fr.huiitre.tools.application.health.weight_log.view.WeightLogView;
 
 @Service
 @Transactional
-public class UpdateWeightLogUseCase implements SecuredUseCase {
+public class GetAllMyWeightLogUseCase implements SecuredUseCase {
 
     @Override
     public Optional<ModuleCode> requiredModule() {
@@ -31,30 +31,18 @@ public class UpdateWeightLogUseCase implements SecuredUseCase {
 
     private final WeightLogRepository weightLogRepository;
 
-    public UpdateWeightLogUseCase(
+    public GetAllMyWeightLogUseCase(
         WeightLogRepository weightLogRepository,
         AuthenticatedUserProvider authenticatedUserProvider
     ) {
         this.weightLogRepository = weightLogRepository;
         this.authenticatedUserProvider = authenticatedUserProvider;
     }
-    
-    public void execute(
-        Long weightLogId,
-        UpdateWeightLogCommand command
-    ) {
+
+    public List<WeightLogView> execute() {
 
         Long userId = authenticatedUserProvider.getUserId();
 
-        WeightLog weightLog = weightLogRepository.findById(userId, weightLogId)
-            .orElseThrow(() -> new IllegalArgumentException("WEIGHT_LOG_NOT_FOUND"));
-
-        weightLog.update(
-            command.getWeight(),
-            command.getNotes(),
-            command.getLogDate()
-        );
-
-        weightLogRepository.update(userId, weightLogId, weightLog);
+        return weightLogRepository.findAllByUserId(userId);
     }
 }
