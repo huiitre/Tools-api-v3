@@ -29,7 +29,7 @@ import fr.huiitre.tools.application.health.weight_log.view.WeightLogView;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-@Tag(name = "Core - Weight Log")
+@Tag(name = "Health - Weight Log")
 @RestController
 @RequestMapping("/weight-logs")
 public class WeightLogController {

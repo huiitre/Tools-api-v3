@@ -9,6 +9,8 @@ import org.springframework.context.annotation.Configuration;
     tags = {
         @Tag(name = "Core - Auth"),
         @Tag(name = "Core - Module"),
+        @Tag(name = "Core - Role"),
+        @Tag(name = "Health - Weight Log"),
         @Tag(name = "Core - Test")
     }
 )
