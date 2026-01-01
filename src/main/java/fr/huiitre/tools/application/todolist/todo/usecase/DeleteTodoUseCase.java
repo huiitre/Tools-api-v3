@@ -10,6 +10,7 @@ import fr.huiitre.tools.application.common.security.usecase.SecuredUseCase;
 import fr.huiitre.tools.application.core.module.ModuleCode;
 import fr.huiitre.tools.application.core.role.RoleCode;
 import fr.huiitre.tools.application.todolist.todo.ports.TodoRepository;
+import fr.huiitre.tools.domain.todolist.todo.Todo;
 
 @Service
 @Transactional
@@ -36,8 +37,15 @@ public class DeleteTodoUseCase implements SecuredUseCase {
         this.authenticatedUserProvider = authenticatedUserProvider;
     }
 
-    public void execute(Long todoId) {
+    public void execute(Long todolistId, Long todoId) {
         Long userId = authenticatedUserProvider.getUserId();
+
+        Todo todo = todoRepository.findById(userId, todoId)
+            .orElseThrow(() -> new IllegalArgumentException("TODO_NOT_FOUND_OR_NOT_OWNED"));
+
+        if (!todo.getTodolistId().equals(todolistId)) {
+            throw new IllegalArgumentException("TODO_NOT_IN_TODOLIST");
+        }
 
         todoRepository.delete(userId, todoId);
     }

@@ -93,7 +93,7 @@ public class PostgresTodolistRepository extends AbstractPostgresRepository imple
 
                 int affected = ps.executeUpdate();
                 if (affected == 0) {
-                    throw new IllegalStateException("TODOLIST_NOT_FOUND_OR_NOT_OWNED");
+                    throw new IllegalArgumentException("TODOLIST_NOT_FOUND_OR_NOT_OWNED");
                 }
             }
         } catch (SQLException e) {

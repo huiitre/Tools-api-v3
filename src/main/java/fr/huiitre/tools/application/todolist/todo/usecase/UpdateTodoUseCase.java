@@ -39,11 +39,15 @@ public class UpdateTodoUseCase implements SecuredUseCase {
         this.authenticatedUserProvider = authenticatedUserProvider;
     }
 
-    public void execute(Long todoId, UpdateTodoCommand command) {
+    public void execute(Long todolistId, Long todoId, UpdateTodoCommand command) {
         Long userId = authenticatedUserProvider.getUserId();
 
         Todo todo = todoRepository.findById(userId, todoId)
             .orElseThrow(() -> new IllegalArgumentException("Todo not found"));
+
+        if (!todo.getTodolistId().equals(todolistId)) {
+            throw new IllegalArgumentException("TODO_NOT_IN_TODOLIST");
+        }
 
         todo.update(
             command.getName(),

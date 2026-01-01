@@ -36,13 +36,17 @@ public class PostgresTodoRepository extends AbstractPostgresRepository implement
                 ps.setString(1, todo.getName());
                 ps.setString(2, todo.getDescription());
                 ps.setLong(3, todo.getDisplayOrder());
-                ps.setString(4, todo.getPriority().name());
+                ps.setObject(
+                    4,
+                    todo.getPriority().name(),
+                    java.sql.Types.OTHER
+                );
                 ps.setLong(5, userId);
                 ps.setLong(6, todo.getTodolistId());
 
                 int affected = ps.executeUpdate();
                 if (affected == 0) {
-                    throw new IllegalStateException("TODOLIST_NOT_FOUND_OR_NOT_OWNED");
+                    throw new IllegalArgumentException("TODOLIST_NOT_FOUND_OR_NOT_OWNED");
                 }
             }
         } catch (SQLException e) {
@@ -53,10 +57,15 @@ public class PostgresTodoRepository extends AbstractPostgresRepository implement
     @Override
     public void update(Long userId, Todo todo) {
         final String sql = """
-            UPDATE tools_todolist.todo
+            UPDATE tools_todolist.todo t
             SET name = ?, description = ?, is_completed = ?, display_order = ?, priority = ?
-            WHERE id = ? AND todolist_id IN (
-                SELECT id FROM tools_todolist.todolist WHERE user_id = ?
+            WHERE t.id = ?
+            AND t.todolist_id = ?
+            AND EXISTS (
+                SELECT 1
+                FROM tools_todolist.todolist tl
+                WHERE tl.id = t.todolist_id
+                    AND tl.user_id = ?
             )
         """;
 
@@ -69,13 +78,18 @@ public class PostgresTodoRepository extends AbstractPostgresRepository implement
                 ps.setString(2, todo.getDescription());
                 ps.setBoolean(3, todo.isCompleted());
                 ps.setLong(4, todo.getDisplayOrder());
-                ps.setString(5, todo.getPriority().name());
+                ps.setObject(
+                    5,
+                    todo.getPriority().name(),
+                    java.sql.Types.OTHER
+                );
                 ps.setLong(6, todo.getId());
-                ps.setLong(7, userId);
+                ps.setLong(7, todo.getTodolistId());
+                ps.setLong(8, userId);
 
                 int affected = ps.executeUpdate();
                 if (affected == 0) {
-                    throw new IllegalStateException("TODO_NOT_FOUND_OR_NOT_OWNED");
+                    throw new IllegalArgumentException("TODO_NOT_FOUND_OR_NOT_OWNED");
                 }
             }
         } catch (SQLException e) {
@@ -102,7 +116,7 @@ public class PostgresTodoRepository extends AbstractPostgresRepository implement
 
                 int affected = ps.executeUpdate();
                 if (affected == 0) {
-                    throw new IllegalStateException("TODO_NOT_FOUND_OR_NOT_OWNED");
+                    throw new IllegalArgumentException("TODO_NOT_FOUND_OR_NOT_OWNED");
                 }
             }
         } catch (SQLException e) {

@@ -67,15 +67,15 @@ public class Todo {
             description,
             false,
             todolistId,
-            displayOrder,
-            priority
+            displayOrder != null ? displayOrder : 0L,
+            priority != null ? priority : TodoPriority.NORMAL
         );
     }
 
     public void update(
         String name,
         String description,
-        boolean completed,
+        Boolean completed,
         Long displayOrder,
         TodoPriority priority
     ) {
@@ -96,7 +96,9 @@ public class Todo {
             this.priority = priority;
         }
 
-        this.completed = completed;
+        if (completed != null) {
+            this.completed = completed;
+        }
 
         validateFields();
     }

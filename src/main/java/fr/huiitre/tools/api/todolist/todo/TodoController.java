@@ -70,18 +70,20 @@ public class TodoController {
     @PatchMapping("/{todoId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void updateTodo(
+        @PathVariable Long todolistId,
         @PathVariable Long todoId,
         @RequestBody UpdateTodoCommand command
     ) {
-        updateTodoUseCase.execute(todoId, command);
+        updateTodoUseCase.execute(todolistId, todoId, command);
     }
 
     @RequiredRole(RoleCode.USER)
     @DeleteMapping("/{todoId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteTodo(
+        @PathVariable Long todolistId,
         @PathVariable Long todoId
     ) {
-        deleteTodoUseCase.execute(todoId);
+        deleteTodoUseCase.execute(todolistId, todoId);
     }
 }

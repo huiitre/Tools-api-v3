@@ -53,8 +53,8 @@ public class Todolist {
 
     public static Todolist create(
         String name,
-        boolean active,
-        boolean favorite,
+        Boolean active,
+        Boolean favorite,
         String colorHex,
         Long displayOrder
     ) {
@@ -62,17 +62,17 @@ public class Todolist {
         return new Todolist(
             null,
             name,
-            active,
-            favorite,
-            colorHex,
-            displayOrder
+            active != null ? active : true,
+            favorite != null ? favorite : false,
+            colorHex != null ? colorHex : "#FFFFFF",
+            displayOrder != null ? displayOrder : 0L
         );
     }
 
     public void update(
         String name,
-        boolean active,
-        boolean favorite,
+        Boolean active,
+        Boolean favorite,
         String colorHex,
         Long displayOrder
     ) {
@@ -80,8 +80,12 @@ public class Todolist {
         if (name != null) {
             this.name = name;
         }
-        this.active = active;
-        this.favorite = favorite;
+        if (active != null) {
+            this.active = active;
+        }
+        if (favorite != null) {
+            this.favorite = favorite;
+        }
         if (colorHex != null) {
             this.colorHex = colorHex;
         }
