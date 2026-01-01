@@ -31,8 +31,9 @@ public class DeleteTodoUseCase implements SecuredUseCase {
     }
 
     public DeleteTodoUseCase(
-            TodoRepository todoRepository,
-            AuthenticatedUserProvider authenticatedUserProvider) {
+        TodoRepository todoRepository,
+        AuthenticatedUserProvider authenticatedUserProvider
+    ) {
         this.todoRepository = todoRepository;
         this.authenticatedUserProvider = authenticatedUserProvider;
     }
