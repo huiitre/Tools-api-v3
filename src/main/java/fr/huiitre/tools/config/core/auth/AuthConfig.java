@@ -12,9 +12,9 @@ import fr.huiitre.tools.application.core.role.ports.UserRoleRepository;
 import fr.huiitre.tools.application.core.user.ports.UserAuthProviderRepository;
 import fr.huiitre.tools.application.core.user.ports.UserCredentialsRepository;
 import fr.huiitre.tools.application.core.user.ports.UserRepository;
-import fr.huiitre.tools.infrastructure.persistence.core.user.PostgresUserAuthProviderRepository;
-import fr.huiitre.tools.infrastructure.persistence.core.user.PostgresUserCredentialsRepository;
-import fr.huiitre.tools.infrastructure.persistence.core.user.PostgresUserRepository;
+import fr.huiitre.tools.infrastructure.core.user.PostgresUserAuthProviderRepository;
+import fr.huiitre.tools.infrastructure.core.user.PostgresUserCredentialsRepository;
+import fr.huiitre.tools.infrastructure.core.user.PostgresUserRepository;
 import fr.huiitre.tools.infrastructure.security.password.BCryptPasswordHasher;
 
 @Configuration

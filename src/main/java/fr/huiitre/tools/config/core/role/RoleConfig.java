@@ -7,12 +7,12 @@ import org.springframework.context.annotation.Configuration;
 
 import fr.huiitre.tools.application.core.role.ports.RoleRepository;
 import fr.huiitre.tools.application.core.role.ports.UserRoleRepository;
-import fr.huiitre.tools.infrastructure.persistence.core.role.PostgresRoleRepository;
-import fr.huiitre.tools.infrastructure.persistence.core.role.PostgresUserRoleRepository;
+import fr.huiitre.tools.infrastructure.core.role.PostgresRoleRepository;
+import fr.huiitre.tools.infrastructure.core.role.PostgresUserRoleRepository;
 
 @Configuration
 public class RoleConfig {
-    
+
     @Bean
     public RoleRepository roleRepository(DataSource dataSource) {
         return new PostgresRoleRepository(dataSource);

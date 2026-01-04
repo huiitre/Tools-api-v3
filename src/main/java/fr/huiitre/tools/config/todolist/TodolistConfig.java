@@ -7,8 +7,8 @@ import org.springframework.context.annotation.Configuration;
 
 import fr.huiitre.tools.application.todolist.todo.ports.TodoRepository;
 import fr.huiitre.tools.application.todolist.todolist.ports.TodolistRepository;
-import fr.huiitre.tools.infrastructure.persistence.todolist.todo.PostgresTodoRepository;
-import fr.huiitre.tools.infrastructure.persistence.todolist.todolist.PostgresTodolistRepository;
+import fr.huiitre.tools.infrastructure.todolist.todo.PostgresTodoRepository;
+import fr.huiitre.tools.infrastructure.todolist.todolist.PostgresTodolistRepository;
 
 @Configuration
 public class TodolistConfig {
