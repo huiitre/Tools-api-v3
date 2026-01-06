@@ -11,10 +11,12 @@ import fr.huiitre.tools.application.dofus.ports.providers.Dofus3LanguageDataProv
 
 public class Dofus3LanguageDataProviderImpl implements Dofus3LanguageDataProvider {
 
-    private final Map<Long, String> stringsById;
+    private final Dofus3LocalAssetsReader assetsReader;
+    private volatile Map<Long, String> stringsById;
 
     public Dofus3LanguageDataProviderImpl(
             Dofus3LocalAssetsReader assetsReader) {
+        this.assetsReader = assetsReader;
         this.stringsById = loadStrings(assetsReader);
     }
 
@@ -23,6 +25,11 @@ public class Dofus3LanguageDataProviderImpl implements Dofus3LanguageDataProvide
         return stringsById.getOrDefault(
                 stringId,
                 "[missing-string:" + stringId + "]");
+    }
+
+    @Override
+    public synchronized void reload() {
+        this.stringsById = loadStrings(this.assetsReader);
     }
 
     private Map<Long, String> loadStrings(

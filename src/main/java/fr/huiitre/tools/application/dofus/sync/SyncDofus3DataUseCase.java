@@ -16,6 +16,7 @@ import fr.huiitre.tools.application.common.security.usecase.SecuredUseCase;
 import fr.huiitre.tools.application.core.module.ModuleCode;
 import fr.huiitre.tools.application.core.role.RoleCode;
 import fr.huiitre.tools.application.dofus.gameversion.GameVersionData;
+import fr.huiitre.tools.application.dofus.ports.providers.Dofus3LanguageDataProvider;
 import fr.huiitre.tools.application.dofus.ports.providers.ItemDataProvider;
 import fr.huiitre.tools.application.dofus.sync.item.SyncItemUseCase;
 import fr.huiitre.tools.application.dofus.sync.itemtype.SyncItemTypesUseCase;
@@ -31,6 +32,8 @@ public class SyncDofus3DataUseCase implements SecuredUseCase {
     private static final int INLINE_LIMIT = 100;
     private static final DateTimeFormatter TS = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
+    private final Dofus3LanguageDataProvider languageDataProvider;
+
     private final MailSenderService mailSenderService;
     private final ReportFileGenerator reportFileGenerator;
 
@@ -41,12 +44,14 @@ public class SyncDofus3DataUseCase implements SecuredUseCase {
         ReportFileGenerator reportFileGenerator,
         MailSenderService mailSenderService,
         SyncItemTypesUseCase syncItemTypesUseCase,
-        SyncItemUseCase syncItemDataUseCase
+        SyncItemUseCase syncItemDataUseCase,
+        Dofus3LanguageDataProvider languageDataProvider
     ) {
         this.reportFileGenerator = reportFileGenerator;
         this.mailSenderService = mailSenderService;
         this.syncItemTypesUseCase = syncItemTypesUseCase;
         this.syncItemUseCase = syncItemDataUseCase;
+        this.languageDataProvider = languageDataProvider;
     }
 
     @Override
@@ -60,6 +65,8 @@ public class SyncDofus3DataUseCase implements SecuredUseCase {
     }
 
     public void execute(GameVersionData gameVersion) {
+
+        languageDataProvider.reload();
 
         // =====================================================
         // ITEM TYPES
