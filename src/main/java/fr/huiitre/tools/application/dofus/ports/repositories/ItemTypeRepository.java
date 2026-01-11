@@ -2,7 +2,7 @@ package fr.huiitre.tools.application.dofus.ports.repositories;
 
 import java.util.List;
 
-import fr.huiitre.tools.domain.dofus.itemtype.ItemType;
+import fr.huiitre.tools.domain.dofus.ItemType;
 
 public interface ItemTypeRepository {
 

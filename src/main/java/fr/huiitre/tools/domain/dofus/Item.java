@@ -1,4 +1,4 @@
-package fr.huiitre.tools.domain.dofus.item;
+package fr.huiitre.tools.domain.dofus;
 
 public class Item {
     private final Long id;
@@ -8,16 +8,16 @@ public class Item {
     private String name;
     private Long level;
     private String description;
+    private Long price;
 
     private Item(
-        Long id,
-        Long assetId,
-        Long gameVersionId,
-        Long itemTypeId,
-        String name,
-        Long level,
-        String description
-    ) {
+            Long id,
+            Long assetId,
+            Long gameVersionId,
+            Long itemTypeId,
+            String name,
+            Long level,
+            String description) {
         this.id = id;
         this.assetId = assetId;
         this.gameVersionId = gameVersionId;
@@ -30,54 +30,49 @@ public class Item {
     }
 
     public static Item rehydrate(
-        Long id,
-        Long assetId,
-        Long gameVersionId,
-        Long itemTypeId,
-        String name,
-        Long level,
-        String description
-    ) {
+            Long id,
+            Long assetId,
+            Long gameVersionId,
+            Long itemTypeId,
+            String name,
+            Long level,
+            String description) {
         if (id == null) {
             throw new IllegalArgumentException("ITEM_ID_REQUIRED");
         }
 
         return new Item(
-            id,
-            assetId,
-            gameVersionId,
-            itemTypeId,
-            name,
-            level,
-            description
-        );
+                id,
+                assetId,
+                gameVersionId,
+                itemTypeId,
+                name,
+                level,
+                description);
     }
 
     public static Item create(
-        Long assetId,
-        Long gameVersionId,
-        Long itemTypeId,
-        String name,
-        Long level,
-        String description
-    ) {
+            Long assetId,
+            Long gameVersionId,
+            Long itemTypeId,
+            String name,
+            Long level,
+            String description) {
         return new Item(
-            null,
-            assetId,
-            gameVersionId,
-            itemTypeId,
-            name,
-            level,
-            description
-        );
+                null,
+                assetId,
+                gameVersionId,
+                itemTypeId,
+                name,
+                level,
+                description);
     }
 
     public void update(
-        Long itemTypeId,
-        String name,
-        Long level,
-        String description
-    ) {
+            Long itemTypeId,
+            String name,
+            Long level,
+            String description) {
 
         if (itemTypeId != null) {
             this.itemTypeId = itemTypeId;
@@ -146,5 +141,9 @@ public class Item {
 
     public String getDescription() {
         return description;
+    }
+
+    public Long getPrice() {
+        return price;
     }
 }

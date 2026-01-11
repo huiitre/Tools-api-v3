@@ -8,7 +8,7 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import fr.huiitre.tools.application.dofus.ports.repositories.ItemTypeRepository;
-import fr.huiitre.tools.domain.dofus.itemtype.ItemType;
+import fr.huiitre.tools.domain.dofus.ItemType;
 import fr.huiitre.tools.infrastructure.common.AbstractPostgresRepository;
 
 public class PostgresItemTypeRepository extends AbstractPostgresRepository implements ItemTypeRepository {

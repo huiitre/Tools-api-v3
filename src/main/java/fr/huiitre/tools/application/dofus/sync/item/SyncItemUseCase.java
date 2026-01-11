@@ -21,8 +21,8 @@ import fr.huiitre.tools.application.dofus.ports.providers.ItemDataProvider;
 import fr.huiitre.tools.application.dofus.ports.repositories.ItemRepository;
 import fr.huiitre.tools.application.dofus.ports.repositories.ItemTypeRepository;
 import fr.huiitre.tools.application.dofus.sync.SyncReport;
-import fr.huiitre.tools.domain.dofus.item.Item;
-import fr.huiitre.tools.domain.dofus.itemtype.ItemType;
+import fr.huiitre.tools.domain.dofus.Item;
+import fr.huiitre.tools.domain.dofus.ItemType;
 import fr.huiitre.tools.infrastructure.filesystem.FileSystemChecker;
 
 @Service
@@ -46,9 +46,9 @@ public class SyncItemUseCase implements SecuredUseCase {
     }
 
     public SyncItemUseCase(
-        ItemRepository itemRepository,
-        ItemDataProvider itemDataProvider,
-        ItemTypeRepository itemTypeRepository) {
+            ItemRepository itemRepository,
+            ItemDataProvider itemDataProvider,
+            ItemTypeRepository itemTypeRepository) {
         this.itemDataProvider = itemDataProvider;
         this.itemRepository = itemRepository;
         this.itemTypeRepository = itemTypeRepository;
@@ -58,82 +58,65 @@ public class SyncItemUseCase implements SecuredUseCase {
 
         List<ItemSyncData> external = itemDataProvider.fetchAll();
 
-        Map<Long, Long> assetIdCounts =
-            external.stream()
+        Map<Long, Long> assetIdCounts = external.stream()
                 .collect(Collectors.groupingBy(
-                    ItemSyncData::getAssetId,
-                    Collectors.counting()
-                ));
+                        ItemSyncData::getAssetId,
+                        Collectors.counting()));
 
         assetIdCounts.entrySet().stream()
-            .filter(e -> e.getValue() > 1)
-            .forEach(e ->
-                logger.error(
-                    "DUPLICATE asset_id in external: assetId={} count={}",
-                    e.getKey(),
-                    e.getValue()
-                )
-            );
+                .filter(e -> e.getValue() > 1)
+                .forEach(e -> logger.error(
+                        "DUPLICATE asset_id in external: assetId={} count={}",
+                        e.getKey(),
+                        e.getValue()));
 
         List<Item> current = itemRepository.findAllByGameVersionId(gameVersion.getId());
 
         Map<Long, Item> currentByAssetId = current.stream().collect(
-            Collectors
-                .toMap(
-                    Item::getAssetId,
-                    it -> it
-                )
-        );
+                Collectors
+                        .toMap(
+                                Item::getAssetId,
+                                it -> it));
 
         List<String> created = new ArrayList<>();
         List<String> updated = new ArrayList<>();
 
         List<ItemType> itemTypes = itemTypeRepository.findAllByGameVersionId(gameVersion.getId());
 
-        Map<Long, Long> itemTypeIdByAssetId =
-            itemTypes.stream()
+        Map<Long, Long> itemTypeIdByAssetId = itemTypes.stream()
                 .collect(Collectors.toMap(
-                    ItemType::getAssetId,
-                    ItemType::getId
-                ));
+                        ItemType::getAssetId,
+                        ItemType::getId));
 
         for (ItemSyncData ext : external) {
-            
+
             Item existing = currentByAssetId.get(ext.getAssetId());
 
             Long itemTypeId = Optional.ofNullable(
-                itemTypeIdByAssetId.get(ext.getItemTypeId())
-            )
-            .orElseThrow(() ->
-                new IllegalArgumentException(
-                    "Item type not found for assetId: " + ext.getItemTypeId()
-                )
-            );
+                    itemTypeIdByAssetId.get(ext.getItemTypeId()))
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Item type not found for assetId: " + ext.getItemTypeId()));
 
             if (existing == null) {
                 Item createdItem = Item.create(
-                    ext.getAssetId(),
-                    gameVersion.getId(),
-                    itemTypeId,
-                    ext.getName(),
-                    ext.getLevel(),
-                    ext.getDescription()
-                );
-                //todo faire un save également pour item_image, et ajoute iconId dans le domaine Item
+                        ext.getAssetId(),
+                        gameVersion.getId(),
+                        itemTypeId,
+                        ext.getName(),
+                        ext.getLevel(),
+                        ext.getDescription());
                 Long saved = itemRepository.save(createdItem);
                 created.add(
-                    "assetId=" + ext.getAssetId()
-                        + " name=\"" + ext.getName() + "\""
-                        + " itemTypeId=" + itemTypeId
-                        + " level=" + ext.getLevel()
-                        + " description=\"" + ext.getDescription() + "\""
-                        + " iconId=" + ext.getIconId()
-                );
+                        "assetId=" + ext.getAssetId()
+                                + " name=\"" + ext.getName() + "\""
+                                + " itemTypeId=" + itemTypeId
+                                + " level=" + ext.getLevel()
+                                + " description=\"" + ext.getDescription() + "\""
+                                + " iconId=" + ext.getIconId());
 
                 itemRepository.refreshImages(
-                    saved,
-                    ext.getIconId()
-                );
+                        saved,
+                        ext.getIconId());
 
                 continue;
             }
@@ -151,34 +134,33 @@ public class SyncItemUseCase implements SecuredUseCase {
                 String oldDescription = existing.getDescription();
 
                 existing.update(
-                    itemTypeId,
-                    ext.getName(),
-                    ext.getLevel(),
-                    ext.getDescription()
-                );
+                        itemTypeId,
+                        ext.getName(),
+                        ext.getLevel(),
+                        ext.getDescription());
 
                 itemRepository.update(existing);
 
                 updated.add(
-                    "assetId=" + ext.getAssetId()
-                        + (nameChanged ? " name: \"" + oldName + "\" -> \"" + ext.getName() + "\"" : "")
-                        + (itemTypeChanged ? " itemTypeId: " + oldItemTypeId + " -> " + ext.getItemTypeId() : "")
-                        + (levelChanged ? " level: " + oldLevel + " -> " + ext.getLevel() : "")
-                        + (descriptionChanged ? " description: \"" + oldDescription + "\" -> \"" + ext.getDescription() + "\"" : "")
-                );
+                        "assetId=" + ext.getAssetId()
+                                + (nameChanged ? " name: \"" + oldName + "\" -> \"" + ext.getName() + "\"" : "")
+                                + (itemTypeChanged ? " itemTypeId: " + oldItemTypeId + " -> " + ext.getItemTypeId()
+                                        : "")
+                                + (levelChanged ? " level: " + oldLevel + " -> " + ext.getLevel() : "")
+                                + (descriptionChanged
+                                        ? " description: \"" + oldDescription + "\" -> \"" + ext.getDescription() + "\""
+                                        : ""));
 
                 itemRepository.refreshImages(
-                    existing.getId(),
-                    ext.getIconId()
-                );
+                        existing.getId(),
+                        ext.getIconId());
             }
         }
 
         return new SyncReport(
-            "items",
-            "Items",
-            created,
-            updated
-        );
+                "items",
+                "Items",
+                created,
+                updated);
     }
 }

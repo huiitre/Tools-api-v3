@@ -2,10 +2,10 @@ package fr.huiitre.tools.application.dofus.ports.repositories;
 
 import java.util.List;
 
-import fr.huiitre.tools.domain.dofus.item.Item;
+import fr.huiitre.tools.domain.dofus.Item;
 
 public interface ItemRepository {
-    
+
     List<Item> findAllByGameVersionId(Long gameVersionId);
 
     Long save(Item item);

@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 
 import fr.huiitre.tools.application.dofus.ports.repositories.ItemRepository;
-import fr.huiitre.tools.domain.dofus.item.Item;
+import fr.huiitre.tools.domain.dofus.Item;
 import fr.huiitre.tools.infrastructure.common.AbstractPostgresRepository;
 import fr.huiitre.tools.infrastructure.filesystem.FileSystemChecker;
 
@@ -147,17 +147,17 @@ public class PostgresItemRepository extends AbstractPostgresRepository implement
         ImageExistence images = checkItemImagesExistence(iconId);
 
         final String deleteSql = """
-            DELETE FROM tools_dofus.item_image
-            WHERE item_id = ?
-        """;
+                    DELETE FROM tools_dofus.item_image
+                    WHERE item_id = ?
+                """;
 
         final String insertSql = """
-            INSERT INTO tools_dofus.item_image (
-                item_id,
-                icon_id,
-                resolution
-            ) VALUES (?, ?, ?)
-        """;
+                    INSERT INTO tools_dofus.item_image (
+                        item_id,
+                        icon_id,
+                        resolution
+                    ) VALUES (?, ?, ?)
+                """;
 
         try {
             Connection conn = openConnection();
@@ -189,27 +189,24 @@ public class PostgresItemRepository extends AbstractPostgresRepository implement
 
         } catch (SQLException e) {
             throw sqlError(
-                "Failed to refresh item images for item id: " + itemId,
-                e
-            );
+                    "Failed to refresh item images for item id: " + itemId,
+                    e);
         }
     }
 
     private ImageExistence checkItemImagesExistence(Long iconId) {
 
         Path image1x = assetsBasePath.resolve(
-            "tools_dofus/dofus3/img/item/1x/" + iconId + "-64.png"
-        );
+                "tools_dofus/dofus3/img/item/1x/" + iconId + "-64.png");
 
         Path image2x = assetsBasePath.resolve(
-            "tools_dofus/dofus3/img/item/2x/" + iconId + "-128.png"
-        );
+                "tools_dofus/dofus3/img/item/2x/" + iconId + "-128.png");
 
         return new ImageExistence(
-            FileSystemChecker.exists(image1x),
-            FileSystemChecker.exists(image2x)
-        );
+                FileSystemChecker.exists(image1x),
+                FileSystemChecker.exists(image2x));
     }
 
-    private record ImageExistence(boolean has1x, boolean has2x) {}
+    private record ImageExistence(boolean has1x, boolean has2x) {
+    }
 }

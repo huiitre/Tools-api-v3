@@ -1,4 +1,4 @@
-package fr.huiitre.tools.domain.dofus.itemtype;
+package fr.huiitre.tools.domain.dofus;
 
 public class ItemType {
 

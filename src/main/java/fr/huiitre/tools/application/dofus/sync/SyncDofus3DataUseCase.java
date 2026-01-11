@@ -18,6 +18,7 @@ import fr.huiitre.tools.application.core.role.RoleCode;
 import fr.huiitre.tools.application.dofus.gameversion.GameVersionData;
 import fr.huiitre.tools.application.dofus.ports.providers.Dofus3LanguageDataProvider;
 import fr.huiitre.tools.application.dofus.ports.providers.ItemDataProvider;
+import fr.huiitre.tools.application.dofus.sync.almanax.SyncAlmanaxUseCase;
 import fr.huiitre.tools.application.dofus.sync.item.SyncItemUseCase;
 import fr.huiitre.tools.application.dofus.sync.itemtype.SyncItemTypesUseCase;
 import fr.huiitre.tools.infrastructure.mail.MailSenderService;
@@ -39,19 +40,22 @@ public class SyncDofus3DataUseCase implements SecuredUseCase {
 
     private final SyncItemTypesUseCase syncItemTypesUseCase;
     private final SyncItemUseCase syncItemUseCase;
+    private final SyncAlmanaxUseCase syncAlmanaxUseCase;
 
     public SyncDofus3DataUseCase(
         ReportFileGenerator reportFileGenerator,
         MailSenderService mailSenderService,
         SyncItemTypesUseCase syncItemTypesUseCase,
         SyncItemUseCase syncItemDataUseCase,
-        Dofus3LanguageDataProvider languageDataProvider
+        Dofus3LanguageDataProvider languageDataProvider,
+        SyncAlmanaxUseCase syncAlmanaxUseCase
     ) {
         this.reportFileGenerator = reportFileGenerator;
         this.mailSenderService = mailSenderService;
         this.syncItemTypesUseCase = syncItemTypesUseCase;
         this.syncItemUseCase = syncItemDataUseCase;
         this.languageDataProvider = languageDataProvider;
+        this.syncAlmanaxUseCase = syncAlmanaxUseCase;
     }
 
     @Override
@@ -71,14 +75,17 @@ public class SyncDofus3DataUseCase implements SecuredUseCase {
         // =====================================================
         // ITEM TYPES
         // =====================================================
-        SyncReport itemTypeReport = syncItemTypesUseCase.execute(gameVersion);
+        // SyncReport itemTypeReport = syncItemTypesUseCase.execute(gameVersion);
 
         // =====================================================
-        // FUTUR : ITEMS
-        // ItemSyncReport itemReport = syncItemsDataUseCase.execute(gameVersion,
-        // itemsDataProvider.execute());
+        // ITEMS
         // =====================================================
-        SyncReport itemReport = syncItemUseCase.execute(gameVersion);
+        // SyncReport itemReport = syncItemUseCase.execute(gameVersion);
+
+        // =====================================================
+        // ITEMS
+        // =====================================================
+        SyncReport almanaxReport = syncAlmanaxUseCase.execute();
 
         // =====================================================
         // FUTUR : AUTRES JSON
@@ -96,7 +103,7 @@ public class SyncDofus3DataUseCase implements SecuredUseCase {
         int globalCreated = 0;
         int globalUpdated = 0;
 
-        // ------------- ITEM TYPES -------------
+        /* // ------------- ITEM TYPES -------------
         globalCreated += itemTypeReport.createdCount();
         globalUpdated += itemTypeReport.updatedCount();
 
@@ -140,6 +147,32 @@ public class SyncDofus3DataUseCase implements SecuredUseCase {
             body.append("Détails       : voir pièce jointe \"")
                 .append(filename)
                 .append("\"\n\n");
+        } */
+
+        // ------------- ALMANAX -------------
+        globalCreated += almanaxReport.createdCount();
+        globalUpdated += almanaxReport.updatedCount();
+
+        body.append(almanaxReport.label()).append('\n');
+        body.append("Ajouts        : ").append(almanaxReport.createdCount()).append('\n');
+        body.append("Modifications : ").append(almanaxReport.updatedCount()).append('\n');
+
+        if (almanaxReport.totalChanges() == 0) {
+            body.append("Détails       : aucun changement\n\n");
+        } else if (almanaxReport.totalChanges() <= INLINE_LIMIT) {
+            body.append('\n').append(almanaxReport.toInlineDetails()).append('\n');
+        } else {
+            String filename = buildAttachmentFilename(gameVersion, almanaxReport.code());
+            Path file = reportFileGenerator.generate(
+                filename,
+                buildAttachmentHeader(gameVersion, almanaxReport)
+                    + "\n"
+                    + almanaxReport.toAttachmentContent()
+            );
+            attachments.add(new Attachment(filename, file));
+            body.append("Détails       : voir pièce jointe \"")
+                .append(filename)
+                .append("\"\n\n");
         }
 
         // ------------- TOTAL -------------
@@ -161,10 +194,10 @@ public class SyncDofus3DataUseCase implements SecuredUseCase {
         // NOTE: il te faut une méthode sendWithAttachments(List<Path>) côté
         // MailSenderService
         logger.info("SUBJECT = {}", subject);
-        mailSenderService.sendWithAttachments(
+        /* mailSenderService.sendWithAttachments(
                 subject,
                 body.toString(),
-                attachments.stream().map(Attachment::path).toList());
+                attachments.stream().map(Attachment::path).toList()); */
     }
 
     private String buildAttachmentFilename(GameVersionData gameVersion, String reportCode) {
