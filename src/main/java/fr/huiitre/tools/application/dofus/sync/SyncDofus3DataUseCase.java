@@ -75,12 +75,12 @@ public class SyncDofus3DataUseCase implements SecuredUseCase {
         // =====================================================
         // ITEM TYPES
         // =====================================================
-        // SyncReport itemTypeReport = syncItemTypesUseCase.execute(gameVersion);
+        SyncReport itemTypeReport = syncItemTypesUseCase.execute(gameVersion);
 
         // =====================================================
         // ITEMS
         // =====================================================
-        // SyncReport itemReport = syncItemUseCase.execute(gameVersion);
+        SyncReport itemReport = syncItemUseCase.execute(gameVersion);
 
         // =====================================================
         // ITEMS
@@ -103,7 +103,7 @@ public class SyncDofus3DataUseCase implements SecuredUseCase {
         int globalCreated = 0;
         int globalUpdated = 0;
 
-        /* // ------------- ITEM TYPES -------------
+        // ------------- ITEM TYPES -------------
         globalCreated += itemTypeReport.createdCount();
         globalUpdated += itemTypeReport.updatedCount();
 
@@ -147,7 +147,7 @@ public class SyncDofus3DataUseCase implements SecuredUseCase {
             body.append("Détails       : voir pièce jointe \"")
                 .append(filename)
                 .append("\"\n\n");
-        } */
+        }
 
         // ------------- ALMANAX -------------
         globalCreated += almanaxReport.createdCount();
@@ -194,10 +194,10 @@ public class SyncDofus3DataUseCase implements SecuredUseCase {
         // NOTE: il te faut une méthode sendWithAttachments(List<Path>) côté
         // MailSenderService
         logger.info("SUBJECT = {}", subject);
-        /* mailSenderService.sendWithAttachments(
+        mailSenderService.sendWithAttachments(
                 subject,
                 body.toString(),
-                attachments.stream().map(Attachment::path).toList()); */
+                attachments.stream().map(Attachment::path).toList());
     }
 
     private String buildAttachmentFilename(GameVersionData gameVersion, String reportCode) {
