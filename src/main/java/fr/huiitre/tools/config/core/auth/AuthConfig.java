@@ -10,6 +10,7 @@ import fr.huiitre.tools.application.core.auth.EmailSender;
 import fr.huiitre.tools.application.core.auth.PasswordHasher;
 import fr.huiitre.tools.application.core.auth.RegisterUserUseCase;
 import fr.huiitre.tools.application.core.auth.UserEmailVerificationRepository;
+import fr.huiitre.tools.application.core.auth.UserPasswordResetRepository;
 import fr.huiitre.tools.application.core.role.ports.RoleRepository;
 import fr.huiitre.tools.application.core.role.ports.UserRoleRepository;
 import fr.huiitre.tools.application.core.user.ports.UserAuthProviderRepository;
@@ -19,6 +20,7 @@ import fr.huiitre.tools.infrastructure.auth.mail.AuthMailSenderService;
 import fr.huiitre.tools.infrastructure.core.user.PostgresUserAuthProviderRepository;
 import fr.huiitre.tools.infrastructure.core.user.PostgresUserCredentialsRepository;
 import fr.huiitre.tools.infrastructure.core.user.PostgresUserEmailVerificationRepository;
+import fr.huiitre.tools.infrastructure.core.user.PostgresUserPasswordResetRepository;
 import fr.huiitre.tools.infrastructure.core.user.PostgresUserRepository;
 import fr.huiitre.tools.infrastructure.security.password.BCryptPasswordHasher;
 
@@ -72,5 +74,10 @@ public class AuthConfig {
         JavaMailSender mailSender
     ) {
         return new AuthMailSenderService(mailSender);
+    }
+
+    @Bean
+    public UserPasswordResetRepository userPasswordResetRepository(DataSource dataSource) {
+        return new PostgresUserPasswordResetRepository(dataSource);
     }
 }

@@ -22,7 +22,6 @@ public class GoogleTokenVerifier {
 
     @SuppressWarnings("unchecked")
     public GoogleUserPayload verify(String idToken) {
-        logger.debug("Ligne #21 || idToken : {}", idToken);
         try {
             Map<String, Object> payload = restTemplate.getForObject(
                 URI.create(String.format(GOOGLE_TOKEN_INFO, idToken)),

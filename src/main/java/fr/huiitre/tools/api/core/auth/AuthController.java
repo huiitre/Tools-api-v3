@@ -23,10 +23,10 @@ import fr.huiitre.tools.application.core.auth.exception.UserNotFoundException;
 import fr.huiitre.tools.application.core.auth.LoginUserCommand;
 import fr.huiitre.tools.application.core.auth.LoginUserUseCase;
 import fr.huiitre.tools.application.core.auth.RegisterUserAndSendVerificationUseCase;
-import fr.huiitre.tools.application.core.auth.RegisterUserUseCase;
 import fr.huiitre.tools.application.core.auth.RegisterUserCommand;
-import fr.huiitre.tools.application.core.auth.SendEmailVerificationUseCase;
+import fr.huiitre.tools.application.core.auth.RequestPasswordResetUseCase;
 import fr.huiitre.tools.application.core.auth.ValidateEmailVerificationUseCase;
+import fr.huiitre.tools.application.core.auth.ValidatePasswordResetUseCase;
 import fr.huiitre.tools.application.core.user.ports.UserRepository;
 import fr.huiitre.tools.domain.core.user.User;
 import fr.huiitre.tools.infrastructure.auth.google.GoogleTokenVerifier;
@@ -57,6 +57,8 @@ public class AuthController {
     private final GoogleTokenVerifier googleTokenVerifier;
     private final ValidateEmailVerificationUseCase validateEmailVerificationUseCase;
     private final RegisterUserAndSendVerificationUseCase registerUserAndSendVerificationUseCase;
+    private final RequestPasswordResetUseCase requestPasswordResetUseCase;
+    private final ValidatePasswordResetUseCase validatePasswordResetUseCase;
 
     public AuthController(
         JwtProvider jwtProvider,
@@ -66,7 +68,9 @@ public class AuthController {
         UserRepository userRepository,
         AuthenticateUserWithProviderUseCase authenticateUserWithProviderUseCase,
         GoogleTokenVerifier googleTokenVerifier,
-        ValidateEmailVerificationUseCase validateEmailVerificationUseCase
+        ValidateEmailVerificationUseCase validateEmailVerificationUseCase,
+        RequestPasswordResetUseCase requestPasswordResetUseCase,
+        ValidatePasswordResetUseCase validatePasswordResetUseCase
     ) {
         this.jwtProvider = jwtProvider;
         this.cookieProperties = cookieProperties;
@@ -76,6 +80,8 @@ public class AuthController {
         this.authenticateUserWithProviderUseCase = authenticateUserWithProviderUseCase;
         this.googleTokenVerifier = googleTokenVerifier;
         this.validateEmailVerificationUseCase = validateEmailVerificationUseCase;
+        this.requestPasswordResetUseCase = requestPasswordResetUseCase;
+        this.validatePasswordResetUseCase = validatePasswordResetUseCase;
     }
 
     /*
@@ -323,4 +329,41 @@ public class AuthController {
         );
     }
 
+    /*
+     * ===============================
+     * RECOVERY PASSWORD
+     * ===============================
+     */
+    @PostMapping("/password/reset-request")
+    public ResponseEntity<?> requestPasswordReset(
+        @RequestBody PasswordResetRequestDto request
+    ) {
+        requestPasswordResetUseCase.execute(request.email());
+        return ResponseEntity.ok(
+            Map.of(
+                "status", "RESET_REQUESTED",
+                "message", "Si un compte correspondant existe, un email a été envoyé"
+            )
+        );
+    }
+    public record PasswordResetRequestDto(String email) {}
+
+    /*
+     * ===============================
+     * CHANGE PASSWORD
+     * ===============================
+     */
+    @PostMapping("/password/reset")
+    public ResponseEntity<?> resetPassword(
+        @RequestBody PasswordResetDto request
+    ) {
+        validatePasswordResetUseCase.execute(request.token(), request.password());
+        return ResponseEntity.ok(
+            Map.of(
+                "status", "PASSWORD_RESET",
+                "message", "Mot de passe modifié avec succès"
+            )
+        );
+    }
+    public record PasswordResetDto(String token, String password) {}
 }

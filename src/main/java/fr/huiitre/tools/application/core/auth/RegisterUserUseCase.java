@@ -51,7 +51,7 @@ public class RegisterUserUseCase {
 
         /*
          * ===============================
-         * VALIDATIONS COMMUNES
+         * VALIDATIONS
          * ===============================
          */
         if (command.getName() == null || command.getName().isBlank()) {
@@ -62,42 +62,18 @@ public class RegisterUserUseCase {
             throw new RegisterException("EMAIL_REQUIRED");
         }
 
+        if (command.getPassword() == null || command.getPassword().isBlank()) {
+            throw new RegisterException("PASSWORD_REQUIRED");
+        }
+
         /*
          * ===============================
-         * VALIDATIONS PAR PROVIDER
+         * REGLE FONDAMENTALE
          * ===============================
+         * Si l'email existe déjà → REGISTER INTERDIT
          */
-        if (command.isPasswordAuth()) {
-
-            if (command.getPassword() == null || command.getPassword().isBlank()) {
-                throw new RegisterException("PASSWORD_REQUIRED");
-            }
-
-            boolean alreadyExists = userAuthProviderRepository
-                    .existsByProviderAndProviderUserId(
-                            AuthProvider.PASSWORD,
-                            command.getEmail()
-                    );
-
-            if (alreadyExists) {
-                throw new RegisterException("EMAIL_ALREADY_REGISTERED");
-            }
-
-        } else {
-            // OAUTH (GOOGLE, GITHUB, etc.)
-            if (command.getProviderUserId() == null || command.getProviderUserId().isBlank()) {
-                throw new RegisterException("PROVIDER_USER_ID_REQUIRED");
-            }
-
-            boolean alreadyExists = userAuthProviderRepository
-                    .existsByProviderAndProviderUserId(
-                            command.getProvider(),
-                            command.getProviderUserId()
-                    );
-
-            if (alreadyExists) {
-                throw new RegisterException("USER_ALREADY_REGISTERED");
-            }
+        if (userRepository.findByEmail(command.getEmail()).isPresent()) {
+            throw new RegisterException("EMAIL_ALREADY_REGISTERED");
         }
 
         /*
@@ -115,32 +91,26 @@ public class RegisterUserUseCase {
 
         /*
          * ===============================
-         * CREDENTIALS (PASSWORD UNIQUEMENT)
+         * CREDENTIALS
          * ===============================
          */
-        if (command.isPasswordAuth()) {
-            String passwordHash = passwordHasher.hash(command.getPassword());
+        String passwordHash = passwordHasher.hash(command.getPassword());
 
-            userCredentialsRepository.save(
-                    user.getId(),
-                    passwordHash
-            );
-        }
+        userCredentialsRepository.save(
+                user.getId(),
+                passwordHash
+        );
 
         /*
          * ===============================
-         * AUTH PROVIDER
+         * AUTH PROVIDER : PASSWORD
          * ===============================
          */
-        String providerUserId = command.isPasswordAuth()
-                ? command.getEmail()
-                : command.getProviderUserId();
-
         userAuthProviderRepository.save(
                 user.getId(),
-                command.getProvider(),
-                providerUserId,
-                command.getEmail()
+                AuthProvider.PASSWORD,
+                command.getEmail(),   // provider_user_id
+                command.getEmail()    // provider_email (indicatif)
         );
 
         /*
@@ -151,9 +121,7 @@ public class RegisterUserUseCase {
         Role role = roleRepository.findByCode("USER")
                 .orElseThrow(() -> new IllegalStateException("DEFAULT_ROLE_USER_NOT_CONFIGURED"));
 
-        UserRole userRole = new UserRole(user.getId(), role.getId());
-
-        userRoleRepository.save(userRole);
+        userRoleRepository.save(new UserRole(user.getId(), role.getId()));
 
         return user;
     }

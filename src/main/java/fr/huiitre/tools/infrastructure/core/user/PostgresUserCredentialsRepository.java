@@ -31,12 +31,6 @@ public class PostgresUserCredentialsRepository extends AbstractPostgresRepositor
 
         try {
             Connection conn = openConnection();
-            logger.debug("TX CHECK PostgresUserCredentialsRepository auth_provider autocommit={}",
-                    conn.getAutoCommit());
-            logger.debug(
-                    "TX CHECK {} connHash={}",
-                    this.getClass().getSimpleName(),
-                    System.identityHashCode(conn));
             try (
                     PreparedStatement ps = conn.prepareStatement(sql);) {
 
@@ -78,6 +72,29 @@ public class PostgresUserCredentialsRepository extends AbstractPostgresRepositor
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to load password hash", e);
+        }
+    }
+
+    @Override
+    public void updatePassword(Long userId, String newPasswordHash) {
+        final String sql = """
+                    UPDATE tools_core.user_credentials
+                    SET password_hash = ?
+                    WHERE user_id = ?
+                """;
+
+        try {
+            Connection conn = openConnection();
+            try (
+                    PreparedStatement ps = conn.prepareStatement(sql);) {
+
+                ps.setString(1, newPasswordHash);
+                ps.setLong(2, userId);
+                ps.executeUpdate();
+
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to update user password", e);
         }
     }
 }
