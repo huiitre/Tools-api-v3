@@ -3,8 +3,10 @@ package fr.huiitre.tools.application.core.auth.exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
+import fr.huiitre.tools.application.common.error.ApplicationException;
+
 @ResponseStatus(HttpStatus.BAD_REQUEST)
-public class RegisterException extends RuntimeException {
+public class RegisterException extends ApplicationException {
 
     public RegisterException(String message) {
         super(message);
