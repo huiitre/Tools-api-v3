@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import javax.sql.DataSource;
@@ -164,6 +165,51 @@ public class PostgresUserRepository extends AbstractPostgresRepository implement
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to find user by id", e);
+        }
+    }
+
+    @Override
+    public void deleteUnvalidatedUsersWithExpiredEmailVerification(LocalDateTime now) {
+
+        final String sql = """
+            DELETE FROM tools_core.users u
+            USING tools_core.user_email_verification v
+            WHERE u.id = v.user_id
+            AND u.is_active = false
+            AND v.expires_at <= ?
+        """;
+
+        try {
+            Connection conn = openConnection();
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setObject(1, now);
+                ps.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to delete unvalidated users with expired email verification", e);
+        }
+    }
+
+    @Override
+    public void deleteUnvalidatedUsersWithoutEmailVerification() {
+
+        final String sql = """
+            DELETE FROM tools_core.users u
+            WHERE u.is_active = false
+            AND NOT EXISTS (
+                SELECT 1
+                FROM tools_core.user_email_verification v
+                WHERE v.user_id = u.id
+            )
+        """;
+
+        try {
+            Connection conn = openConnection();
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to delete unvalidated users without email verification", e);
         }
     }
 }
