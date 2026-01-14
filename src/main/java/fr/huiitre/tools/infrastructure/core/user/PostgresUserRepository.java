@@ -26,24 +26,27 @@ public class PostgresUserRepository extends AbstractPostgresRepository implement
 
     @Override
     public void save(User user) {
+        if (user.getId() == null) {
+            insert(user);
+        } else {
+            update(user);
+        }
+    }
+
+    private void insert(User user) {
         final String sql = """
-                    INSERT INTO tools_core.users (name, email, is_active, user_type)
-                    VALUES (?, ?, ?, ?)
-                    RETURNING id
-                """;
+            INSERT INTO tools_core.users (name, email, is_active, user_type)
+            VALUES (?, ?, ?, ?)
+            RETURNING id
+        """;
 
         try {
             Connection conn = openConnection();
-            logger.debug("TX CHECK PostgresUserRepository auth_provider autocommit={}", conn.getAutoCommit());
-            logger.debug(
-                    "TX CHECK {} connHash={}",
-                    this.getClass().getSimpleName(),
-                    System.identityHashCode(conn));
             try (PreparedStatement ps = conn.prepareStatement(sql)) {
 
                 ps.setString(1, user.getName());
                 ps.setString(2, user.getEmail());
-                ps.setBoolean(3, false);
+                ps.setBoolean(3, user.isActive());
                 ps.setString(4, user.getUserType().name());
 
                 try (ResultSet rs = ps.executeQuery()) {
@@ -53,10 +56,36 @@ public class PostgresUserRepository extends AbstractPostgresRepository implement
                         throw new SQLException("Failed to retrieve generated user id");
                     }
                 }
-
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to insert user", e);
+        }
+    }
+
+    private void update(User user) {
+        final String sql = """
+            UPDATE tools_core.users
+            SET name = ?,
+                email = ?,
+                is_active = ?,
+                user_type = ?
+            WHERE id = ?
+        """;
+
+        try {
+            Connection conn = openConnection();
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+
+                ps.setString(1, user.getName());
+                ps.setString(2, user.getEmail());
+                ps.setBoolean(3, user.isActive());
+                ps.setString(4, user.getUserType().name());
+                ps.setLong(5, user.getId());
+
+                ps.executeUpdate();
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to update user", e);
         }
     }
 

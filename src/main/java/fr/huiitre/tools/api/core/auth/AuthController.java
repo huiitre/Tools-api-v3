@@ -8,20 +8,29 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import fr.huiitre.tools.api.core.auth.dto.GoogleLoginRequest;
 import fr.huiitre.tools.api.core.auth.dto.LoginRequest;
 import fr.huiitre.tools.api.core.auth.dto.LoginResponse;
 import fr.huiitre.tools.api.core.auth.dto.RegisterRequest;
 import fr.huiitre.tools.api.core.auth.dto.RegisterResponse;
 import fr.huiitre.tools.application.core.auth.AuthProvider;
+import fr.huiitre.tools.application.core.auth.AuthenticateUserWithProviderUseCase;
+import fr.huiitre.tools.application.core.auth.AuthenticateWithProviderCommand;
 import fr.huiitre.tools.application.core.auth.exception.UserNotFoundException;
-import fr.huiitre.tools.application.core.auth.login.command.LoginUserCommand;
-import fr.huiitre.tools.application.core.auth.login.usecase.LoginUserUseCase;
-import fr.huiitre.tools.application.core.auth.register.command.RegisterUserUseCase;
-import fr.huiitre.tools.application.core.auth.register.usecase.RegisterUserCommand;
+import fr.huiitre.tools.application.core.auth.LoginUserCommand;
+import fr.huiitre.tools.application.core.auth.LoginUserUseCase;
+import fr.huiitre.tools.application.core.auth.RegisterUserAndSendVerificationUseCase;
+import fr.huiitre.tools.application.core.auth.RegisterUserUseCase;
+import fr.huiitre.tools.application.core.auth.RegisterUserCommand;
+import fr.huiitre.tools.application.core.auth.SendEmailVerificationUseCase;
+import fr.huiitre.tools.application.core.auth.ValidateEmailVerificationUseCase;
 import fr.huiitre.tools.application.core.user.ports.UserRepository;
 import fr.huiitre.tools.domain.core.user.User;
+import fr.huiitre.tools.infrastructure.auth.google.GoogleTokenVerifier;
+import fr.huiitre.tools.infrastructure.auth.google.GoogleUserPayload;
 import fr.huiitre.tools.infrastructure.security.JwtProvider;
 import fr.huiitre.tools.infrastructure.security.SecurityCookieProperties;
 import io.jsonwebtoken.Claims;
@@ -42,22 +51,31 @@ public class AuthController {
 
     private final JwtProvider jwtProvider;
     private final SecurityCookieProperties cookieProperties;
-    private final RegisterUserUseCase registerUserUseCase;
     private final LoginUserUseCase loginUserUseCase;
     private final UserRepository userRepository;
+    private final AuthenticateUserWithProviderUseCase authenticateUserWithProviderUseCase;
+    private final GoogleTokenVerifier googleTokenVerifier;
+    private final ValidateEmailVerificationUseCase validateEmailVerificationUseCase;
+    private final RegisterUserAndSendVerificationUseCase registerUserAndSendVerificationUseCase;
 
     public AuthController(
         JwtProvider jwtProvider,
         SecurityCookieProperties cookieProperties,
-        RegisterUserUseCase registerUserUseCase,
+        RegisterUserAndSendVerificationUseCase registerUserAndSendVerificationUseCase,
         LoginUserUseCase loginUserUseCase,
-        UserRepository userRepository
+        UserRepository userRepository,
+        AuthenticateUserWithProviderUseCase authenticateUserWithProviderUseCase,
+        GoogleTokenVerifier googleTokenVerifier,
+        ValidateEmailVerificationUseCase validateEmailVerificationUseCase
     ) {
         this.jwtProvider = jwtProvider;
         this.cookieProperties = cookieProperties;
-        this.registerUserUseCase = registerUserUseCase;
+        this.registerUserAndSendVerificationUseCase = registerUserAndSendVerificationUseCase;
         this.loginUserUseCase = loginUserUseCase;
         this.userRepository = userRepository;
+        this.authenticateUserWithProviderUseCase = authenticateUserWithProviderUseCase;
+        this.googleTokenVerifier = googleTokenVerifier;
+        this.validateEmailVerificationUseCase = validateEmailVerificationUseCase;
     }
 
     /*
@@ -94,6 +112,56 @@ public class AuthController {
         response.addCookie(refreshCookie);
 
         // Access token retourné au front
+        return ResponseEntity.ok(new LoginResponse(accessToken));
+    }
+
+    /*
+     * ===============================
+     * LOGIN / REGISTER GOOGLE
+     * ===============================
+     */
+    @PostMapping("/google")
+    public ResponseEntity<LoginResponse> loginWithGoogle(
+            @Valid @RequestBody GoogleLoginRequest request,
+            HttpServletResponse response
+    ) {
+
+        // 1. Vérifier le token Google (INFRA)
+        GoogleUserPayload payload = googleTokenVerifier.verify(request.getIdToken());
+
+        // 2. Construire la commande métier
+        AuthenticateWithProviderCommand command =
+            new AuthenticateWithProviderCommand(
+                AuthProvider.GOOGLE,
+                payload.getProviderUserId(),
+                payload.getEmail(),
+                payload.getName()
+            );
+
+        // 3. Authentifier (login OU register implicite)
+        User user = authenticateUserWithProviderUseCase.execute(command);
+
+        // 4. Générer les tokens (IDENTIQUE AU LOGIN CLASSIQUE)
+        String accessToken = jwtProvider.generateAccessToken(
+            user.getId().toString(),
+            buildAccessClaims(user)
+        );
+
+        String refreshToken = jwtProvider.generateRefreshToken(
+            user.getId().toString()
+        );
+
+        // 5. Cookie refresh token
+        Cookie refreshCookie = new Cookie("refresh_token", refreshToken);
+        refreshCookie.setHttpOnly(true);
+        refreshCookie.setSecure(cookieProperties.isSecure());
+        refreshCookie.setPath("/api/v3/auth");
+        refreshCookie.setMaxAge(7 * 24 * 3600);
+        refreshCookie.setAttribute("SameSite", "Strict");
+
+        response.addCookie(refreshCookie);
+
+        // 6. Retour access token
         return ResponseEntity.ok(new LoginResponse(accessToken));
     }
 
@@ -216,16 +284,18 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
 
-        RegisterUserCommand command = new RegisterUserCommand(
-                AuthProvider.PASSWORD,
+        RegisterUserCommand command =
+            RegisterUserCommand.password(
                 request.getEmail(),
-                request.getPassword(),
-                request.getName());
+                request.getName(),
+                request.getPassword()
+            );
 
-        User user = registerUserUseCase.execute(command);
+        registerUserAndSendVerificationUseCase.execute(command);
 
         return ResponseEntity.ok(
-                new RegisterResponse("REGISTER_SUCCESS", "Inscription réussie."));
+                new RegisterResponse("EMAIL_VERIFICATION_REQUIRED", "Un email de confirmation vous a été envoyé. Veuillez valider votre adresse pour activer votre compte.")
+        );
     }
 
     private Map<String, Object> buildAccessClaims(User user) {
@@ -234,4 +304,23 @@ public class AuthController {
                 "userType", user.getUserType().name(),
                 "isActive", user.isActive());
     }
+
+    /*
+     * ===============================
+     * VALIDATION EMAIL
+     * ===============================
+     */
+    @PostMapping("/verify-email")
+    public ResponseEntity<?> verifyEmail(
+        @RequestParam("token") String token
+    ) {
+        validateEmailVerificationUseCase.execute(token);
+        return ResponseEntity.ok(
+            Map.of(
+                "status", "EMAIL_VERIFIED",
+                "message", "Adresse email vérifiée avec succès"
+            )
+        );
+    }
+
 }

@@ -1,5 +1,7 @@
 package fr.huiitre.tools.application.core.user.ports;
 
+import java.util.Optional;
+
 import fr.huiitre.tools.application.core.auth.AuthProvider;
 
 public interface UserAuthProviderRepository {
@@ -19,5 +21,10 @@ public interface UserAuthProviderRepository {
         AuthProvider provider,
         String providerUserId,
         String providerEmail
+    );
+
+    Optional<Long> findUserIdByProviderAndProviderUserId(
+        AuthProvider provider,
+        String providerUserId
     );
 }

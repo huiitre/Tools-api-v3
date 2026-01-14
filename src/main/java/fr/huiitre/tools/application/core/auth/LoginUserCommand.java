@@ -1,4 +1,4 @@
-package fr.huiitre.tools.application.core.auth.login.command;
+package fr.huiitre.tools.application.core.auth;
 
 public class LoginUserCommand {
 

@@ -18,6 +18,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.core.env.Environment;
 
 import fr.huiitre.tools.application.common.security.exception.ForbiddenException;
+import fr.huiitre.tools.application.core.auth.exception.InvalidCredentialsException;
+import fr.huiitre.tools.application.core.auth.exception.InvalidEmailVerificationTokenException;
+import fr.huiitre.tools.application.core.auth.exception.UserDisabledException;
+import fr.huiitre.tools.application.core.auth.exception.UserNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 
 @Hidden
@@ -99,5 +103,69 @@ public class ApiSecurityExceptionHandler {
         return ResponseEntity
             .status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(body);
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidCredentials(
+        InvalidCredentialsException ex,
+        HttpServletRequest request
+    ) {
+        return ResponseEntity
+            .status(HttpStatus.UNAUTHORIZED)
+            .body(Map.of(
+                "timestamp", Instant.now().toString(),
+                "status", HttpStatus.UNAUTHORIZED.value(),
+                "error", "Unauthorized",
+                "message", ex.getMessage(),
+                "path", request.getRequestURI()
+            ));
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleUserNotFound(
+        UserNotFoundException ex,
+        HttpServletRequest request
+    ) {
+        return ResponseEntity
+            .status(HttpStatus.UNAUTHORIZED)
+            .body(Map.of(
+                "timestamp", Instant.now().toString(),
+                "status", HttpStatus.UNAUTHORIZED.value(),
+                "error", "Unauthorized",
+                "message", ex.getMessage(),
+                "path", request.getRequestURI()
+            ));
+    }
+
+    @ExceptionHandler(UserDisabledException.class)
+    public ResponseEntity<Map<String, Object>> handleUserDisabled(
+        UserDisabledException ex,
+        HttpServletRequest request
+    ) {
+        return ResponseEntity
+            .status(HttpStatus.UNAUTHORIZED)
+            .body(Map.of(
+                "timestamp", Instant.now().toString(),
+                "status", HttpStatus.UNAUTHORIZED.value(),
+                "error", "Unauthorized",
+                "message", ex.getMessage(),
+                "path", request.getRequestURI()
+            ));
+    }
+
+    @ExceptionHandler(InvalidEmailVerificationTokenException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidEmailVerificationToken(
+        InvalidEmailVerificationTokenException ex,
+        HttpServletRequest request
+    ) {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(Map.of(
+                "timestamp", Instant.now().toString(),
+                "status", HttpStatus.BAD_REQUEST.value(),
+                "error", "Bad Request",
+                "message", ex.getMessage(),
+                "path", request.getRequestURI()
+            ));
     }
 }

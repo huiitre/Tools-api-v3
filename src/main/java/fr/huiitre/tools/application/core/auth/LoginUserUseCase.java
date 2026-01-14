@@ -1,4 +1,4 @@
-package fr.huiitre.tools.application.core.auth.login.usecase;
+package fr.huiitre.tools.application.core.auth;
 
 import java.util.Optional;
 
@@ -10,7 +10,7 @@ import fr.huiitre.tools.application.core.auth.AuthProvider;
 import fr.huiitre.tools.application.core.auth.PasswordHasher;
 import fr.huiitre.tools.application.core.auth.exception.InvalidCredentialsException;
 import fr.huiitre.tools.application.core.auth.exception.UserDisabledException;
-import fr.huiitre.tools.application.core.auth.login.command.LoginUserCommand;
+import fr.huiitre.tools.application.core.auth.LoginUserCommand;
 import fr.huiitre.tools.application.core.module.ModuleCode;
 import fr.huiitre.tools.application.core.user.ports.UserAuthProviderRepository;
 import fr.huiitre.tools.application.core.user.ports.UserCredentialsRepository;

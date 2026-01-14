@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Optional;
 
 import javax.sql.DataSource;
 
@@ -12,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import fr.huiitre.tools.application.core.auth.AuthProvider;
 import fr.huiitre.tools.application.core.user.ports.UserAuthProviderRepository;
+import fr.huiitre.tools.domain.core.user.User;
 import fr.huiitre.tools.infrastructure.common.AbstractPostgresRepository;
 
 public class PostgresUserAuthProviderRepository extends AbstractPostgresRepository
@@ -115,6 +117,40 @@ public class PostgresUserAuthProviderRepository extends AbstractPostgresReposito
             }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to insert auth provider", e);
+        }
+    }
+
+    @Override
+    public Optional<Long> findUserIdByProviderAndProviderUserId(
+            AuthProvider provider,
+            String providerUserId) {
+        final String sql = """
+                    SELECT user_id
+                    FROM tools_core.user_auth_provider
+                    WHERE provider = ? AND provider_user_id = ?
+                    LIMIT 1
+                """;
+
+        try {
+            Connection conn = openConnection();
+            try (
+                    PreparedStatement ps = conn.prepareStatement(sql);) {
+
+                ps.setString(1, provider.name());
+                ps.setString(2, providerUserId);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        Long userId = rs.getLong("user_id");
+                        return Optional.of(userId);
+                    } else {
+                        return Optional.empty();
+                    }
+                }
+
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to find user ID by auth provider", e);
         }
     }
 }
