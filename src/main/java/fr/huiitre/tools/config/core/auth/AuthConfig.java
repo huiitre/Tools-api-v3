@@ -4,6 +4,7 @@ import javax.sql.DataSource;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mail.javamail.JavaMailSender;
 
 import fr.huiitre.tools.application.core.auth.EmailSender;
@@ -28,18 +29,18 @@ import fr.huiitre.tools.infrastructure.security.password.BCryptPasswordHasher;
 public class AuthConfig {
 
     @Bean
-    public UserRepository userRepository(DataSource dataSource) {
-        return new PostgresUserRepository(dataSource);
+    public UserRepository userRepository(JdbcTemplate jdbcTemplate) {
+        return new PostgresUserRepository(jdbcTemplate);
     }
 
     @Bean
-    public UserCredentialsRepository userCredentialsRepository(DataSource dataSource) {
-        return new PostgresUserCredentialsRepository(dataSource);
+    public UserCredentialsRepository userCredentialsRepository(JdbcTemplate jdbcTemplate) {
+        return new PostgresUserCredentialsRepository(jdbcTemplate);
     }
 
     @Bean
-    public UserAuthProviderRepository userAuthProviderRepository(DataSource dataSource) {
-        return new PostgresUserAuthProviderRepository(dataSource);
+    public UserAuthProviderRepository userAuthProviderRepository(JdbcTemplate jdbcTemplate) {
+        return new PostgresUserAuthProviderRepository(jdbcTemplate);
     }
 
     @Bean
@@ -65,8 +66,8 @@ public class AuthConfig {
     }
 
     @Bean
-    public UserEmailVerificationRepository userEmailVerificationRepository(DataSource dataSource) {
-        return new PostgresUserEmailVerificationRepository(dataSource);
+    public UserEmailVerificationRepository userEmailVerificationRepository(JdbcTemplate jdbcTemplate) {
+        return new PostgresUserEmailVerificationRepository(jdbcTemplate);
     }
 
     @Bean
@@ -77,7 +78,7 @@ public class AuthConfig {
     }
 
     @Bean
-    public UserPasswordResetRepository userPasswordResetRepository(DataSource dataSource) {
-        return new PostgresUserPasswordResetRepository(dataSource);
+    public UserPasswordResetRepository userPasswordResetRepository(JdbcTemplate jdbcTemplate) {
+        return new PostgresUserPasswordResetRepository(jdbcTemplate);
     }
 }

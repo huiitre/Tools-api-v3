@@ -4,6 +4,7 @@ import javax.sql.DataSource;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import fr.huiitre.tools.application.core.user_module.ports.UserModuleRoleRepository;
 import fr.huiitre.tools.infrastructure.core.user_module.PostgresUserModuleRoleRepository;
@@ -12,7 +13,7 @@ import fr.huiitre.tools.infrastructure.core.user_module.PostgresUserModuleRoleRe
 public class UserModuleRoleConfig {
 
     @Bean
-    public UserModuleRoleRepository userModuleRoleRepository(DataSource dataSource) {
-        return new PostgresUserModuleRoleRepository(dataSource);
+    public UserModuleRoleRepository userModuleRoleRepository(JdbcTemplate jdbcTemplate) {
+        return new PostgresUserModuleRoleRepository(jdbcTemplate);
     }
 }

@@ -1,12 +1,13 @@
 package fr.huiitre.tools.application.core.role.ports;
 
-import fr.huiitre.tools.domain.core.role.Role;
+import java.util.List;
+
+import fr.huiitre.tools.application.core.role.view.RoleView;
 import fr.huiitre.tools.domain.core.role.UserRole;
 
 public interface UserRoleRepository {
 
     void save(UserRole userRole);
 
-    // void changeUserRole(UserRole userRole, Role newRoleCode);
-
+    List<RoleView> findAllByUserId(Long userId);
 }

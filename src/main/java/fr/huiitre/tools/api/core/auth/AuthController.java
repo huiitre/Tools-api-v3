@@ -1,10 +1,14 @@
 package fr.huiitre.tools.api.core.auth;
 
+import java.io.IOException;
+import java.util.Date;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,11 +31,17 @@ import fr.huiitre.tools.application.core.auth.RegisterUserCommand;
 import fr.huiitre.tools.application.core.auth.RequestPasswordResetUseCase;
 import fr.huiitre.tools.application.core.auth.ValidateEmailVerificationUseCase;
 import fr.huiitre.tools.application.core.auth.ValidatePasswordResetUseCase;
+import fr.huiitre.tools.application.core.auth.exception.UserDisabledException;
+import fr.huiitre.tools.application.core.auth.GetCurrentUserProfileUseCase;
 import fr.huiitre.tools.application.core.user.ports.UserRepository;
 import fr.huiitre.tools.domain.core.user.User;
+import fr.huiitre.tools.infrastructure.auth.github.GitHubOAuthClient;
+import fr.huiitre.tools.infrastructure.auth.github.GitHubUser;
+import fr.huiitre.tools.infrastructure.auth.github.GitHubUserClient;
 import fr.huiitre.tools.infrastructure.auth.google.GoogleTokenVerifier;
 import fr.huiitre.tools.infrastructure.auth.google.GoogleUserPayload;
 import fr.huiitre.tools.infrastructure.security.JwtProvider;
+import fr.huiitre.tools.infrastructure.security.RefreshTokenCookieManager;
 import fr.huiitre.tools.infrastructure.security.SecurityCookieProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -59,6 +69,13 @@ public class AuthController {
     private final RegisterUserAndSendVerificationUseCase registerUserAndSendVerificationUseCase;
     private final RequestPasswordResetUseCase requestPasswordResetUseCase;
     private final ValidatePasswordResetUseCase validatePasswordResetUseCase;
+    private final GitHubOAuthClient gitHubOAuthClient;
+    private final GitHubUserClient gitHubUserClient;
+    private final GetCurrentUserProfileUseCase getCurrentUserProfileUseCase;
+    private final RefreshTokenCookieManager refreshTokenCookieManager;
+
+    @Value("${app.frontend.base-url}")
+    private String frontendBaseUrl;
 
     public AuthController(
         JwtProvider jwtProvider,
@@ -70,7 +87,11 @@ public class AuthController {
         GoogleTokenVerifier googleTokenVerifier,
         ValidateEmailVerificationUseCase validateEmailVerificationUseCase,
         RequestPasswordResetUseCase requestPasswordResetUseCase,
-        ValidatePasswordResetUseCase validatePasswordResetUseCase
+        ValidatePasswordResetUseCase validatePasswordResetUseCase,
+        GitHubOAuthClient gitHubOAuthClient,
+        GitHubUserClient gitHubUserClient,
+        GetCurrentUserProfileUseCase getCurrentUserProfileUseCase,
+        RefreshTokenCookieManager refreshTokenCookieManager
     ) {
         this.jwtProvider = jwtProvider;
         this.cookieProperties = cookieProperties;
@@ -82,6 +103,10 @@ public class AuthController {
         this.validateEmailVerificationUseCase = validateEmailVerificationUseCase;
         this.requestPasswordResetUseCase = requestPasswordResetUseCase;
         this.validatePasswordResetUseCase = validatePasswordResetUseCase;
+        this.gitHubOAuthClient = gitHubOAuthClient;
+        this.gitHubUserClient = gitHubUserClient;
+        this.getCurrentUserProfileUseCase = getCurrentUserProfileUseCase;
+        this.refreshTokenCookieManager = refreshTokenCookieManager;
     }
 
     /*
@@ -108,14 +133,11 @@ public class AuthController {
         String refreshToken = jwtProvider.generateRefreshToken(user.getId().toString());
 
         // * Cookie HttpOnly pour le refresh token */
-        Cookie refreshCookie = new Cookie("refresh_token", refreshToken);
-        refreshCookie.setHttpOnly(true);
-        refreshCookie.setSecure(cookieProperties.isSecure()); // HTTPS only (OK derrière proxy)
-        refreshCookie.setPath("/api/v3/auth"); // limité à l’auth
-        refreshCookie.setMaxAge(7 * 24 * 3600); // 7 jours
-        refreshCookie.setAttribute("SameSite", "Strict");
-
-        response.addCookie(refreshCookie);
+        refreshTokenCookieManager.set(
+            response,
+            refreshToken,
+            7 * 24 * 3600
+        );
 
         // Access token retourné au front
         return ResponseEntity.ok(new LoginResponse(accessToken));
@@ -158,14 +180,11 @@ public class AuthController {
         );
 
         // 5. Cookie refresh token
-        Cookie refreshCookie = new Cookie("refresh_token", refreshToken);
-        refreshCookie.setHttpOnly(true);
-        refreshCookie.setSecure(cookieProperties.isSecure());
-        refreshCookie.setPath("/api/v3/auth");
-        refreshCookie.setMaxAge(7 * 24 * 3600);
-        refreshCookie.setAttribute("SameSite", "Strict");
-
-        response.addCookie(refreshCookie);
+        refreshTokenCookieManager.set(
+            response,
+            refreshToken,
+            7 * 24 * 3600
+        );
 
         // 6. Retour access token
         return ResponseEntity.ok(new LoginResponse(accessToken));
@@ -209,6 +228,10 @@ public class AuthController {
 
             // 1. Valider l’ancien refresh token
             Claims claims = jwtProvider.parseToken(refreshToken);
+            String tokenType = claims.get("tokenType", String.class);
+            if (!"REFRESH".equals(tokenType)) {
+                throw new JwtException("Invalid token type");
+            }
             Long userId = Long.parseLong(claims.getSubject());
 
             User user = userRepository
@@ -220,16 +243,17 @@ public class AuthController {
             }
 
             // 2. Rotation du refresh token
-            String newRefreshToken = jwtProvider.generateRefreshToken(user.getId().toString());
+            Date absoluteExp = claims.getExpiration();
+            String newRefreshToken = jwtProvider.generateRefreshToken(user.getId().toString(), absoluteExp);
 
-            Cookie newRefreshCookie = new Cookie("refresh_token", newRefreshToken);
-            newRefreshCookie.setHttpOnly(true);
-            newRefreshCookie.setSecure(cookieProperties.isSecure());
-            newRefreshCookie.setPath("/api/v3/auth");
-            newRefreshCookie.setMaxAge(7 * 24 * 3600);
-            newRefreshCookie.setAttribute("SameSite", "Strict");
+            long remainingSeconds =
+                (absoluteExp.getTime() - System.currentTimeMillis()) / 1000;
 
-            response.addCookie(newRefreshCookie);
+            refreshTokenCookieManager.set(
+                response,
+                newRefreshToken,
+                (int) Math.max(0, remainingSeconds)
+            );
 
             // 3. Génération du nouvel access token
             String newAccessToken = jwtProvider.generateAccessToken(
@@ -267,19 +291,7 @@ public class AuthController {
     @PostMapping("/logout")
     public void logout(HttpServletRequest request, HttpServletResponse response) {
 
-        Cookie deleteRefreshCookie = new Cookie("refresh_token", "");
-        deleteRefreshCookie.setHttpOnly(true);
-        deleteRefreshCookie.setSecure(cookieProperties.isSecure());
-        deleteRefreshCookie.setPath("/api/v3/auth");
-        deleteRefreshCookie.setMaxAge(0);
-        deleteRefreshCookie.setAttribute("SameSite", "Strict");
-
-        logger.info(
-                "AUTH_LOGOUT ip={} userAgent={}",
-                request.getRemoteAddr(),
-                request.getHeader("User-Agent"));
-
-        response.addCookie(deleteRefreshCookie);
+        refreshTokenCookieManager.clear(response);
     }
 
     /*
@@ -366,4 +378,66 @@ public class AuthController {
         );
     }
     public record PasswordResetDto(String token, String password) {}
+
+    /*
+     * ===============================
+     * LOGIN / REGISTER GITHUB
+     * ===============================
+     */
+    /* @GetMapping("/github/callback")
+    public void githubCallback(
+        @RequestParam("code") String code,
+        HttpServletResponse response
+    ) throws IOException {
+
+        try {
+
+            // 1. OAuth exchange
+            String accessToken = gitHubOAuthClient.exchangeCodeForAccessToken(code);
+
+            // 2. Fetch GitHub user
+            GitHubUser gitHubUser = gitHubUserClient.fetchUser(accessToken);
+
+            // 3. Commande métier
+            AuthenticateWithProviderCommand command =
+                new AuthenticateWithProviderCommand(
+                    AuthProvider.GITHUB,
+                    gitHubUser.providerUserId(),
+                    gitHubUser.email(),
+                    gitHubUser.name()
+                );
+
+            User user = authenticateUserWithProviderUseCase.execute(command);
+
+            // 4. Tokens
+            String accessJwt = jwtProvider.generateAccessToken(
+                user.getId().toString(),
+                buildAccessClaims(user)
+            );
+
+            String refreshJwt = jwtProvider.generateRefreshToken(
+                user.getId().toString()
+            );
+
+            Cookie refreshCookie = new Cookie("refresh_token", refreshJwt);
+            refreshCookie.setHttpOnly(true);
+            refreshCookie.setSecure(cookieProperties.isSecure());
+            refreshCookie.setPath("/api/v3/auth");
+            refreshCookie.setMaxAge(7 * 24 * 3600);
+            refreshCookie.setAttribute("SameSite", "Strict");
+            response.addCookie(refreshCookie);
+
+            // SUCCESS → redirect front
+            response.setHeader("Authorization", "Bearer " + accessJwt);
+            response.sendRedirect(frontendBaseUrl);
+
+        } catch (UserDisabledException e) {
+
+            response.sendRedirect(frontendBaseUrl + "/login?error=USER_DISABLED");
+
+        } catch (Exception e) {
+
+            response.sendRedirect(frontendBaseUrl + "/login?error=GITHUB_AUTH_FAILED");
+        }
+    } */
 }

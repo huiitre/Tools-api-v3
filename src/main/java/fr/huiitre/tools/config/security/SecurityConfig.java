@@ -5,6 +5,7 @@ import fr.huiitre.tools.infrastructure.security.JwtProvider;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -78,8 +79,15 @@ public class SecurityConfig {
                 "/ping",
                 "/dev/jwt"
             ).permitAll() */
+            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
             .requestMatchers(
-                "/auth/**",
+                "/auth/login",
+                "/auth/refresh",
+                "/auth/register",
+                "/auth/google",
+                "/auth/verify-email",
+                "/auth/password/reset-request",
+                "/auth/password/reset",
                 "/error",
                 "/api-docs/**",
                 "/swagger-ui/**",

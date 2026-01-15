@@ -4,6 +4,7 @@ import javax.sql.DataSource;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import fr.huiitre.tools.application.core.module.ports.ModuleRepository;
 import fr.huiitre.tools.infrastructure.core.module.PostgresModuleRepository;
@@ -12,7 +13,7 @@ import fr.huiitre.tools.infrastructure.core.module.PostgresModuleRepository;
 public class ModuleConfig {
 
     @Bean
-    public ModuleRepository moduleRepository(DataSource dataSource) {
-        return new PostgresModuleRepository(dataSource);
+    public ModuleRepository moduleRepository(JdbcTemplate jdbcTemplate) {
+        return new PostgresModuleRepository(jdbcTemplate);
     }
 }

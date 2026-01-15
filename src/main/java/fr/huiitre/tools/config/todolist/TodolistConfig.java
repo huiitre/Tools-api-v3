@@ -4,6 +4,7 @@ import javax.sql.DataSource;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import fr.huiitre.tools.application.todolist.todo.ports.TodoRepository;
 import fr.huiitre.tools.application.todolist.todolist.ports.TodolistRepository;
@@ -15,19 +16,19 @@ public class TodolistConfig {
     
     @Bean
     public TodolistRepository todolistRepository(
-        DataSource dataSource
+        JdbcTemplate jdbcTemplate
     ) {
         return new PostgresTodolistRepository(
-            dataSource
+            jdbcTemplate
         );
     }
 
     @Bean
     public TodoRepository todoRepository(
-        DataSource dataSource
+        JdbcTemplate jdbcTemplate
     ) {
         return new PostgresTodoRepository(
-            dataSource
+            jdbcTemplate
         );
     }
 }

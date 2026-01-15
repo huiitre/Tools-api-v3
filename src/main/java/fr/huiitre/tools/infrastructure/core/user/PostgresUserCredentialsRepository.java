@@ -1,100 +1,50 @@
 package fr.huiitre.tools.infrastructure.core.user;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.Optional;
 
-import javax.sql.DataSource;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import fr.huiitre.tools.application.core.user.ports.UserCredentialsRepository;
-import fr.huiitre.tools.infrastructure.common.AbstractPostgresRepository;
 
-public class PostgresUserCredentialsRepository extends AbstractPostgresRepository implements UserCredentialsRepository {
+public class PostgresUserCredentialsRepository implements UserCredentialsRepository {
 
-    private static final Logger logger = LoggerFactory.getLogger(PostgresUserCredentialsRepository.class);
+    private final JdbcTemplate jdbcTemplate;
 
-    public PostgresUserCredentialsRepository(DataSource dataSource) {
-        super(dataSource);
+    public PostgresUserCredentialsRepository(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
     public void save(Long userId, String passwordHash) {
         final String sql = """
-                    INSERT INTO tools_core.user_credentials (user_id, password_hash)
-                    VALUES (?, ?)
-                """;
+            INSERT INTO tools_core.user_credentials (user_id, password_hash)
+            VALUES (?, ?)
+        """;
 
-        try {
-            Connection conn = openConnection();
-            try (
-                    PreparedStatement ps = conn.prepareStatement(sql);) {
-
-                ps.setLong(1, userId);
-                ps.setString(2, passwordHash);
-                ps.executeUpdate();
-
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to insert user credentials", e);
-        }
+        jdbcTemplate.update(sql, userId, passwordHash);
     }
 
     @Override
     public Optional<String> findPasswordHashByUserId(Long userId) {
-
         final String sql = """
-                    SELECT password_hash
-                    FROM tools_core.user_credentials
-                    WHERE user_id = ?
-                    LIMIT 1
-                """;
+            SELECT password_hash
+            FROM tools_core.user_credentials
+            WHERE user_id = ?
+            LIMIT 1
+        """;
 
-        try {
-            Connection conn = openConnection();
-            try (
-                    PreparedStatement ps = conn.prepareStatement(sql);) {
-
-                ps.setLong(1, userId);
-
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (!rs.next()) {
-                        return Optional.empty();
-                    }
-
-                    return Optional.of(rs.getString("password_hash"));
-                }
-
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to load password hash", e);
-        }
+        return jdbcTemplate
+            .query(sql, rs -> rs.next() ? Optional.of(rs.getString("password_hash")) : Optional.empty(), userId);
     }
 
     @Override
     public void updatePassword(Long userId, String newPasswordHash) {
         final String sql = """
-                    UPDATE tools_core.user_credentials
-                    SET password_hash = ?
-                    WHERE user_id = ?
-                """;
+            UPDATE tools_core.user_credentials
+            SET password_hash = ?
+            WHERE user_id = ?
+        """;
 
-        try {
-            Connection conn = openConnection();
-            try (
-                    PreparedStatement ps = conn.prepareStatement(sql);) {
-
-                ps.setString(1, newPasswordHash);
-                ps.setLong(2, userId);
-                ps.executeUpdate();
-
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to update user password", e);
-        }
+        jdbcTemplate.update(sql, newPasswordHash, userId);
     }
 }

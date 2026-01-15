@@ -9,25 +9,19 @@ public class RoleView {
     private final String name;
     private final String description;
     private final boolean active;
-    private final LocalDateTime createdAt;
-    private final LocalDateTime updatedAt;
 
     public RoleView(
         Long id,
         String code,
         String name,
         String description,
-        boolean active,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        boolean active
     ) {
         this.id = id;
         this.code = code;
         this.name = name;
         this.description = description;
         this.active = active;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
     }
 
     public Long getId() {
@@ -56,15 +50,5 @@ public class RoleView {
 
     public boolean getActive() {
         return this.active;
-    }
-
-
-    public LocalDateTime getCreatedAt() {
-        return this.createdAt;
-    }
-
-
-    public LocalDateTime getUpdatedAt() {
-        return this.updatedAt;
     }
 }

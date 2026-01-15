@@ -1,50 +1,58 @@
 package fr.huiitre.tools.infrastructure.core.role;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.util.List;
 
-import javax.sql.DataSource;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 
 import fr.huiitre.tools.application.core.role.ports.UserRoleRepository;
+import fr.huiitre.tools.application.core.role.view.RoleView;
 import fr.huiitre.tools.domain.core.role.UserRole;
-import fr.huiitre.tools.infrastructure.common.AbstractPostgresRepository;
 
-public class PostgresUserRoleRepository extends AbstractPostgresRepository implements UserRoleRepository {
+public class PostgresUserRoleRepository implements UserRoleRepository {
 
-    private static final Logger logger = LoggerFactory.getLogger(PostgresUserRoleRepository.class);
+    private final JdbcTemplate jdbcTemplate;
 
-    public PostgresUserRoleRepository(DataSource dataSource) {
-        super(dataSource);
+    public PostgresUserRoleRepository(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
+
+    private static final RowMapper<RoleView> ROLE_VIEW_ROW_MAPPER = (rs, rowNum) ->
+        new RoleView(
+            rs.getLong("id"),
+            rs.getString("code"),
+            rs.getString("name"),
+            rs.getString("description"),
+            rs.getBoolean("is_active")
+        );
 
     @Override
     public void save(UserRole userRole) {
         final String sql = """
-                    INSERT INTO tools_core.user_role (user_id, role_id)
-                    VALUES (?, ?)
-                """;
+            INSERT INTO tools_core.user_role (user_id, role_id)
+            VALUES (?, ?)
+        """;
 
-        try {
-            Connection conn = openConnection();
-            logger.debug("TX CHECK PostgresUserRoleRepository auth_provider autocommit={}", conn.getAutoCommit());
-            logger.debug(
-                    "TX CHECK {} connHash={}",
-                    this.getClass().getSimpleName(),
-                    System.identityHashCode(conn));
-            try (
-                    PreparedStatement ps = conn.prepareStatement(sql);) {
-                ps.setLong(1, userRole.getUserId());
-                ps.setLong(2, userRole.getRoleId());
+        jdbcTemplate.update(
+            sql,
+            userRole.getUserId(),
+            userRole.getRoleId()
+        );
+    }
 
-                ps.executeUpdate();
+    @Override
+    public List<RoleView> findAllByUserId(Long userId) {
+        final String sql = """
+            SELECT r.id, r.code, r.name, r.description, r.is_active, r.created_at, r.updated_at
+            FROM tools_core.role r
+            JOIN tools_core.user_role ur ON r.id = ur.role_id
+            WHERE ur.user_id = ?
+        """;
 
-            }
-        } catch (SQLException e) {
-            throw sqlError("Failed to insert user role", e);
-        }
+        return jdbcTemplate.query(
+            sql,
+            ROLE_VIEW_ROW_MAPPER,
+            userId
+        );
     }
 }

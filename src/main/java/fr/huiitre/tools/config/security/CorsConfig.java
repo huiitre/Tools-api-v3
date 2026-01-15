@@ -17,12 +17,13 @@ public class CorsConfig {
         cfg.setAllowedOrigins(List.of(
             "http://localhost:5173",
             "http://192.168.1.23:8090",
-            "https://tools.huiitre.fr"
+            "https://tools.huiitre.fr",
+            "https://qa.tools.huiitre.fr"
         ));
 
         cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         cfg.setAllowedHeaders(List.of("Authorization", "Content-Type"));
-        cfg.setAllowCredentials(false);
+        cfg.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", cfg);

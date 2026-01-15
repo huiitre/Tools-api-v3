@@ -44,17 +44,24 @@ public class JwtProvider {
     /* =========================
        REFRESH TOKEN
        ========================= */
-    public String generateRefreshToken(String subject) {
+    public String generateRefreshToken(String subject, Date expiration) {
         Date now = new Date();
-        Date expiry = new Date(now.getTime() + props.getRefreshTokenTtl() * 1000);
 
         return Jwts.builder()
             .issuer(props.getIssuer())
             .subject(subject)
+            .claim("tokenType", "REFRESH")
             .issuedAt(now)
-            .expiration(expiry)
+            .expiration(expiration)
             .signWith(secretKey)
             .compact();
+    }
+    public String generateRefreshToken(String subject) {
+        Date now = new Date();
+        Date expiration = new Date(
+            now.getTime() + props.getRefreshTokenTtl() * 1000
+        );
+        return generateRefreshToken(subject, expiration);
     }
     /* =========================
        VALIDATION

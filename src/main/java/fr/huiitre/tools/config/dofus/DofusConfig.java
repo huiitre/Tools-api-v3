@@ -4,6 +4,7 @@ import javax.sql.DataSource;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import fr.huiitre.tools.application.dofus.ports.repositories.AlmanaxRepository;
 import fr.huiitre.tools.application.dofus.ports.repositories.GameVersionRepository;
@@ -19,28 +20,28 @@ public class DofusConfig {
 
     @Bean
     public GameVersionRepository gameVersionRepository(
-            DataSource dataSource) {
-        return new PostgresGameVersionRepository(dataSource);
+            JdbcTemplate jdbcTemplate) {
+        return new PostgresGameVersionRepository(jdbcTemplate);
     }
 
     @Bean
     public ItemTypeRepository itemTypeRepository(
-            DataSource dataSource) {
+            JdbcTemplate jdbcTemplate) {
         return new PostgresItemTypeRepository(
-                dataSource);
+                jdbcTemplate);
     }
 
     @Bean
     public ItemRepository itemRepository(
-            DataSource dataSource) {
+            JdbcTemplate jdbcTemplate) {
         return new PostgresItemRepository(
-                dataSource);
+                jdbcTemplate);
     }
 
     @Bean
     public AlmanaxRepository almanaxRepository(
-            DataSource dataSource) {
+            JdbcTemplate jdbcTemplate) {
         return new PostgresAlmanaxRepository(
-                dataSource);
+                jdbcTemplate);
     }
 }

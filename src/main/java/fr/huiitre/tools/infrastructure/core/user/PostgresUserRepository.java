@@ -1,29 +1,34 @@
 package fr.huiitre.tools.infrastructure.core.user;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
-import javax.sql.DataSource;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 
 import fr.huiitre.tools.application.core.user.ports.UserRepository;
 import fr.huiitre.tools.domain.core.user.User;
 import fr.huiitre.tools.domain.core.user.UserType;
-import fr.huiitre.tools.infrastructure.common.AbstractPostgresRepository;
 
-public class PostgresUserRepository extends AbstractPostgresRepository implements UserRepository {
+public class PostgresUserRepository implements UserRepository {
 
-    private static final Logger logger = LoggerFactory.getLogger(PostgresUserRepository.class);
+    private final JdbcTemplate jdbcTemplate;
 
-    public PostgresUserRepository(DataSource dataSource) {
-        super(dataSource);
+    public PostgresUserRepository(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
+
+    private static final RowMapper<User> USER_ROW_MAPPER = (rs, rowNum) -> {
+        User user = new User(
+            rs.getString("name"),
+            rs.getString("email"),
+            UserType.valueOf(rs.getString("user_type"))
+        );
+        user.setId(rs.getLong("id"));
+        user.setIsActive(rs.getBoolean("is_active"));
+        return user;
+    };
 
     @Override
     public void save(User user) {
@@ -41,26 +46,16 @@ public class PostgresUserRepository extends AbstractPostgresRepository implement
             RETURNING id
         """;
 
-        try {
-            Connection conn = openConnection();
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+        Long id = jdbcTemplate.queryForObject(
+            sql,
+            Long.class,
+            user.getName(),
+            user.getEmail(),
+            user.isActive(),
+            user.getUserType().name()
+        );
 
-                ps.setString(1, user.getName());
-                ps.setString(2, user.getEmail());
-                ps.setBoolean(3, user.isActive());
-                ps.setString(4, user.getUserType().name());
-
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (rs.next()) {
-                        user.setId(rs.getLong(1));
-                    } else {
-                        throw new SQLException("Failed to retrieve generated user id");
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to insert user", e);
-        }
+        user.setId(id);
     }
 
     private void update(User user) {
@@ -73,104 +68,44 @@ public class PostgresUserRepository extends AbstractPostgresRepository implement
             WHERE id = ?
         """;
 
-        try {
-            Connection conn = openConnection();
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-
-                ps.setString(1, user.getName());
-                ps.setString(2, user.getEmail());
-                ps.setBoolean(3, user.isActive());
-                ps.setString(4, user.getUserType().name());
-                ps.setLong(5, user.getId());
-
-                ps.executeUpdate();
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to update user", e);
-        }
+        jdbcTemplate.update(
+            sql,
+            user.getName(),
+            user.getEmail(),
+            user.isActive(),
+            user.getUserType().name(),
+            user.getId()
+        );
     }
 
     @Override
     public Optional<User> findByEmail(String email) {
-
         final String sql = """
-                    SELECT id, name, email, is_active, user_type
-                    FROM tools_core.users
-                    WHERE email = ?
-                    LIMIT 1
-                """;
+            SELECT id, name, email, is_active, user_type
+            FROM tools_core.users
+            WHERE email = ?
+            LIMIT 1
+        """;
 
-        try {
-            Connection conn = openConnection();
-            try (
-                    PreparedStatement ps = conn.prepareStatement(sql);) {
-
-                ps.setString(1, email);
-
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (!rs.next()) {
-                        return Optional.empty();
-                    }
-
-                    User user = new User(
-                            rs.getString("name"),
-                            rs.getString("email"),
-                            UserType.valueOf(rs.getString("user_type")));
-
-                    user.setId(rs.getLong("id"));
-                    user.setIsActive(rs.getBoolean("is_active"));
-
-                    return Optional.of(user);
-                }
-
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to find user by email", e);
-        }
+        List<User> results = jdbcTemplate.query(sql, USER_ROW_MAPPER, email);
+        return results.stream().findFirst();
     }
 
     @Override
     public Optional<User> findById(Long id) {
-
         final String sql = """
-                    SELECT id, name, email, is_active, user_type
-                    FROM tools_core.users
-                    WHERE id = ?
-                    LIMIT 1
-                """;
+            SELECT id, name, email, is_active, user_type
+            FROM tools_core.users
+            WHERE id = ?
+            LIMIT 1
+        """;
 
-        try {
-            Connection conn = openConnection();
-            try (
-                    PreparedStatement ps = conn.prepareStatement(sql);) {
-
-                ps.setLong(1, id);
-
-                try (ResultSet rs = ps.executeQuery()) {
-                    if (!rs.next()) {
-                        return Optional.empty();
-                    }
-
-                    User user = new User(
-                            rs.getString("name"),
-                            rs.getString("email"),
-                            UserType.valueOf(rs.getString("user_type")));
-
-                    user.setId(rs.getLong("id"));
-                    user.setIsActive(rs.getBoolean("is_active"));
-
-                    return Optional.of(user);
-                }
-
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to find user by id", e);
-        }
+        List<User> results = jdbcTemplate.query(sql, USER_ROW_MAPPER, id);
+        return results.stream().findFirst();
     }
 
     @Override
     public void deleteUnvalidatedUsersWithExpiredEmailVerification(LocalDateTime now) {
-
         final String sql = """
             DELETE FROM tools_core.users u
             USING tools_core.user_email_verification v
@@ -179,20 +114,11 @@ public class PostgresUserRepository extends AbstractPostgresRepository implement
             AND v.expires_at <= ?
         """;
 
-        try {
-            Connection conn = openConnection();
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setObject(1, now);
-                ps.executeUpdate();
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to delete unvalidated users with expired email verification", e);
-        }
+        jdbcTemplate.update(sql, now);
     }
 
     @Override
     public void deleteUnvalidatedUsersWithoutEmailVerification() {
-
         final String sql = """
             DELETE FROM tools_core.users u
             WHERE u.is_active = false
@@ -203,13 +129,6 @@ public class PostgresUserRepository extends AbstractPostgresRepository implement
             )
         """;
 
-        try {
-            Connection conn = openConnection();
-            try (PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.executeUpdate();
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to delete unvalidated users without email verification", e);
-        }
+        jdbcTemplate.update(sql);
     }
 }
