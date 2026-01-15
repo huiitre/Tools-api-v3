@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -22,7 +21,6 @@ import fr.huiitre.tools.api.core.auth.dto.RegisterRequest;
 import fr.huiitre.tools.api.core.auth.dto.RegisterResponse;
 import fr.huiitre.tools.application.core.auth.AuthProvider;
 import fr.huiitre.tools.application.core.auth.AuthenticateUserWithProviderUseCase;
-import fr.huiitre.tools.application.core.auth.AuthenticateWithProviderCommand;
 import fr.huiitre.tools.application.core.auth.exception.UserNotFoundException;
 import fr.huiitre.tools.application.core.auth.LoginUserCommand;
 import fr.huiitre.tools.application.core.auth.LoginUserUseCase;
@@ -60,7 +58,6 @@ public class AuthController {
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     private final JwtProvider jwtProvider;
-    private final SecurityCookieProperties cookieProperties;
     private final LoginUserUseCase loginUserUseCase;
     private final UserRepository userRepository;
     private final AuthenticateUserWithProviderUseCase authenticateUserWithProviderUseCase;
@@ -69,9 +66,6 @@ public class AuthController {
     private final RegisterUserAndSendVerificationUseCase registerUserAndSendVerificationUseCase;
     private final RequestPasswordResetUseCase requestPasswordResetUseCase;
     private final ValidatePasswordResetUseCase validatePasswordResetUseCase;
-    private final GitHubOAuthClient gitHubOAuthClient;
-    private final GitHubUserClient gitHubUserClient;
-    private final GetCurrentUserProfileUseCase getCurrentUserProfileUseCase;
     private final RefreshTokenCookieManager refreshTokenCookieManager;
 
     @Value("${app.frontend.base-url}")
@@ -79,7 +73,6 @@ public class AuthController {
 
     public AuthController(
         JwtProvider jwtProvider,
-        SecurityCookieProperties cookieProperties,
         RegisterUserAndSendVerificationUseCase registerUserAndSendVerificationUseCase,
         LoginUserUseCase loginUserUseCase,
         UserRepository userRepository,
@@ -88,13 +81,9 @@ public class AuthController {
         ValidateEmailVerificationUseCase validateEmailVerificationUseCase,
         RequestPasswordResetUseCase requestPasswordResetUseCase,
         ValidatePasswordResetUseCase validatePasswordResetUseCase,
-        GitHubOAuthClient gitHubOAuthClient,
-        GitHubUserClient gitHubUserClient,
-        GetCurrentUserProfileUseCase getCurrentUserProfileUseCase,
         RefreshTokenCookieManager refreshTokenCookieManager
     ) {
         this.jwtProvider = jwtProvider;
-        this.cookieProperties = cookieProperties;
         this.registerUserAndSendVerificationUseCase = registerUserAndSendVerificationUseCase;
         this.loginUserUseCase = loginUserUseCase;
         this.userRepository = userRepository;
@@ -103,9 +92,6 @@ public class AuthController {
         this.validateEmailVerificationUseCase = validateEmailVerificationUseCase;
         this.requestPasswordResetUseCase = requestPasswordResetUseCase;
         this.validatePasswordResetUseCase = validatePasswordResetUseCase;
-        this.gitHubOAuthClient = gitHubOAuthClient;
-        this.gitHubUserClient = gitHubUserClient;
-        this.getCurrentUserProfileUseCase = getCurrentUserProfileUseCase;
         this.refreshTokenCookieManager = refreshTokenCookieManager;
     }
 
@@ -158,8 +144,8 @@ public class AuthController {
         GoogleUserPayload payload = googleTokenVerifier.verify(request.getIdToken());
 
         // 2. Construire la commande métier
-        AuthenticateWithProviderCommand command =
-            new AuthenticateWithProviderCommand(
+        RegisterUserCommand command =
+            RegisterUserCommand.oauth(
                 AuthProvider.GOOGLE,
                 payload.getProviderUserId(),
                 payload.getEmail(),

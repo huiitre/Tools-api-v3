@@ -34,7 +34,7 @@ public class AuthenticateUserWithProviderUseCase {
         this.roleRepository = roleRepository;
     }
 
-    public User execute(AuthenticateWithProviderCommand command) {
+    public User execute(RegisterUserCommand command) {
 
         // 1. Vérifier si un lien provider existe déjà
         return userAuthProviderRepository
@@ -47,30 +47,16 @@ public class AuthenticateUserWithProviderUseCase {
             .orElseGet(() -> authenticateOrRegisterByEmail(command));
     }
 
-    private User authenticateOrRegisterByEmail(AuthenticateWithProviderCommand command) {
+    private User authenticateOrRegisterByEmail(RegisterUserCommand command) {
 
-        // 2. User existant par email → lier le provider
-        return userRepository
-            .findByEmail(command.getEmail())
-            .map(this::ensureActive)
-            .map(user -> linkProviderToExistingUser(user, command))
-            // 3. Aucun user → création
-            .orElseGet(() -> registerNewUser(command));
+        if (userRepository.findByEmail(command.getEmail()).isPresent()) {
+            throw new IllegalStateException("EMAIL_ALREADY_REGISTERED");
+        }
+
+        return registerNewUser(command);
     }
 
-    private User linkProviderToExistingUser(User user, AuthenticateWithProviderCommand command) {
-
-        userAuthProviderRepository.save(
-            user.getId(),
-            command.getProvider(),
-            command.getProviderUserId(),
-            command.getEmail()
-        );
-
-        return user;
-    }
-
-    private User registerNewUser(AuthenticateWithProviderCommand command) {
+    private User registerNewUser(RegisterUserCommand command) {
 
         // 2. Création user
         User user = new User(

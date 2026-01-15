@@ -19,9 +19,7 @@ public class GitHubOAuthClient {
     private final WebClient webClient;
 
     public GitHubOAuthClient(
-        WebClient.Builder webClientBuilder,
-        @Value("${github.client-id}") String clientId,
-        @Value("${github.client-secret}") String clientSecret
+        WebClient.Builder webClientBuilder
     ) {
         this.webClient = webClientBuilder
             .baseUrl("https://github.com")
