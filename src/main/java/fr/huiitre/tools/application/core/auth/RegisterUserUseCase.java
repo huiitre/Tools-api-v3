@@ -16,6 +16,7 @@ import fr.huiitre.tools.application.core.user.ports.UserCredentialsRepository;
 import fr.huiitre.tools.application.core.user.ports.UserRepository;
 import fr.huiitre.tools.domain.core.role.Role;
 import fr.huiitre.tools.domain.core.role.UserRole;
+import fr.huiitre.tools.domain.core.user.AvatarSource;
 import fr.huiitre.tools.domain.core.user.User;
 import fr.huiitre.tools.domain.core.user.UserType;
 
@@ -55,15 +56,15 @@ public class RegisterUserUseCase {
          * ===============================
          */
         if (command.getName() == null || command.getName().isBlank()) {
-            throw new RegisterException("NAME_REQUIRED");
+            throw new RegisterException("Le nom est obligatoire.");
         }
 
         if (command.getEmail() == null || command.getEmail().isBlank()) {
-            throw new RegisterException("EMAIL_REQUIRED");
+            throw new RegisterException("L’adresse email est obligatoire.");
         }
 
         if (command.getPassword() == null || command.getPassword().isBlank()) {
-            throw new RegisterException("PASSWORD_REQUIRED");
+            throw new RegisterException("Le mot de passe est obligatoire.");
         }
 
         /*
@@ -73,7 +74,7 @@ public class RegisterUserUseCase {
          * Si l'email existe déjà → REGISTER INTERDIT
          */
         if (userRepository.findByEmail(command.getEmail()).isPresent()) {
-            throw new RegisterException("EMAIL_ALREADY_REGISTERED");
+            throw new RegisterException("Un compte existe déjà avec cette adresse email.");
         }
 
         /*
@@ -84,7 +85,8 @@ public class RegisterUserUseCase {
         User user = new User(
                 command.getName(),
                 command.getEmail(),
-                UserType.HUMAN
+                UserType.HUMAN,
+                AvatarSource.PASSWORD
         );
 
         userRepository.save(user);
@@ -110,7 +112,8 @@ public class RegisterUserUseCase {
                 user.getId(),
                 AuthProvider.PASSWORD,
                 command.getEmail(),   // provider_user_id
-                command.getEmail()    // provider_email (indicatif)
+                command.getEmail(),   // provider_email (indicatif)
+                null                  // provider_avatar_url
         );
 
         /*
@@ -119,7 +122,7 @@ public class RegisterUserUseCase {
          * ===============================
          */
         Role role = roleRepository.findByCode("USER")
-                .orElseThrow(() -> new IllegalStateException("DEFAULT_ROLE_USER_NOT_CONFIGURED"));
+                .orElseThrow(() -> new RegisterException("La configuration du compte utilisateur est incomplète. Veuillez contacter le support."));
 
         userRoleRepository.save(new UserRole(user.getId(), role.getId()));
 

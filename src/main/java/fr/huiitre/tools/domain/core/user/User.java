@@ -10,12 +10,14 @@ public class User {
     private final UserType userType;
     private boolean active;
     private LocalDateTime createdAt;
+    private AvatarSource avatarSource;
 
-    public User(String name, String email, UserType userType) {
+    public User(String name, String email, UserType userType, AvatarSource avatarSource) {
         this.name = name;
         this.email = email;
         this.userType = userType;
         this.active = false;
+        this.avatarSource = avatarSource != null ? avatarSource : AvatarSource.PASSWORD;
     }
 
     public Long getId() {
@@ -52,5 +54,13 @@ public class User {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public AvatarSource getAvatarSource() {
+        return avatarSource;
+    }
+
+    public void setAvatarSource(AvatarSource avatarSource) {
+        this.avatarSource = avatarSource != null ? avatarSource : AvatarSource.PASSWORD;
     }
 }

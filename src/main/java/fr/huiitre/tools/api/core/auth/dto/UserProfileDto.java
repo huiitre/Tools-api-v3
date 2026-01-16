@@ -13,6 +13,7 @@ public class UserProfileDto {
     private final String name;
     private final String userType;
     private final boolean active;
+    private final String avatarUrl;
     private final List<RoleView> roles;
     private final List<UserModuleView> modules;
 
@@ -22,6 +23,7 @@ public class UserProfileDto {
             String name,
             String userType,
             boolean active,
+            String avatarUrl,
             List<RoleView> roles,
             List<UserModuleView> modules
     ) {
@@ -30,6 +32,7 @@ public class UserProfileDto {
         this.name = name;
         this.userType = userType;
         this.active = active;
+        this.avatarUrl = avatarUrl;
         this.roles = roles;
         this.modules = modules;
     }
@@ -39,6 +42,7 @@ public class UserProfileDto {
     public String getName() { return name; }
     public String getUserType() { return userType; }
     public boolean isActive() { return active; }
+    public String getAvatarUrl() { return avatarUrl; }
     public List<RoleView> getRoles() { return roles; }
     public List<UserModuleView> getModules() { return modules; }
 }

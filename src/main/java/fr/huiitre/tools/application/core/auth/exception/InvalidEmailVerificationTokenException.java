@@ -9,6 +9,6 @@ import fr.huiitre.tools.application.common.error.ApplicationException;
 public class InvalidEmailVerificationTokenException extends ApplicationException {
 
     public InvalidEmailVerificationTokenException() {
-        super("EMAIL_VERIFICATION_INVALID_OR_EXPIRED");
+        super("Lien de validation invalide ou expiré.");
     }
 }

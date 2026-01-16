@@ -18,10 +18,11 @@ public class PostgresUserAuthProviderRepository implements UserAuthProviderRepos
     @Override
     public boolean existsByUserIdAndProvider(Long userId, AuthProvider provider) {
         final String sql = """
-            SELECT 1
-            FROM tools_core.user_auth_provider
-            WHERE user_id = ? AND provider = ?
-            LIMIT 1
+            SELECT EXISTS (
+                SELECT 1
+                FROM tools_core.user_auth_provider
+                WHERE user_id = ? AND provider = ?
+            )
         """;
 
         return Boolean.TRUE.equals(
@@ -40,10 +41,11 @@ public class PostgresUserAuthProviderRepository implements UserAuthProviderRepos
             String providerUserId) {
 
         final String sql = """
-            SELECT 1
-            FROM tools_core.user_auth_provider
-            WHERE provider = ? AND provider_user_id = ?
-            LIMIT 1
+            SELECT EXISTS (
+                SELECT 1
+                FROM tools_core.user_auth_provider
+                WHERE provider = ? AND provider_user_id = ?
+            )
         """;
 
         return Boolean.TRUE.equals(
@@ -58,15 +60,17 @@ public class PostgresUserAuthProviderRepository implements UserAuthProviderRepos
 
     @Override
     public void save(
-            Long userId,
-            AuthProvider provider,
-            String providerUserId,
-            String providerEmail) {
+        Long userId,
+        AuthProvider provider,
+        String providerUserId,
+        String providerEmail,
+        String providerAvatarUrl
+    ) {
 
         final String sql = """
             INSERT INTO tools_core.user_auth_provider
-                (user_id, provider, provider_user_id, provider_email)
-            VALUES (?, ?, ?, ?)
+                (user_id, provider, provider_user_id, provider_email, provider_avatar_url)
+            VALUES (?, ?, ?, ?, ?)
         """;
 
         jdbcTemplate.update(
@@ -74,7 +78,8 @@ public class PostgresUserAuthProviderRepository implements UserAuthProviderRepos
             userId,
             provider.name(),
             providerUserId,
-            providerEmail
+            providerEmail,
+            providerAvatarUrl
         );
     }
 
@@ -95,6 +100,43 @@ public class PostgresUserAuthProviderRepository implements UserAuthProviderRepos
             rs -> rs.next() ? Optional.of(rs.getLong("user_id")) : Optional.empty(),
             provider.name(),
             providerUserId
+        );
+    }
+
+    @Override
+    public Optional<String> findProviderAvatarUrl(Long userId, AuthProvider provider) {
+        final String sql = """
+            SELECT provider_avatar_url
+            FROM tools_core.user_auth_provider
+            WHERE user_id = ? AND provider = ?
+            LIMIT 1
+        """;
+
+        return jdbcTemplate.query(
+            sql,
+            rs -> rs.next() ? Optional.ofNullable(rs.getString("provider_avatar_url")) : Optional.empty(),
+            userId,
+            provider.name()
+        );
+    }
+
+    @Override
+    public void updateProviderAvatarUrl(
+        Long userId,
+        AuthProvider provider,
+        String newAvatarUrl
+    ) {
+        final String sql = """
+            UPDATE tools_core.user_auth_provider
+            SET provider_avatar_url = ?
+            WHERE user_id = ? AND provider = ?
+        """;
+
+        jdbcTemplate.update(
+            sql,
+            newAvatarUrl,
+            userId,
+            provider.name()
         );
     }
 }

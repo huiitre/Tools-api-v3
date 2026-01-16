@@ -2,6 +2,7 @@ package fr.huiitre.tools.application.core.auth;
 
 import org.springframework.stereotype.Service;
 
+import fr.huiitre.tools.application.core.auth.exception.RegisterException;
 import fr.huiitre.tools.application.core.auth.exception.UserDisabledException;
 import fr.huiitre.tools.application.core.role.ports.RoleRepository;
 import fr.huiitre.tools.application.core.role.ports.UserRoleRepository;
@@ -9,6 +10,7 @@ import fr.huiitre.tools.application.core.user.ports.UserAuthProviderRepository;
 import fr.huiitre.tools.application.core.user.ports.UserRepository;
 import fr.huiitre.tools.domain.core.role.Role;
 import fr.huiitre.tools.domain.core.role.UserRole;
+import fr.huiitre.tools.domain.core.user.AvatarSource;
 import fr.huiitre.tools.domain.core.user.User;
 import fr.huiitre.tools.domain.core.user.UserType;
 import jakarta.transaction.Transactional;
@@ -43,14 +45,25 @@ public class AuthenticateUserWithProviderUseCase {
                 command.getProviderUserId()
             )
             .flatMap(userRepository::findById)
-            .map(this::ensureActive)
+            .map(user -> {
+                ensureActive(user);
+
+                if (command.getPicture() != null) {
+                    userAuthProviderRepository.updateProviderAvatarUrl(
+                        user.getId(),
+                        command.getProvider(),
+                        command.getPicture()
+                    );
+                }
+                return user;
+            })
             .orElseGet(() -> authenticateOrRegisterByEmail(command));
     }
 
     private User authenticateOrRegisterByEmail(RegisterUserCommand command) {
 
         if (userRepository.findByEmail(command.getEmail()).isPresent()) {
-            throw new IllegalStateException("EMAIL_ALREADY_REGISTERED");
+            throw new RegisterException("Un compte existe déjà avec cette adresse email.");
         }
 
         return registerNewUser(command);
@@ -62,7 +75,8 @@ public class AuthenticateUserWithProviderUseCase {
         User user = new User(
             command.getName(),
             command.getEmail(),
-            UserType.HUMAN
+            UserType.HUMAN,
+            AvatarSource.valueOf(command.getProvider().name())
         );
 
         user.setIsActive(true);
@@ -74,12 +88,13 @@ public class AuthenticateUserWithProviderUseCase {
             user.getId(),
             command.getProvider(),
             command.getProviderUserId(),
-            command.getEmail()
+            command.getEmail(),
+            command.getPicture()
         );
 
         // 4. Rôle USER
         Role role = roleRepository.findByCode("USER")
-            .orElseThrow(() -> new IllegalStateException("DEFAULT_ROLE_USER_NOT_CONFIGURED"));
+            .orElseThrow(() -> new RegisterException("La configuration du compte utilisateur est incomplète. Veuillez contacter le support."));
 
         userRoleRepository.save(new UserRole(user.getId(), role.getId()));
 

@@ -1,7 +1,5 @@
 package fr.huiitre.tools.application.core.auth;
 
-import fr.huiitre.tools.application.core.auth.AuthProvider;
-
 public class RegisterUserCommand {
 
     private final AuthProvider provider;
@@ -9,6 +7,7 @@ public class RegisterUserCommand {
     // Identité commune
     private final String email;
     private final String name;
+    private final String picture;
 
     // PASSWORD only
     private final String password;
@@ -20,12 +19,14 @@ public class RegisterUserCommand {
             AuthProvider provider,
             String email,
             String name,
+            String picture,
             String password,
             String providerUserId) {
 
         this.provider = provider;
         this.email = email;
         this.name = name;
+        this.picture = picture;
         this.password = password;
         this.providerUserId = providerUserId;
     }
@@ -43,6 +44,7 @@ public class RegisterUserCommand {
                 AuthProvider.PASSWORD,
                 email,
                 name,
+                null,
                 password,
                 null
         );
@@ -51,6 +53,7 @@ public class RegisterUserCommand {
     public static RegisterUserCommand oauth(
             AuthProvider provider,
             String providerUserId,
+            String picture,
             String email,
             String name) {
 
@@ -62,6 +65,7 @@ public class RegisterUserCommand {
                 provider,
                 email,
                 name,
+                picture,
                 null,
                 providerUserId
         );
@@ -81,6 +85,10 @@ public class RegisterUserCommand {
 
     public String getName() {
         return name;
+    }
+
+    public String getPicture() {
+        return picture;
     }
 
     public String getPassword() {

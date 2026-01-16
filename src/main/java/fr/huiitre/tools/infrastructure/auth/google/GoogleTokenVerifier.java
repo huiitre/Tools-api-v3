@@ -31,12 +31,13 @@ public class GoogleTokenVerifier {
             String sub = (String) payload.get("sub");
             String email = (String) payload.get("email");
             String name = (String) payload.get("name");
+            String picture = (String) payload.get("picture");
 
             if (sub == null || email == null) {
                 throw new InvalidCredentialsException();
             }
 
-            return new GoogleUserPayload(sub, email, name);
+            return new GoogleUserPayload(sub, email, name, picture);
 
         } catch (Exception e) {
             throw new InvalidCredentialsException();

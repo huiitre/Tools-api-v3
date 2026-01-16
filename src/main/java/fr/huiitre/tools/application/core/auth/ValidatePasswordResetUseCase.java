@@ -29,12 +29,12 @@ public class ValidatePasswordResetUseCase {
     public void execute(String token, String newPassword) {
 
         if (newPassword == null || newPassword.isBlank()) {
-            throw new IllegalArgumentException("PASSWORD_REQUIRED");
+            throw new RuntimeException("Le mot de passe est obligatoire.");
         }
 
         Long userId = userPasswordResetRepository
             .findUserIdByValidToken(token, LocalDateTime.now())
-            .orElseThrow(() -> new InvalidPasswordResetTokenException("Invalid or expired password reset token"));
+            .orElseThrow(() -> new InvalidPasswordResetTokenException("Lien de réinitialisation du mot de passe invalide ou expiré."));
 
         String passwordHash = passwordHasher.hash(newPassword);
 

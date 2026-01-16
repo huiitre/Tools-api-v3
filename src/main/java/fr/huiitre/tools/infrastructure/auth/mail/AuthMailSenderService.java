@@ -50,7 +50,7 @@ public class AuthMailSenderService implements EmailSender {
             mailSender.send(message);
 
         } catch (MessagingException | UnsupportedEncodingException e) {
-            throw new RuntimeException("EMAIL_VERIFICATION_SEND_FAILED", e);
+            throw new RuntimeException("L’envoi de l’email de confirmation a échoué. Veuillez réessayer plus tard.", e);
         }
     }
 
@@ -82,7 +82,7 @@ public class AuthMailSenderService implements EmailSender {
             mailSender.send(message);
 
         } catch (MessagingException | UnsupportedEncodingException e) {
-            throw new RuntimeException("PASSWORD_RESET_SEND_FAILED", e);
+            throw new RuntimeException("L’envoi de l’email de réinitialisation du mot de passe a échoué. Veuillez réessayer plus tard.", e);
         }
     }
 

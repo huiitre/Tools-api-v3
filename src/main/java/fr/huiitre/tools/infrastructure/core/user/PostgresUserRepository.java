@@ -8,6 +8,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 import fr.huiitre.tools.application.core.user.ports.UserRepository;
+import fr.huiitre.tools.domain.core.user.AvatarSource;
 import fr.huiitre.tools.domain.core.user.User;
 import fr.huiitre.tools.domain.core.user.UserType;
 
@@ -23,7 +24,8 @@ public class PostgresUserRepository implements UserRepository {
         User user = new User(
             rs.getString("name"),
             rs.getString("email"),
-            UserType.valueOf(rs.getString("user_type"))
+            UserType.valueOf(rs.getString("user_type")),
+            AvatarSource.valueOf(rs.getString("avatar_source"))
         );
         user.setId(rs.getLong("id"));
         user.setIsActive(rs.getBoolean("is_active"));
@@ -41,8 +43,8 @@ public class PostgresUserRepository implements UserRepository {
 
     private void insert(User user) {
         final String sql = """
-            INSERT INTO tools_core.users (name, email, is_active, user_type)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO tools_core.users (name, email, is_active, user_type, avatar_source)
+            VALUES (?, ?, ?, ?, ?)
             RETURNING id
         """;
 
@@ -52,7 +54,8 @@ public class PostgresUserRepository implements UserRepository {
             user.getName(),
             user.getEmail(),
             user.isActive(),
-            user.getUserType().name()
+            user.getUserType().name(),
+            user.getAvatarSource().name()
         );
 
         user.setId(id);
@@ -64,7 +67,8 @@ public class PostgresUserRepository implements UserRepository {
             SET name = ?,
                 email = ?,
                 is_active = ?,
-                user_type = ?
+                user_type = ?,
+                avatar_source = ?
             WHERE id = ?
         """;
 
@@ -74,6 +78,7 @@ public class PostgresUserRepository implements UserRepository {
             user.getEmail(),
             user.isActive(),
             user.getUserType().name(),
+            user.getAvatarSource().name(),
             user.getId()
         );
     }
@@ -81,7 +86,7 @@ public class PostgresUserRepository implements UserRepository {
     @Override
     public Optional<User> findByEmail(String email) {
         final String sql = """
-            SELECT id, name, email, is_active, user_type
+            SELECT id, name, email, is_active, user_type, avatar_source
             FROM tools_core.users
             WHERE email = ?
             LIMIT 1
@@ -94,7 +99,7 @@ public class PostgresUserRepository implements UserRepository {
     @Override
     public Optional<User> findById(Long id) {
         final String sql = """
-            SELECT id, name, email, is_active, user_type
+            SELECT id, name, email, is_active, user_type, avatar_source
             FROM tools_core.users
             WHERE id = ?
             LIMIT 1

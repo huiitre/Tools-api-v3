@@ -20,11 +20,20 @@ public interface UserAuthProviderRepository {
         Long userId,
         AuthProvider provider,
         String providerUserId,
-        String providerEmail
+        String providerEmail,
+        String providerAvatarUrl
     );
 
     Optional<Long> findUserIdByProviderAndProviderUserId(
         AuthProvider provider,
         String providerUserId
+    );
+
+    Optional<String> findProviderAvatarUrl(Long userId, AuthProvider provider);
+
+    void updateProviderAvatarUrl(
+        Long userId,
+        AuthProvider provider,
+        String newAvatarUrl
     );
 }

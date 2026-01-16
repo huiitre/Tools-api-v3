@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 public class RefreshTokenCookieManager {
 
     private static final String COOKIE_NAME = "refresh_token";
-    private static final String COOKIE_PATH = "/api/v3/auth";
+    private static final String COOKIE_PATH = "/";
     private static final String SAME_SITE = "Strict";
 
     private final SecurityCookieProperties cookieProperties;

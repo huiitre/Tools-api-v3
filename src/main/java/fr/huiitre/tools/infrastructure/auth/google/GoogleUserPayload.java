@@ -5,11 +5,13 @@ public class GoogleUserPayload {
     private final String providerUserId; // sub
     private final String email;
     private final String name;
+    private final String picture;
 
-    public GoogleUserPayload(String providerUserId, String email, String name) {
+    public GoogleUserPayload(String providerUserId, String email, String name, String picture) {
         this.providerUserId = providerUserId;
         this.email = email;
         this.name = name;
+        this.picture = picture;
     }
 
     public String getProviderUserId() {
@@ -22,5 +24,9 @@ public class GoogleUserPayload {
 
     public String getName() {
         return name;
+    }
+
+    public String getPicture() {
+        return picture;
     }
 }

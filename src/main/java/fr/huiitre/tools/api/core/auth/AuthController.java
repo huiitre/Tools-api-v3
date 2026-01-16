@@ -148,6 +148,7 @@ public class AuthController {
             RegisterUserCommand.oauth(
                 AuthProvider.GOOGLE,
                 payload.getProviderUserId(),
+                payload.getPicture(),
                 payload.getEmail(),
                 payload.getName()
             );
