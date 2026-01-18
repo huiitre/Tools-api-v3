@@ -17,7 +17,7 @@ public class DeleteWeightLogUseCase implements SecuredUseCase {
 
     @Override
     public Optional<ModuleCode> requiredModule() {
-        return Optional.of(ModuleCode.TOOLS_HEALTH);
+        return Optional.of(ModuleCode.HEALTH);
     }
 
     @Override
@@ -30,16 +30,15 @@ public class DeleteWeightLogUseCase implements SecuredUseCase {
     private final AuthenticatedUserProvider authenticatedUserProvider;
 
     public DeleteWeightLogUseCase(
-        WeightLogRepository weightLogRepository,
-        AuthenticatedUserProvider authenticatedUserProvider
-    ) {
+            WeightLogRepository weightLogRepository,
+            AuthenticatedUserProvider authenticatedUserProvider) {
         this.weightLogRepository = weightLogRepository;
         this.authenticatedUserProvider = authenticatedUserProvider;
     }
 
     public void execute(Long weightLogId) {
 
-        Long userId =  authenticatedUserProvider.getUserId();
+        Long userId = authenticatedUserProvider.getUserId();
 
         if (!weightLogRepository.existsById(userId, weightLogId)) {
             throw new IllegalArgumentException("WEIGHT_LOG_NOT_FOUND");

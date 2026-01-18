@@ -23,7 +23,7 @@ public class ListUserTodolistsUseCase implements SecuredUseCase {
 
     @Override
     public Optional<ModuleCode> requiredModule() {
-        return Optional.of(ModuleCode.TOOLS_TODOLIST);
+        return Optional.of(ModuleCode.TODOLIST);
     }
 
     @Override
@@ -32,9 +32,8 @@ public class ListUserTodolistsUseCase implements SecuredUseCase {
     }
 
     public ListUserTodolistsUseCase(
-        TodolistRepository todolistRepository,
-        AuthenticatedUserProvider authenticatedUserProvider
-    ) {
+            TodolistRepository todolistRepository,
+            AuthenticatedUserProvider authenticatedUserProvider) {
         this.todolistRepository = todolistRepository;
         this.authenticatedUserProvider = authenticatedUserProvider;
     }

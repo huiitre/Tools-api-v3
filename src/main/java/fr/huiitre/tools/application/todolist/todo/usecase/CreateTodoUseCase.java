@@ -23,7 +23,7 @@ public class CreateTodoUseCase implements SecuredUseCase {
 
     @Override
     public Optional<ModuleCode> requiredModule() {
-        return Optional.of(ModuleCode.TOOLS_TODOLIST);
+        return Optional.of(ModuleCode.TODOLIST);
     }
 
     @Override
@@ -42,12 +42,11 @@ public class CreateTodoUseCase implements SecuredUseCase {
         Long userId = authenticatedUserProvider.getUserId();
 
         Todo todo = Todo.create(
-            command.getName(),
-            command.getDescription(),
-            todolistId,
-            command.getDisplayOrder(),
-            command.getPriority()
-        );
+                command.getName(),
+                command.getDescription(),
+                todolistId,
+                command.getDisplayOrder(),
+                command.getPriority());
 
         todoRepository.save(userId, todo);
     }

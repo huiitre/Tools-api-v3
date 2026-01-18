@@ -19,7 +19,7 @@ public class GetAllMyWeightLogUseCase implements SecuredUseCase {
 
     @Override
     public Optional<ModuleCode> requiredModule() {
-        return Optional.of(ModuleCode.TOOLS_HEALTH);
+        return Optional.of(ModuleCode.HEALTH);
     }
 
     @Override
@@ -32,9 +32,8 @@ public class GetAllMyWeightLogUseCase implements SecuredUseCase {
     private final WeightLogRepository weightLogRepository;
 
     public GetAllMyWeightLogUseCase(
-        WeightLogRepository weightLogRepository,
-        AuthenticatedUserProvider authenticatedUserProvider
-    ) {
+            WeightLogRepository weightLogRepository,
+            AuthenticatedUserProvider authenticatedUserProvider) {
         this.weightLogRepository = weightLogRepository;
         this.authenticatedUserProvider = authenticatedUserProvider;
     }

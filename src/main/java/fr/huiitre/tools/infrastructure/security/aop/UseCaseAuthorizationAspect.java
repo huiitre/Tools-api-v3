@@ -5,6 +5,8 @@ import java.util.Optional;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import fr.huiitre.tools.application.common.security.exception.ForbiddenException;
 import fr.huiitre.tools.application.common.security.ports.CurrentUserProvider;
@@ -21,6 +23,8 @@ public class UseCaseAuthorizationAspect {
     private final ModuleAuthorizationPort moduleAuthorizationPort;
     private final UserRoleProvider userRoleProvider;
     private final CurrentUserProvider currentUserProvider;
+
+    private static final Logger logger = LoggerFactory.getLogger(UseCaseAuthorizationAspect.class);
 
     public UseCaseAuthorizationAspect(
             ModuleAuthorizationPort moduleAuthorizationPort,

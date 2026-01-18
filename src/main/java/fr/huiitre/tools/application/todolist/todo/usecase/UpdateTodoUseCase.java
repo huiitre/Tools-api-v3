@@ -23,7 +23,7 @@ public class UpdateTodoUseCase implements SecuredUseCase {
 
     @Override
     public Optional<ModuleCode> requiredModule() {
-        return Optional.of(ModuleCode.TOOLS_TODOLIST);
+        return Optional.of(ModuleCode.TODOLIST);
     }
 
     @Override
@@ -32,9 +32,8 @@ public class UpdateTodoUseCase implements SecuredUseCase {
     }
 
     public UpdateTodoUseCase(
-        TodoRepository todoRepository,
-        AuthenticatedUserProvider authenticatedUserProvider
-    ) {
+            TodoRepository todoRepository,
+            AuthenticatedUserProvider authenticatedUserProvider) {
         this.todoRepository = todoRepository;
         this.authenticatedUserProvider = authenticatedUserProvider;
     }
@@ -43,19 +42,18 @@ public class UpdateTodoUseCase implements SecuredUseCase {
         Long userId = authenticatedUserProvider.getUserId();
 
         Todo todo = todoRepository.findById(userId, todoId)
-            .orElseThrow(() -> new IllegalArgumentException("Todo not found"));
+                .orElseThrow(() -> new IllegalArgumentException("Todo not found"));
 
         if (!todo.getTodolistId().equals(todolistId)) {
             throw new IllegalArgumentException("TODO_NOT_IN_TODOLIST");
         }
 
         todo.update(
-            command.getName(),
-            command.getDescription(),
-            command.isCompleted(),
-            command.getDisplayOrder(),
-            command.getPriority()
-        );
+                command.getName(),
+                command.getDescription(),
+                command.isCompleted(),
+                command.getDisplayOrder(),
+                command.getPriority());
 
         todoRepository.update(userId, todo);
     }

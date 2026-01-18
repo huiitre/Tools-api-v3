@@ -52,7 +52,7 @@ public class PostgresUserRoleProvider implements UserRoleProvider {
 
             ps.setLong(1, uid);
             if (moduleCode != null) {
-                ps.setString(2, moduleCode.name());
+                ps.setString(2, moduleCode.name().toLowerCase());
             }
 
             try (ResultSet rs = ps.executeQuery()) {

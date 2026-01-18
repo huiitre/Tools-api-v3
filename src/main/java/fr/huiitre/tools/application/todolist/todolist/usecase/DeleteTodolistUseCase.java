@@ -24,7 +24,7 @@ public class DeleteTodolistUseCase implements SecuredUseCase {
 
     @Override
     public Optional<ModuleCode> requiredModule() {
-        return Optional.of(ModuleCode.TOOLS_TODOLIST);
+        return Optional.of(ModuleCode.TODOLIST);
     }
 
     @Override
@@ -33,10 +33,9 @@ public class DeleteTodolistUseCase implements SecuredUseCase {
     }
 
     public DeleteTodolistUseCase(
-        TodolistRepository todolistRepository,
-        TodoRepository todoRepository,
-        AuthenticatedUserProvider authenticatedUserProvider
-    ) {
+            TodolistRepository todolistRepository,
+            TodoRepository todoRepository,
+            AuthenticatedUserProvider authenticatedUserProvider) {
         this.todolistRepository = todolistRepository;
         this.todoRepository = todoRepository;
         this.authenticatedUserProvider = authenticatedUserProvider;

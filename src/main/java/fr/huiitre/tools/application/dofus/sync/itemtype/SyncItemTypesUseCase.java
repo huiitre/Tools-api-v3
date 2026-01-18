@@ -28,7 +28,7 @@ public class SyncItemTypesUseCase implements SecuredUseCase {
 
         @Override
         public Optional<ModuleCode> requiredModule() {
-                return Optional.of(ModuleCode.TOOLS_DOFUS);
+                return Optional.of(ModuleCode.DOFUS);
         }
 
         @Override

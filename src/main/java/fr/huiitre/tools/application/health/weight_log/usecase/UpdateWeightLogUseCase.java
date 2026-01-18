@@ -19,7 +19,7 @@ public class UpdateWeightLogUseCase implements SecuredUseCase {
 
     @Override
     public Optional<ModuleCode> requiredModule() {
-        return Optional.of(ModuleCode.TOOLS_HEALTH);
+        return Optional.of(ModuleCode.HEALTH);
     }
 
     @Override
@@ -32,28 +32,25 @@ public class UpdateWeightLogUseCase implements SecuredUseCase {
     private final WeightLogRepository weightLogRepository;
 
     public UpdateWeightLogUseCase(
-        WeightLogRepository weightLogRepository,
-        AuthenticatedUserProvider authenticatedUserProvider
-    ) {
+            WeightLogRepository weightLogRepository,
+            AuthenticatedUserProvider authenticatedUserProvider) {
         this.weightLogRepository = weightLogRepository;
         this.authenticatedUserProvider = authenticatedUserProvider;
     }
-    
+
     public void execute(
-        Long weightLogId,
-        UpdateWeightLogCommand command
-    ) {
+            Long weightLogId,
+            UpdateWeightLogCommand command) {
 
         Long userId = authenticatedUserProvider.getUserId();
 
         WeightLog weightLog = weightLogRepository.findById(userId, weightLogId)
-            .orElseThrow(() -> new IllegalArgumentException("WEIGHT_LOG_NOT_FOUND"));
+                .orElseThrow(() -> new IllegalArgumentException("WEIGHT_LOG_NOT_FOUND"));
 
         weightLog.update(
-            command.getWeight(),
-            command.getNotes(),
-            command.getLogDate()
-        );
+                command.getWeight(),
+                command.getNotes(),
+                command.getLogDate());
 
         weightLogRepository.update(userId, weightLogId, weightLog);
     }

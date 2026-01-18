@@ -21,7 +21,7 @@ public class CreateTodolistUseCase implements SecuredUseCase {
 
     @Override
     public Optional<ModuleCode> requiredModule() {
-        return Optional.of(ModuleCode.TOOLS_TODOLIST);
+        return Optional.of(ModuleCode.TODOLIST);
     }
 
     @Override
@@ -32,9 +32,8 @@ public class CreateTodolistUseCase implements SecuredUseCase {
     private final TodolistRepository todolistRepository;
 
     public CreateTodolistUseCase(
-        AuthenticatedUserProvider authenticatedUserProvider,
-        TodolistRepository todolistRepository
-    ) {
+            AuthenticatedUserProvider authenticatedUserProvider,
+            TodolistRepository todolistRepository) {
         this.authenticatedUserProvider = authenticatedUserProvider;
         this.todolistRepository = todolistRepository;
     }
@@ -43,12 +42,11 @@ public class CreateTodolistUseCase implements SecuredUseCase {
         Long userId = authenticatedUserProvider.getUserId();
 
         Todolist todolist = Todolist.create(
-            command.getName(),
-            command.isActive(),
-            command.isFavorite(),
-            command.getColorHex(),
-            command.getDisplayOrder()
-        );
+                command.getName(),
+                command.isActive(),
+                command.isFavorite(),
+                command.getColorHex(),
+                command.getDisplayOrder());
         todolistRepository.save(userId, todolist);
     }
 }

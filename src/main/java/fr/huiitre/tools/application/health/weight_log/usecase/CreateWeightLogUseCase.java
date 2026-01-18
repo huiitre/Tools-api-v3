@@ -19,7 +19,7 @@ public class CreateWeightLogUseCase implements SecuredUseCase {
 
     @Override
     public Optional<ModuleCode> requiredModule() {
-        return Optional.of(ModuleCode.TOOLS_HEALTH);
+        return Optional.of(ModuleCode.HEALTH);
     }
 
     @Override
@@ -32,24 +32,21 @@ public class CreateWeightLogUseCase implements SecuredUseCase {
     private final WeightLogRepository weightLogRepository;
 
     public CreateWeightLogUseCase(
-        WeightLogRepository weightLogRepository,
-        AuthenticatedUserProvider authenticatedUserProvider
-    ) {
+            WeightLogRepository weightLogRepository,
+            AuthenticatedUserProvider authenticatedUserProvider) {
         this.weightLogRepository = weightLogRepository;
         this.authenticatedUserProvider = authenticatedUserProvider;
     }
 
     public void execute(
-        CreateWeightLogCommand command
-    ) {
+            CreateWeightLogCommand command) {
 
         Long userId = authenticatedUserProvider.getUserId();
 
         WeightLog weightLog = new WeightLog(
-            command.getWeight(),
-            command.getLogDate(),
-            command.getNotes()
-        );
+                command.getWeight(),
+                command.getLogDate(),
+                command.getNotes());
 
         weightLogRepository.save(userId, weightLog);
     }

@@ -22,7 +22,7 @@ public class DeleteTodoUseCase implements SecuredUseCase {
 
     @Override
     public Optional<ModuleCode> requiredModule() {
-        return Optional.of(ModuleCode.TOOLS_TODOLIST);
+        return Optional.of(ModuleCode.TODOLIST);
     }
 
     @Override
@@ -31,9 +31,8 @@ public class DeleteTodoUseCase implements SecuredUseCase {
     }
 
     public DeleteTodoUseCase(
-        TodoRepository todoRepository,
-        AuthenticatedUserProvider authenticatedUserProvider
-    ) {
+            TodoRepository todoRepository,
+            AuthenticatedUserProvider authenticatedUserProvider) {
         this.todoRepository = todoRepository;
         this.authenticatedUserProvider = authenticatedUserProvider;
     }
@@ -42,7 +41,7 @@ public class DeleteTodoUseCase implements SecuredUseCase {
         Long userId = authenticatedUserProvider.getUserId();
 
         Todo todo = todoRepository.findById(userId, todoId)
-            .orElseThrow(() -> new IllegalArgumentException("TODO_NOT_FOUND_OR_NOT_OWNED"));
+                .orElseThrow(() -> new IllegalArgumentException("TODO_NOT_FOUND_OR_NOT_OWNED"));
 
         if (!todo.getTodolistId().equals(todolistId)) {
             throw new IllegalArgumentException("TODO_NOT_IN_TODOLIST");

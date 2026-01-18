@@ -37,7 +37,7 @@ public class PostgresModuleAuthorizationAdapter implements ModuleAuthorizationPo
         ) {
 
             ps.setLong(1, Long.parseLong(userId));
-            ps.setString(2, moduleCode.name());
+            ps.setString(2, moduleCode.name().toLowerCase());
 
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();

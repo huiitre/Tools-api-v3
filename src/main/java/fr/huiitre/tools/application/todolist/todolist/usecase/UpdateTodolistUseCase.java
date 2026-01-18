@@ -2,7 +2,6 @@ package fr.huiitre.tools.application.todolist.todolist.usecase;
 
 import java.util.Optional;
 
-import org.hibernate.sql.Update;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +23,7 @@ public class UpdateTodolistUseCase implements SecuredUseCase {
 
     @Override
     public Optional<ModuleCode> requiredModule() {
-        return Optional.of(ModuleCode.TOOLS_TODOLIST);
+        return Optional.of(ModuleCode.TODOLIST);
     }
 
     @Override
@@ -33,9 +32,8 @@ public class UpdateTodolistUseCase implements SecuredUseCase {
     }
 
     public UpdateTodolistUseCase(
-        TodolistRepository todolistRepository,
-        AuthenticatedUserProvider authenticatedUserProvider
-    ) {
+            TodolistRepository todolistRepository,
+            AuthenticatedUserProvider authenticatedUserProvider) {
         this.todolistRepository = todolistRepository;
         this.authenticatedUserProvider = authenticatedUserProvider;
     }
@@ -44,15 +42,14 @@ public class UpdateTodolistUseCase implements SecuredUseCase {
         Long userId = authenticatedUserProvider.getUserId();
 
         Todolist todolist = todolistRepository.findById(userId, id)
-            .orElseThrow(() -> new IllegalArgumentException("TODOLIST_NOT_FOUND"));
+                .orElseThrow(() -> new IllegalArgumentException("TODOLIST_NOT_FOUND"));
 
         todolist.update(
-            command.getName(),
-            command.isActive(),
-            command.isFavorite(),
-            command.getColorHex(),
-            command.getDisplayOrder()
-        );
+                command.getName(),
+                command.isActive(),
+                command.isFavorite(),
+                command.getColorHex(),
+                command.getDisplayOrder());
 
         todolistRepository.update(userId, todolist);
     }
