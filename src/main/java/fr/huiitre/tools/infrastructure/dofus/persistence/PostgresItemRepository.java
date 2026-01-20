@@ -2,6 +2,7 @@ package fr.huiitre.tools.infrastructure.dofus.persistence;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -152,6 +153,30 @@ public class PostgresItemRepository implements ItemRepository {
             FileSystemChecker.exists(image1x),
             FileSystemChecker.exists(image2x)
         );
+    }
+
+    @Override
+    public Optional<Item> findByAssetId(Long assetId, long gameVersionId) {
+        final String sql = """
+            SELECT
+                id,
+                asset_id,
+                game_version_id,
+                item_type_id,
+                name,
+                level,
+                description
+            FROM tools_dofus.item
+            WHERE asset_id = ? AND game_version_id = ?
+        """;
+
+        List<Item> items = jdbcTemplate.query(sql, ITEM_ROW_MAPPER, assetId, gameVersionId);
+
+        if (items.isEmpty()) {
+            return Optional.empty();
+        } else {
+            return Optional.of(items.get(0));
+        }
     }
 
     private record ImageExistence(boolean has1x, boolean has2x) {

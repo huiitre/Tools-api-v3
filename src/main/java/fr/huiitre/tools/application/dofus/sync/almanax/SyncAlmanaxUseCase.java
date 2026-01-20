@@ -2,6 +2,7 @@ package fr.huiitre.tools.application.dofus.sync.almanax;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -17,8 +18,10 @@ import fr.huiitre.tools.application.core.role.RoleCode;
 import fr.huiitre.tools.application.dofus.gameversion.GameVersionData;
 import fr.huiitre.tools.application.dofus.ports.providers.AlmanaxDataProvider;
 import fr.huiitre.tools.application.dofus.ports.repositories.AlmanaxRepository;
+import fr.huiitre.tools.application.dofus.ports.repositories.ItemRepository;
 import fr.huiitre.tools.application.dofus.sync.SyncReport;
 import fr.huiitre.tools.domain.dofus.Almanax;
+import fr.huiitre.tools.domain.dofus.Item;
 import fr.huiitre.tools.infrastructure.logging.DebugLogger;
 
 @Service
@@ -28,6 +31,7 @@ public class SyncAlmanaxUseCase implements SecuredUseCase {
     private final AuthenticatedUserProvider authenticatedUserProvider;
     private final AlmanaxDataProvider almanaxDataProvider;
     private final AlmanaxRepository almanaxRepository;
+    private final ItemRepository itemRepository;
 
     private static final DebugLogger log = DebugLogger.of(SyncAlmanaxUseCase.class);
     private static final Logger logger = LoggerFactory.getLogger(SyncAlmanaxUseCase.class);
@@ -45,14 +49,16 @@ public class SyncAlmanaxUseCase implements SecuredUseCase {
     public SyncAlmanaxUseCase(
         AuthenticatedUserProvider authenticatedUserProvider,
         AlmanaxDataProvider almanaxDataProvider,
-        AlmanaxRepository almanaxRepository
+        AlmanaxRepository almanaxRepository,
+        ItemRepository itemRepository
     ) {
         this.authenticatedUserProvider = authenticatedUserProvider;
         this.almanaxDataProvider = almanaxDataProvider;
         this.almanaxRepository = almanaxRepository;
+        this.itemRepository = itemRepository;
     }
 
-    public SyncReport execute() {
+    public SyncReport execute(GameVersionData gameVersion) {
         
         List<AlmanaxSyncData> external = almanaxDataProvider.fetchAll();
 
@@ -71,9 +77,16 @@ public class SyncAlmanaxUseCase implements SecuredUseCase {
         List<String> created = new java.util.ArrayList<>();
         List<String> updated = new java.util.ArrayList<>();
 
-        logger.debug("Ligne #74 || updated : {}", updated);
-
         for (AlmanaxSyncData externalAlmanax : external) {
+
+            Long resolvedItemId = null;
+
+            if (externalAlmanax.getItemId() != null) {
+                resolvedItemId = itemRepository
+                    .findByAssetId(externalAlmanax.getItemId(), gameVersion.getId())
+                    .map(Item::getId)
+                    .orElse(null);
+            }
 
             Almanax existing = currentByAssetId.get(externalAlmanax.getAssetId());
 
@@ -82,7 +95,9 @@ public class SyncAlmanaxUseCase implements SecuredUseCase {
                     externalAlmanax.getAssetId(),
                     externalAlmanax.getName(),
                     externalAlmanax.getDescription(),
-                    externalAlmanax.getDates()
+                    externalAlmanax.getDates(),
+                    resolvedItemId,
+                    externalAlmanax.getItemQuantity()
                 );
                 Long saved = almanaxRepository.save(newAlmanax);
                 created.add("""
@@ -92,6 +107,8 @@ public class SyncAlmanaxUseCase implements SecuredUseCase {
                                 externalAlmanax.getName(),
                                 externalAlmanax.getDescription(),
                                 externalAlmanax.getDates().toString(),
+                                resolvedItemId,
+                                externalAlmanax.getItemQuantity(),
                                 saved
                             )
                 );
@@ -101,17 +118,23 @@ public class SyncAlmanaxUseCase implements SecuredUseCase {
             boolean nameChanged = !existing.getName().equals(externalAlmanax.getName());
             boolean descriptionChanged = !existing.getDescription().equals(externalAlmanax.getDescription());
             boolean datesChanged = !existing.getDates().equals(externalAlmanax.getDates());
+            boolean itemIdChanged = !Objects.equals(existing.getItemId(), resolvedItemId);
+            boolean itemQuantityChanged = !existing.getItemQuantity().equals(externalAlmanax.getItemQuantity());
 
-            if (nameChanged || descriptionChanged || datesChanged) {
+            if (nameChanged || descriptionChanged || datesChanged || itemIdChanged || itemQuantityChanged) {
                 
                 String oldName = existing.getName();
                 String oldDescription = existing.getDescription();
                 List<String> oldDates = existing.getDates();
+                Long oldItemId = existing.getItemId();
+                Long oldItemQuantity = existing.getItemQuantity();
 
                 existing.update(
                     externalAlmanax.getName(),
                     externalAlmanax.getDescription(),
-                    externalAlmanax.getDates()
+                    externalAlmanax.getDates(),
+                    resolvedItemId,
+                    externalAlmanax.getItemQuantity()
                 );
 
                 almanaxRepository.update(existing);
@@ -121,6 +144,8 @@ public class SyncAlmanaxUseCase implements SecuredUseCase {
                         name : %s -> %s
                         description : %s -> %s
                         dates : %s -> %s
+                        itemId : %d -> %d
+                        itemQuantity : %d -> %d
                         """.formatted(
                                 existing.getId(),
                                 externalAlmanax.getAssetId(),
@@ -129,15 +154,19 @@ public class SyncAlmanaxUseCase implements SecuredUseCase {
                                 oldDescription,
                                 externalAlmanax.getDescription(),
                                 oldDates.toString(),
-                                externalAlmanax.getDates().toString()
+                                externalAlmanax.getDates().toString(),
+                                oldItemId,
+                                resolvedItemId,
+                                oldItemQuantity,
+                                externalAlmanax.getItemQuantity()
                             )
                 );
             }
         }
         
         return new SyncReport(
-            "items",
-            "Items",
+            "almanax",
+            "Almanax",
             created,
             updated);
     }

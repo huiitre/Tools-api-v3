@@ -1,7 +1,9 @@
 package fr.huiitre.tools.infrastructure.dofus.assets.dofus3;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,21 +37,36 @@ public class Dofus3AlmanaxDataProvider implements AlmanaxDataProvider {
     public List<AlmanaxSyncData> fetchAll() {
 
         try {
-            String json = assetsReader.readFile("almanax.json");
-            JsonNode root = objectMapper.readTree(json);
+            String almanaxJson = assetsReader.readFile("almanax.json");
+            JsonNode almanaxRoot = objectMapper.readTree(almanaxJson);
 
-            JsonNode refIds = root
+            JsonNode almanaxRefIds = almanaxRoot
                 .path("references")
                 .path("RefIds");
 
+            String objectiveJson = assetsReader.readFile("quest_objectives.json");
+            JsonNode objectiveRoot = objectMapper.readTree(objectiveJson);
+
+            JsonNode objectiveRefIds = objectiveRoot
+                .path("references")
+                .path("RefIds");
+
+            Map<Long, JsonNode> objectiveById = new HashMap<>();
+            for (JsonNode objRef : objectiveRefIds) {
+                JsonNode objType = objRef.path("type");
+                if (!"QuestObjectiveBringItemToNpcData".equals(objType.path("class").asText())) {
+                    continue;
+                }
+                JsonNode objData = objRef.path("data");
+                objectiveById.put(objData.path("id").asLong(), objData);
+            }
+
             List<AlmanaxSyncData> result = new ArrayList<>();
 
-            for (JsonNode ref : refIds) {
+            for (JsonNode ref : almanaxRefIds) {
 
                 JsonNode type = ref.path("type");
-                JsonNode classitem = type.path("class");
-
-                if (!"AlmanaxCalendarData".equals(classitem.asText())) {
+                if (!"AlmanaxCalendarData".equals(type.path("class").asText())) {
                     continue;
                 }
 
@@ -59,25 +76,37 @@ public class Dofus3AlmanaxDataProvider implements AlmanaxDataProvider {
                 String name = languageDataProvider.getString(data.path("nameId").asLong());
                 String description = languageDataProvider.getString(data.path("descId").asLong());
 
-                JsonNode dateNodes = data.path("dates");
-                JsonNode dateArray = dateNodes.path("Array");
-
+                JsonNode dateArray = data.path("dates").path("Array");
                 List<String> dates = new ArrayList<>();
                 for (JsonNode dateNode : dateArray) {
-                    String dateStr = dateNode.asText();
-                    dates.add(dateStr);
+                    dates.add(dateNode.asText());
+                }
+
+                Long itemId = null;
+                Long itemQuantity = null;
+
+                Long objectiveId = data.path("objectiveId").asLong();
+
+                JsonNode objectiveData = objectiveById.get(objectiveId);
+                if (objectiveData != null) {
+                    JsonNode parameters = objectiveData.path("parameters");
+                    itemId = parameters.path("parameter1").asLong();
+                    itemQuantity = parameters.path("parameter2").asLong();
                 }
 
                 result.add(new AlmanaxSyncData(
                     assetId,
                     name,
                     description,
-                    dates
+                    dates,
+                    itemId,
+                    itemQuantity
                 ));
             }
 
             return result;
-        } catch(Exception e) {
+
+        } catch (Exception e) {
             throw new RuntimeException("Erreur lors de la lecture des données Almanax Dofus3", e);
         }
     }

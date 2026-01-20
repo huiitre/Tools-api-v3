@@ -33,7 +33,9 @@ public class PostgresAlmanaxRepository implements AlmanaxRepository {
                     rs.getLong("asset_id"),
                     rs.getString("name"),
                     rs.getString("description"),
-                    dates
+                    dates,
+                    rs.getLong("item_id"),
+                    rs.getLong("item_quantity")
             );
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to parse dates JSON", e);
@@ -48,7 +50,9 @@ public class PostgresAlmanaxRepository implements AlmanaxRepository {
                 asset_id,
                 name,
                 description,
-                dates
+                dates,
+                item_id,
+                item_quantity
             FROM
                 tools_dofus.almanax
         """;
@@ -63,8 +67,10 @@ public class PostgresAlmanaxRepository implements AlmanaxRepository {
                 asset_id,
                 name,
                 description,
-                dates
-            ) VALUES (?, ?, ?, ?)
+                dates,
+                item_id,
+                item_quantity
+            ) VALUES (?, ?, ?, ?, ?, ?)
             RETURNING id
         """;
 
@@ -77,7 +83,9 @@ public class PostgresAlmanaxRepository implements AlmanaxRepository {
                     almanax.getAssetId(),
                     almanax.getName(),
                     almanax.getDescription(),
-                    jsonDates
+                    jsonDates,
+                    almanax.getItemId(),
+                    almanax.getItemQuantity()
             );
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to serialize dates to JSON", e);
@@ -91,7 +99,9 @@ public class PostgresAlmanaxRepository implements AlmanaxRepository {
             SET
                 name = ?,
                 description = ?,
-                dates = ?
+                dates = ?::jsonb,
+                item_id = ?,
+                item_quantity = ?
             WHERE
                 id = ?
         """;
@@ -104,6 +114,8 @@ public class PostgresAlmanaxRepository implements AlmanaxRepository {
                     almanax.getName(),
                     almanax.getDescription(),
                     jsonDates,
+                    almanax.getItemId(),
+                    almanax.getItemQuantity(),
                     almanax.getId()
             );
         } catch (JsonProcessingException e) {

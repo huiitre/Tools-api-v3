@@ -85,7 +85,7 @@ public class SyncDofus3DataUseCase implements SecuredUseCase {
         // =====================================================
         // ITEMS
         // =====================================================
-        SyncReport almanaxReport = syncAlmanaxUseCase.execute();
+        SyncReport almanaxReport = syncAlmanaxUseCase.execute(gameVersion);
 
         // =====================================================
         // FUTUR : AUTRES JSON
