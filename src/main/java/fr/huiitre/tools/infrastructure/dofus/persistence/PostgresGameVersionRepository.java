@@ -52,4 +52,23 @@ public class PostgresGameVersionRepository implements GameVersionRepository {
                                 rs.getString("name"),
                                 rs.getString("code")));
     }
+
+    @Override
+    public GameVersionData findByCode(String code) {
+        final String sql = """
+            SELECT id, code, name
+            FROM tools_dofus.game_version
+            WHERE code = ?
+        """;
+
+        return jdbcTemplate.queryForObject(
+                sql,
+                (rs, rowNum) -> new GameVersionData(
+                    rs.getLong("id"),
+                    rs.getString("name"),
+                    rs.getString("code")
+                ),
+                code
+            );
+    }
 }

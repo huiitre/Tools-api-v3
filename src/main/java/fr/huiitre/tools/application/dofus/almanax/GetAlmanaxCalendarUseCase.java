@@ -15,17 +15,21 @@ import fr.huiitre.tools.application.common.security.ports.AuthenticatedUserProvi
 import fr.huiitre.tools.application.common.security.usecase.SecuredUseCase;
 import fr.huiitre.tools.application.core.module.ModuleCode;
 import fr.huiitre.tools.application.core.role.RoleCode;
+import fr.huiitre.tools.application.dofus.game.GameVersionData;
 import fr.huiitre.tools.application.dofus.item.GetItemUseCase;
 import fr.huiitre.tools.application.dofus.item.ItemView;
 import fr.huiitre.tools.application.dofus.ports.repositories.AlmanaxRepository;
 import fr.huiitre.tools.domain.dofus.Almanax;
 import fr.huiitre.tools.domain.dofus.DatePattern;
+import fr.huiitre.tools.application.dofus.ports.repositories.GameVersionRepository;
 
 @Service
 @Transactional
 public class GetAlmanaxCalendarUseCase implements SecuredUseCase {
 
     private final AlmanaxRepository almanaxRepository;
+
+    private final GameVersionRepository gameVersionRepository;
 
     private final GetItemUseCase getItemUseCase;
 
@@ -46,14 +50,17 @@ public class GetAlmanaxCalendarUseCase implements SecuredUseCase {
     public GetAlmanaxCalendarUseCase(
         AlmanaxRepository almanaxRepository,
         AuthenticatedUserProvider authenticatedUserProvider,
-        GetItemUseCase getItemUseCase
+        GetItemUseCase getItemUseCase,
+        GameVersionRepository gameVersionRepository
     ) {
         this.almanaxRepository = almanaxRepository;
         this.authenticatedUserProvider = authenticatedUserProvider;
         this.getItemUseCase = getItemUseCase;
+        this.gameVersionRepository = gameVersionRepository;
     }
 
-    public List<AlmanaxDto> execute(Long gameVersionId) {
+    public List<AlmanaxDto> execute() {
+
         List<Almanax> almanaxList = almanaxRepository.findAll();
 
         LocalDate start = LocalDate.now();
@@ -62,6 +69,8 @@ public class GetAlmanaxCalendarUseCase implements SecuredUseCase {
         List<AlmanaxDto> result = new ArrayList<>();
 
         List<LocalDate> missingDates = new ArrayList<>();
+
+        GameVersionData gameVersion = gameVersionRepository.findByCode("dofus3");
 
         for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
 
@@ -102,7 +111,7 @@ public class GetAlmanaxCalendarUseCase implements SecuredUseCase {
 
             if (bestAlmanax != null) {
 
-                ItemView itemView = getItemUseCase.execute(gameVersionId, bestAlmanax.getItemId())
+                ItemView itemView = getItemUseCase.execute(gameVersion.getId(), bestAlmanax.getItemId())
                     .orElse(null);
 
                 result.add(new AlmanaxDto(

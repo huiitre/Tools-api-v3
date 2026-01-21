@@ -9,5 +9,7 @@ public interface GameVersionRepository {
 
     Optional<GameVersionData> findById(Long gameVersionId);
 
+    GameVersionData findByCode(String code);
+
     List<GameVersionData> findAll();
 }
