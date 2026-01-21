@@ -15,6 +15,8 @@ import fr.huiitre.tools.application.common.security.ports.AuthenticatedUserProvi
 import fr.huiitre.tools.application.common.security.usecase.SecuredUseCase;
 import fr.huiitre.tools.application.core.module.ModuleCode;
 import fr.huiitre.tools.application.core.role.RoleCode;
+import fr.huiitre.tools.application.dofus.item.GetItemUseCase;
+import fr.huiitre.tools.application.dofus.item.ItemView;
 import fr.huiitre.tools.application.dofus.ports.repositories.AlmanaxRepository;
 import fr.huiitre.tools.domain.dofus.Almanax;
 import fr.huiitre.tools.domain.dofus.DatePattern;
@@ -24,6 +26,8 @@ import fr.huiitre.tools.domain.dofus.DatePattern;
 public class GetAlmanaxCalendarUseCase implements SecuredUseCase {
 
     private final AlmanaxRepository almanaxRepository;
+
+    private final GetItemUseCase getItemUseCase;
 
     private static final Logger logger = LoggerFactory.getLogger(GetAlmanaxCalendarUseCase.class);
 
@@ -41,13 +45,15 @@ public class GetAlmanaxCalendarUseCase implements SecuredUseCase {
 
     public GetAlmanaxCalendarUseCase(
         AlmanaxRepository almanaxRepository,
-        AuthenticatedUserProvider authenticatedUserProvider
+        AuthenticatedUserProvider authenticatedUserProvider,
+        GetItemUseCase getItemUseCase
     ) {
         this.almanaxRepository = almanaxRepository;
         this.authenticatedUserProvider = authenticatedUserProvider;
+        this.getItemUseCase = getItemUseCase;
     }
 
-    public List<AlmanaxDto> execute() {
+    public List<AlmanaxDto> execute(Long gameVersionId) {
         List<Almanax> almanaxList = almanaxRepository.findAll();
 
         LocalDate start = LocalDate.now();
@@ -95,11 +101,17 @@ public class GetAlmanaxCalendarUseCase implements SecuredUseCase {
             }
 
             if (bestAlmanax != null) {
+
+                ItemView itemView = getItemUseCase.execute(gameVersionId, bestAlmanax.getItemId())
+                    .orElse(null);
+
                 result.add(new AlmanaxDto(
                     bestAlmanax.getId(),
                     bestAlmanax.getName(),
                     bestAlmanax.getDescription(),
-                    date
+                    date,
+                    itemView,
+                    bestAlmanax.getItemQuantity()
                 ));
             } else {
                 missingDates.add(date);

@@ -31,9 +31,9 @@ public class PostgresModuleRepository implements ModuleRepository {
         module.setActive(rs.getBoolean("is_active"));
         module.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
         module.setUpdatedAt(
-                rs.getTimestamp("updated_at") != null
-                        ? rs.getTimestamp("updated_at").toLocalDateTime()
-                        : null
+            rs.getTimestamp("updated_at") != null
+                ? rs.getTimestamp("updated_at").toLocalDateTime()
+                : null
         );
         return module;
     };

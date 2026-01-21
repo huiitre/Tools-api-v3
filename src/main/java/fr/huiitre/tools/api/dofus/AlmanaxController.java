@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -28,8 +29,9 @@ public class AlmanaxController {
     }
 
     @GetMapping
-    public ResponseEntity<List<AlmanaxDto>> getAllAlmanax() {
-        // Implementation to retrieve and return all Almanax entries
-        return ResponseEntity.ok(getAlmanaxCalendarUseCase.execute());
+    public ResponseEntity<List<AlmanaxDto>> getAllAlmanax(
+        @RequestHeader(value = "X-Game-Version-Id", required = false) Long gameVersionId
+    ) {
+        return ResponseEntity.ok(getAlmanaxCalendarUseCase.execute(gameVersionId));
     }
 }
