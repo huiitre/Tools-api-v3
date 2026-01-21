@@ -15,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import fr.huiitre.tools.application.common.security.usecase.SecuredUseCase;
 import fr.huiitre.tools.application.core.module.ModuleCode;
 import fr.huiitre.tools.application.core.role.RoleCode;
-import fr.huiitre.tools.application.dofus.gameversion.GameVersionData;
+import fr.huiitre.tools.application.dofus.game.GameVersionData;
 import fr.huiitre.tools.application.dofus.ports.providers.Dofus3LanguageDataProvider;
 import fr.huiitre.tools.application.dofus.ports.providers.ItemDataProvider;
 import fr.huiitre.tools.application.dofus.sync.almanax.SyncAlmanaxUseCase;
@@ -43,13 +43,12 @@ public class SyncDofus3DataUseCase implements SecuredUseCase {
     private final SyncAlmanaxUseCase syncAlmanaxUseCase;
 
     public SyncDofus3DataUseCase(
-        ReportFileGenerator reportFileGenerator,
-        MailSenderService mailSenderService,
-        SyncItemTypesUseCase syncItemTypesUseCase,
-        SyncItemUseCase syncItemDataUseCase,
-        Dofus3LanguageDataProvider languageDataProvider,
-        SyncAlmanaxUseCase syncAlmanaxUseCase
-    ) {
+            ReportFileGenerator reportFileGenerator,
+            MailSenderService mailSenderService,
+            SyncItemTypesUseCase syncItemTypesUseCase,
+            SyncItemUseCase syncItemDataUseCase,
+            Dofus3LanguageDataProvider languageDataProvider,
+            SyncAlmanaxUseCase syncAlmanaxUseCase) {
         this.reportFileGenerator = reportFileGenerator;
         this.mailSenderService = mailSenderService;
         this.syncItemTypesUseCase = syncItemTypesUseCase;
@@ -138,15 +137,14 @@ public class SyncDofus3DataUseCase implements SecuredUseCase {
         } else {
             String filename = buildAttachmentFilename(gameVersion, itemReport.code());
             Path file = reportFileGenerator.generate(
-                filename,
-                buildAttachmentHeader(gameVersion, itemReport)
-                    + "\n"
-                    + itemReport.toAttachmentContent()
-            );
+                    filename,
+                    buildAttachmentHeader(gameVersion, itemReport)
+                            + "\n"
+                            + itemReport.toAttachmentContent());
             attachments.add(new Attachment(filename, file));
             body.append("Détails       : voir pièce jointe \"")
-                .append(filename)
-                .append("\"\n\n");
+                    .append(filename)
+                    .append("\"\n\n");
         }
 
         // ------------- ALMANAX -------------
@@ -164,15 +162,14 @@ public class SyncDofus3DataUseCase implements SecuredUseCase {
         } else {
             String filename = buildAttachmentFilename(gameVersion, almanaxReport.code());
             Path file = reportFileGenerator.generate(
-                filename,
-                buildAttachmentHeader(gameVersion, almanaxReport)
-                    + "\n"
-                    + almanaxReport.toAttachmentContent()
-            );
+                    filename,
+                    buildAttachmentHeader(gameVersion, almanaxReport)
+                            + "\n"
+                            + almanaxReport.toAttachmentContent());
             attachments.add(new Attachment(filename, file));
             body.append("Détails       : voir pièce jointe \"")
-                .append(filename)
-                .append("\"\n\n");
+                    .append(filename)
+                    .append("\"\n\n");
         }
 
         // ------------- TOTAL -------------

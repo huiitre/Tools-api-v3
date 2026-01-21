@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import fr.huiitre.tools.application.common.security.usecase.SecuredUseCase;
 import fr.huiitre.tools.application.core.module.ModuleCode;
 import fr.huiitre.tools.application.core.role.RoleCode;
-import fr.huiitre.tools.application.dofus.gameversion.GameVersionData;
+import fr.huiitre.tools.application.dofus.game.GameVersionData;
 import fr.huiitre.tools.application.dofus.ports.repositories.GameVersionRepository;
 
 @Service

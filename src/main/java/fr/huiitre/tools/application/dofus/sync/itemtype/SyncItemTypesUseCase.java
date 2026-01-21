@@ -9,11 +9,10 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import fr.huiitre.tools.application.common.security.ports.AuthenticatedUserProvider;
 import fr.huiitre.tools.application.common.security.usecase.SecuredUseCase;
 import fr.huiitre.tools.application.core.module.ModuleCode;
 import fr.huiitre.tools.application.core.role.RoleCode;
-import fr.huiitre.tools.application.dofus.gameversion.GameVersionData;
+import fr.huiitre.tools.application.dofus.game.GameVersionData;
 import fr.huiitre.tools.application.dofus.ports.providers.ItemTypeDataProvider;
 import fr.huiitre.tools.application.dofus.ports.repositories.ItemTypeRepository;
 import fr.huiitre.tools.application.dofus.sync.SyncReport;

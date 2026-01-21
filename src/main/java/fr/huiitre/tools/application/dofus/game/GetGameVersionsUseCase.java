@@ -1,4 +1,4 @@
-package fr.huiitre.tools.application.dofus.gameversion;
+package fr.huiitre.tools.application.dofus.game;
 
 import java.util.List;
 import java.util.Optional;
@@ -31,9 +31,8 @@ public class GetGameVersionsUseCase implements SecuredUseCase {
     }
 
     public GetGameVersionsUseCase(
-        GameVersionRepository gameVersionRepository,
-        AuthenticatedUserProvider authenticatedUserProvider
-    ) {
+            GameVersionRepository gameVersionRepository,
+            AuthenticatedUserProvider authenticatedUserProvider) {
         this.gameVersionRepository = gameVersionRepository;
         this.authenticatedUserProvider = authenticatedUserProvider;
     }

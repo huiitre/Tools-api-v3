@@ -15,7 +15,7 @@ import fr.huiitre.tools.application.common.security.ports.AuthenticatedUserProvi
 import fr.huiitre.tools.application.common.security.usecase.SecuredUseCase;
 import fr.huiitre.tools.application.core.module.ModuleCode;
 import fr.huiitre.tools.application.core.role.RoleCode;
-import fr.huiitre.tools.application.dofus.gameversion.GameVersionData;
+import fr.huiitre.tools.application.dofus.game.GameVersionData;
 import fr.huiitre.tools.application.dofus.ports.providers.AlmanaxDataProvider;
 import fr.huiitre.tools.application.dofus.ports.repositories.AlmanaxRepository;
 import fr.huiitre.tools.application.dofus.ports.repositories.ItemRepository;
@@ -47,11 +47,10 @@ public class SyncAlmanaxUseCase implements SecuredUseCase {
     }
 
     public SyncAlmanaxUseCase(
-        AuthenticatedUserProvider authenticatedUserProvider,
-        AlmanaxDataProvider almanaxDataProvider,
-        AlmanaxRepository almanaxRepository,
-        ItemRepository itemRepository
-    ) {
+            AuthenticatedUserProvider authenticatedUserProvider,
+            AlmanaxDataProvider almanaxDataProvider,
+            AlmanaxRepository almanaxRepository,
+            ItemRepository itemRepository) {
         this.authenticatedUserProvider = authenticatedUserProvider;
         this.almanaxDataProvider = almanaxDataProvider;
         this.almanaxRepository = almanaxRepository;
@@ -59,20 +58,20 @@ public class SyncAlmanaxUseCase implements SecuredUseCase {
     }
 
     public SyncReport execute(GameVersionData gameVersion) {
-        
+
         List<AlmanaxSyncData> external = almanaxDataProvider.fetchAll();
 
         Map<Long, Long> assetsIdCounts = external.stream()
-            .collect(Collectors.groupingBy(AlmanaxSyncData::getAssetId, Collectors.counting()));
+                .collect(Collectors.groupingBy(AlmanaxSyncData::getAssetId, Collectors.counting()));
 
         assetsIdCounts.entrySet().stream()
-            .filter(entry -> entry.getValue() > 1)
-            .forEach(entry -> logger.warn("Asset ID {} is duplicated {} times", entry.getKey(), entry.getValue()));
+                .filter(entry -> entry.getValue() > 1)
+                .forEach(entry -> logger.warn("Asset ID {} is duplicated {} times", entry.getKey(), entry.getValue()));
 
         List<Almanax> current = almanaxRepository.findAll();
 
         Map<Long, Almanax> currentByAssetId = current.stream()
-            .collect(Collectors.toMap(Almanax::getAssetId, item -> item));
+                .collect(Collectors.toMap(Almanax::getAssetId, item -> item));
 
         List<String> created = new java.util.ArrayList<>();
         List<String> updated = new java.util.ArrayList<>();
@@ -83,35 +82,32 @@ public class SyncAlmanaxUseCase implements SecuredUseCase {
 
             if (externalAlmanax.getItemId() != null) {
                 resolvedItemId = itemRepository
-                    .findByAssetId(externalAlmanax.getItemId(), gameVersion.getId())
-                    .map(Item::getId)
-                    .orElse(null);
+                        .findByAssetId(externalAlmanax.getItemId(), gameVersion.getId())
+                        .map(Item::getId)
+                        .orElse(null);
             }
 
             Almanax existing = currentByAssetId.get(externalAlmanax.getAssetId());
 
             if (existing == null) {
                 Almanax newAlmanax = Almanax.create(
-                    externalAlmanax.getAssetId(),
-                    externalAlmanax.getName(),
-                    externalAlmanax.getDescription(),
-                    externalAlmanax.getDates(),
-                    resolvedItemId,
-                    externalAlmanax.getItemQuantity()
-                );
+                        externalAlmanax.getAssetId(),
+                        externalAlmanax.getName(),
+                        externalAlmanax.getDescription(),
+                        externalAlmanax.getDates(),
+                        resolvedItemId,
+                        externalAlmanax.getItemQuantity());
                 Long saved = almanaxRepository.save(newAlmanax);
                 created.add("""
                         assetId=%d name=%s description=%s dates=%s id=%d
                         """.formatted(
-                                externalAlmanax.getAssetId(),
-                                externalAlmanax.getName(),
-                                externalAlmanax.getDescription(),
-                                externalAlmanax.getDates().toString(),
-                                resolvedItemId,
-                                externalAlmanax.getItemQuantity(),
-                                saved
-                            )
-                );
+                        externalAlmanax.getAssetId(),
+                        externalAlmanax.getName(),
+                        externalAlmanax.getDescription(),
+                        externalAlmanax.getDates().toString(),
+                        resolvedItemId,
+                        externalAlmanax.getItemQuantity(),
+                        saved));
                 continue;
             }
 
@@ -122,7 +118,7 @@ public class SyncAlmanaxUseCase implements SecuredUseCase {
             boolean itemQuantityChanged = !existing.getItemQuantity().equals(externalAlmanax.getItemQuantity());
 
             if (nameChanged || descriptionChanged || datesChanged || itemIdChanged || itemQuantityChanged) {
-                
+
                 String oldName = existing.getName();
                 String oldDescription = existing.getDescription();
                 List<String> oldDates = existing.getDates();
@@ -130,12 +126,11 @@ public class SyncAlmanaxUseCase implements SecuredUseCase {
                 Long oldItemQuantity = existing.getItemQuantity();
 
                 existing.update(
-                    externalAlmanax.getName(),
-                    externalAlmanax.getDescription(),
-                    externalAlmanax.getDates(),
-                    resolvedItemId,
-                    externalAlmanax.getItemQuantity()
-                );
+                        externalAlmanax.getName(),
+                        externalAlmanax.getDescription(),
+                        externalAlmanax.getDates(),
+                        resolvedItemId,
+                        externalAlmanax.getItemQuantity());
 
                 almanaxRepository.update(existing);
                 updated.add("""
@@ -147,27 +142,25 @@ public class SyncAlmanaxUseCase implements SecuredUseCase {
                         itemId : %d -> %d
                         itemQuantity : %d -> %d
                         """.formatted(
-                                existing.getId(),
-                                externalAlmanax.getAssetId(),
-                                oldName,
-                                externalAlmanax.getName(),
-                                oldDescription,
-                                externalAlmanax.getDescription(),
-                                oldDates.toString(),
-                                externalAlmanax.getDates().toString(),
-                                oldItemId,
-                                resolvedItemId,
-                                oldItemQuantity,
-                                externalAlmanax.getItemQuantity()
-                            )
-                );
+                        existing.getId(),
+                        externalAlmanax.getAssetId(),
+                        oldName,
+                        externalAlmanax.getName(),
+                        oldDescription,
+                        externalAlmanax.getDescription(),
+                        oldDates.toString(),
+                        externalAlmanax.getDates().toString(),
+                        oldItemId,
+                        resolvedItemId,
+                        oldItemQuantity,
+                        externalAlmanax.getItemQuantity()));
             }
         }
-        
+
         return new SyncReport(
-            "almanax",
-            "Almanax",
-            created,
-            updated);
+                "almanax",
+                "Almanax",
+                created,
+                updated);
     }
 }

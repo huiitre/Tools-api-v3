@@ -1,4 +1,4 @@
-package fr.huiitre.tools.application.dofus.gameversion;
+package fr.huiitre.tools.application.dofus.game;
 
 public class GameVersionData {
     private final Long id;
