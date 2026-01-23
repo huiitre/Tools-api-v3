@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import fr.huiitre.tools.application.core.module.command.CreateModuleCommand;
 import fr.huiitre.tools.application.core.module.ports.ModuleRepository;
-import fr.huiitre.tools.domain.core.module.Module;
+import fr.huiitre.tools.modules.core.module.domain.Module;
 
 /*
  * Classe de test du use case CreateModuleUseCase

@@ -1,29 +1,27 @@
 package fr.huiitre.tools.config.core.auth;
 
-import javax.sql.DataSource;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.mail.javamail.JavaMailSender;
 
-import fr.huiitre.tools.application.core.auth.EmailSender;
-import fr.huiitre.tools.application.core.auth.PasswordHasher;
-import fr.huiitre.tools.application.core.auth.RegisterUserUseCase;
-import fr.huiitre.tools.application.core.auth.UserEmailVerificationRepository;
-import fr.huiitre.tools.application.core.auth.UserPasswordResetRepository;
-import fr.huiitre.tools.application.core.role.ports.RoleRepository;
-import fr.huiitre.tools.application.core.role.ports.UserRoleRepository;
-import fr.huiitre.tools.application.core.user.ports.UserAuthProviderRepository;
-import fr.huiitre.tools.application.core.user.ports.UserCredentialsRepository;
-import fr.huiitre.tools.application.core.user.ports.UserRepository;
-import fr.huiitre.tools.infrastructure.auth.mail.AuthMailSenderService;
-import fr.huiitre.tools.infrastructure.core.user.PostgresUserAuthProviderRepository;
-import fr.huiitre.tools.infrastructure.core.user.PostgresUserCredentialsRepository;
-import fr.huiitre.tools.infrastructure.core.user.PostgresUserEmailVerificationRepository;
-import fr.huiitre.tools.infrastructure.core.user.PostgresUserPasswordResetRepository;
-import fr.huiitre.tools.infrastructure.core.user.PostgresUserRepository;
-import fr.huiitre.tools.infrastructure.security.password.BCryptPasswordHasher;
+import fr.huiitre.tools.modules.core.auth.application.ports.EmailSender;
+import fr.huiitre.tools.modules.core.auth.application.ports.PasswordHasher;
+import fr.huiitre.tools.modules.core.auth.application.ports.UserEmailVerificationRepository;
+import fr.huiitre.tools.modules.core.auth.application.ports.UserPasswordResetRepository;
+import fr.huiitre.tools.modules.core.role.application.ports.RoleRepository;
+import fr.huiitre.tools.modules.core.role.application.ports.UserRoleRepository;
+import fr.huiitre.tools.modules.core.user.application.ports.UserAuthProviderRepository;
+import fr.huiitre.tools.modules.core.user.application.ports.UserCredentialsRepository;
+import fr.huiitre.tools.modules.core.user.application.ports.UserRepository;
+import fr.huiitre.tools.modules.core.auth.application.usecase.RegisterUserUseCase;
+import fr.huiitre.tools.modules.core.auth.infrastructure.mail.AuthMailSenderService;
+import fr.huiitre.tools.modules.core.auth.infrastructure.password.BCryptPasswordHasher;
+import fr.huiitre.tools.modules.core.user.infrastructure.PostgresUserAuthProviderRepository;
+import fr.huiitre.tools.modules.core.user.infrastructure.PostgresUserCredentialsRepository;
+import fr.huiitre.tools.modules.core.user.infrastructure.PostgresUserEmailVerificationRepository;
+import fr.huiitre.tools.modules.core.user.infrastructure.PostgresUserPasswordResetRepository;
+import fr.huiitre.tools.modules.core.user.infrastructure.PostgresUserRepository;
 
 @Configuration
 public class AuthConfig {
@@ -72,8 +70,7 @@ public class AuthConfig {
 
     @Bean
     public EmailSender emailSender(
-        JavaMailSender mailSender
-    ) {
+            JavaMailSender mailSender) {
         return new AuthMailSenderService(mailSender);
     }
 

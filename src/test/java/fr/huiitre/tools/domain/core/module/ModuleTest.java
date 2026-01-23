@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
+import fr.huiitre.tools.modules.core.module.domain.Module;
+
 /*
  * Tests unitaires de l'entité métier Module
  *
@@ -28,10 +30,9 @@ class ModuleTest {
 
         // WHEN : création du module via la factory métier
         Module module = Module.create(
-            "DOFUS",
-            "Dofus",
-            "Module Dofus"
-        );
+                "DOFUS",
+                "Dofus",
+                "Module Dofus");
 
         // THEN : le module est correctement initialisé
         assertNotNull(module);
@@ -53,13 +54,11 @@ class ModuleTest {
     void should_throw_exception_when_code_is_null() {
 
         IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
-            () -> Module.create(
-                null,
-                "Dofus",
-                "Module Dofus"
-            )
-        );
+                IllegalArgumentException.class,
+                () -> Module.create(
+                        null,
+                        "Dofus",
+                        "Module Dofus"));
 
         assertEquals("CODE_REQUIRED", exception.getMessage());
     }
@@ -71,13 +70,11 @@ class ModuleTest {
     void should_throw_exception_when_code_is_blank() {
 
         IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
-            () -> Module.create(
-                "   ",
-                "Dofus",
-                "Module Dofus"
-            )
-        );
+                IllegalArgumentException.class,
+                () -> Module.create(
+                        "   ",
+                        "Dofus",
+                        "Module Dofus"));
 
         assertEquals("CODE_REQUIRED", exception.getMessage());
     }
@@ -89,13 +86,11 @@ class ModuleTest {
     void should_throw_exception_when_name_is_null() {
 
         IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
-            () -> Module.create(
-                "DOFUS",
-                null,
-                "Module Dofus"
-            )
-        );
+                IllegalArgumentException.class,
+                () -> Module.create(
+                        "DOFUS",
+                        null,
+                        "Module Dofus"));
 
         assertEquals("NAME_REQUIRED", exception.getMessage());
     }
@@ -107,13 +102,11 @@ class ModuleTest {
     void should_throw_exception_when_name_is_blank() {
 
         IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
-            () -> Module.create(
-                "DOFUS",
-                "",
-                "Module Dofus"
-            )
-        );
+                IllegalArgumentException.class,
+                () -> Module.create(
+                        "DOFUS",
+                        "",
+                        "Module Dofus"));
 
         assertEquals("NAME_REQUIRED", exception.getMessage());
     }
@@ -125,13 +118,11 @@ class ModuleTest {
     void should_throw_exception_when_description_is_null() {
 
         IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
-            () -> Module.create(
-                "DOFUS",
-                "Dofus",
-                null
-            )
-        );
+                IllegalArgumentException.class,
+                () -> Module.create(
+                        "DOFUS",
+                        "Dofus",
+                        null));
 
         assertEquals("DESCRIPTION_REQUIRED", exception.getMessage());
     }
@@ -143,13 +134,11 @@ class ModuleTest {
     void should_throw_exception_when_description_is_blank() {
 
         IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
-            () -> Module.create(
-                "DOFUS",
-                "Dofus",
-                ""
-            )
-        );
+                IllegalArgumentException.class,
+                () -> Module.create(
+                        "DOFUS",
+                        "Dofus",
+                        ""));
 
         assertEquals("DESCRIPTION_REQUIRED", exception.getMessage());
     }

@@ -6,10 +6,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import fr.huiitre.tools.application.todolist.todo.ports.TodoRepository;
-import fr.huiitre.tools.application.todolist.todolist.ports.TodolistRepository;
-import fr.huiitre.tools.infrastructure.todolist.todo.PostgresTodoRepository;
-import fr.huiitre.tools.infrastructure.todolist.todolist.PostgresTodolistRepository;
+import fr.huiitre.tools.modules.todolist.application.ports.TodoRepository;
+import fr.huiitre.tools.modules.todolist.application.ports.TodolistRepository;
+import fr.huiitre.tools.modules.todolist.infrastructure.PostgresTodoRepository;
+import fr.huiitre.tools.modules.todolist.infrastructure.PostgresTodolistRepository;
 
 @Configuration
 public class TodolistConfig {

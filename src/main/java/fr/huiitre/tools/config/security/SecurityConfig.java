@@ -1,8 +1,5 @@
 package fr.huiitre.tools.config.security;
 
-import fr.huiitre.tools.infrastructure.security.JwtAuthenticationFilter;
-import fr.huiitre.tools.infrastructure.security.JwtProvider;
-
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -13,9 +10,11 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 
-import fr.huiitre.tools.infrastructure.security.RestAccessDeniedHandler;
-import fr.huiitre.tools.infrastructure.security.RestAuthenticationEntryPoint;
-import fr.huiitre.tools.infrastructure.security.SecurityHeadersProperties;
+import fr.huiitre.tools.modules.core.security.infrastructure.JwtAuthenticationFilter;
+import fr.huiitre.tools.modules.core.security.infrastructure.JwtProvider;
+import fr.huiitre.tools.modules.core.security.infrastructure.RestAccessDeniedHandler;
+import fr.huiitre.tools.modules.core.security.infrastructure.RestAuthenticationEntryPoint;
+import fr.huiitre.tools.modules.core.security.infrastructure.SecurityHeadersProperties;
 
 @Configuration
 public class SecurityConfig {
@@ -28,86 +27,95 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain securityFilterChain(
-        HttpSecurity http,
-        JwtProvider jwtProvider
-    ) throws Exception {
+            HttpSecurity http,
+            JwtProvider jwtProvider) throws Exception {
 
-        /* ===============================
-           API STATELESS (JWT READY)
-           =============================== */
-        http.sessionManagement(sm ->
-            sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-        );
+        /*
+         * ===============================
+         * API STATELESS (JWT READY)
+         * ===============================
+         */
+        http.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        /* ===============================
-           CORS
-           =============================== */
+        /*
+         * ===============================
+         * CORS
+         * ===============================
+         */
         http.cors(Customizer.withDefaults());
 
-        /* ===============================
-           CSRF (API stateless)
-           =============================== */
+        /*
+         * ===============================
+         * CSRF (API stateless)
+         * ===============================
+         */
         http.csrf(csrf -> csrf.disable());
 
-        /* ===============================
-           HTTP SECURITY HEADERS
-           =============================== */
+        /*
+         * ===============================
+         * HTTP SECURITY HEADERS
+         * ===============================
+         */
         http.headers(headers -> headers
-            .contentTypeOptions(Customizer.withDefaults()) // X-Content-Type-Options: nosniff
-            .frameOptions(frame -> frame.deny())            // X-Frame-Options: DENY
-            .referrerPolicy(ref -> ref.policy(
-                ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER
-            ))
-            .contentSecurityPolicy(csp -> csp
-                .policyDirectives(headersProperties.getPolicy())
-            )
-        );
+                .contentTypeOptions(Customizer.withDefaults()) // X-Content-Type-Options: nosniff
+                .frameOptions(frame -> frame.deny()) // X-Frame-Options: DENY
+                .referrerPolicy(ref -> ref.policy(
+                        ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
+                .contentSecurityPolicy(csp -> csp
+                        .policyDirectives(headersProperties.getPolicy())));
 
-        /* ===============================
-           SECURITY ERROR HANDLING (401 / 403)
-           =============================== */
+        /*
+         * ===============================
+         * SECURITY ERROR HANDLING (401 / 403)
+         * ===============================
+         */
         http.exceptionHandling(ex -> ex
-            .authenticationEntryPoint(new RestAuthenticationEntryPoint())
-            .accessDeniedHandler(new RestAccessDeniedHandler())
-        );
+                .authenticationEntryPoint(new RestAuthenticationEntryPoint())
+                .accessDeniedHandler(new RestAccessDeniedHandler()));
 
-        /* ===============================
-           AUTHORIZATION RULES
-           =============================== */
+        /*
+         * ===============================
+         * AUTHORIZATION RULES
+         * ===============================
+         */
         http.authorizeHttpRequests(auth -> auth
-            /* .requestMatchers(
-                "/ping",
-                "/dev/jwt"
-            ).permitAll() */
-            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-            .requestMatchers(
-                "/auth/login",
-                "/auth/refresh",
-                "/auth/register",
-                "/auth/google",
-                "/auth/verify-email",
-                "/auth/password/reset-request",
-                "/auth/password/reset",
-                "/error",
-                "/api-docs/**",
-                "/swagger-ui/**",
-                "/v3/api-docs/**",
-                "/v3/api-docs/swagger-config"
-            ).permitAll()
-            .anyRequest().authenticated()
-        );
+                /*
+                 * .requestMatchers(
+                 * "/ping",
+                 * "/dev/jwt"
+                 * ).permitAll()
+                 */
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers(
+                        "/auth/login",
+                        "/auth/refresh",
+                        "/auth/register",
+                        "/auth/google",
+                        "/auth/verify-email",
+                        "/auth/password/reset-request",
+                        "/auth/password/reset",
+                        "/error",
+                        "/api-docs/**",
+                        "/swagger-ui/**",
+                        "/v3/api-docs/**",
+                        "/v3/api-docs/swagger-config")
+                .permitAll()
+                .anyRequest().authenticated());
 
-        /* ===============================
-           JWT AUTHENTICATION FILTER
-           =============================== */
+        /*
+         * ===============================
+         * JWT AUTHENTICATION FILTER
+         * ===============================
+         */
         http.addFilterBefore(
-            new JwtAuthenticationFilter(jwtProvider),
-            UsernamePasswordAuthenticationFilter.class
-        );
+                new JwtAuthenticationFilter(jwtProvider),
+                UsernamePasswordAuthenticationFilter.class);
 
-        /* ===============================
-           DISABLED LEGACY AUTH
-           =============================== */
+        /*
+         * ===============================
+         * DISABLED LEGACY AUTH
+         * ===============================
+         */
         // http.httpBasic(Customizer.withDefaults());
         http.formLogin(form -> form.disable());
 

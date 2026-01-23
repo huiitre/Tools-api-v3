@@ -5,14 +5,13 @@ import javax.sql.DataSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import fr.huiitre.tools.application.common.security.ports.CurrentUserProvider;
-import fr.huiitre.tools.application.common.security.ports.ModuleAuthorizationPort;
-import fr.huiitre.tools.application.common.security.ports.UserRoleProvider;
-// import fr.huiitre.tools.infrastructure.security.FakeModuleAuthorizationAdapter;
-import fr.huiitre.tools.infrastructure.security.PostgresModuleAuthorizationAdapter;
-import fr.huiitre.tools.infrastructure.security.PostgresUserRoleProvider;
-import fr.huiitre.tools.infrastructure.security.SpringSecurityCurrentUserProvider;
-import fr.huiitre.tools.infrastructure.security.aop.UseCaseAuthorizationAspect;
+import fr.huiitre.tools.modules.core.security.application.ports.CurrentUserProvider;
+import fr.huiitre.tools.modules.core.security.application.ports.ModuleAuthorizationPort;
+import fr.huiitre.tools.modules.core.security.application.ports.UserRoleProvider;
+import fr.huiitre.tools.modules.core.security.infrastructure.aop.UseCaseAuthorizationAspect;
+import fr.huiitre.tools.modules.core.security.infrastructure.PostgresModuleAuthorizationAdapter;
+import fr.huiitre.tools.modules.core.security.infrastructure.PostgresUserRoleProvider;
+import fr.huiitre.tools.modules.core.security.infrastructure.SpringSecurityCurrentUserProvider;
 
 @Configuration
 public class AuthorizationConfig {
@@ -30,15 +29,13 @@ public class AuthorizationConfig {
 
     @Bean
     public UseCaseAuthorizationAspect useCaseAuthorizationAspect(
-        ModuleAuthorizationPort moduleAuthorizationPort,
-        UserRoleProvider userRoleProvider,
-        CurrentUserProvider currentUserProvider
-    ) {
+            ModuleAuthorizationPort moduleAuthorizationPort,
+            UserRoleProvider userRoleProvider,
+            CurrentUserProvider currentUserProvider) {
         return new UseCaseAuthorizationAspect(
-            moduleAuthorizationPort,
-            userRoleProvider,
-            currentUserProvider
-        );
+                moduleAuthorizationPort,
+                userRoleProvider,
+                currentUserProvider);
     }
 
     @Bean

@@ -6,8 +6,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import fr.huiitre.tools.application.core.user_module.ports.UserModuleRoleRepository;
-import fr.huiitre.tools.infrastructure.core.user_module.PostgresUserModuleRoleRepository;
+import fr.huiitre.tools.modules.core.user_module.application.ports.UserModuleRoleRepository;
+import fr.huiitre.tools.modules.core.user_module.infrastructure.PostgresUserModuleRoleRepository;
 
 @Configuration
 public class UserModuleRoleConfig {
