@@ -41,7 +41,7 @@ public class DofusController {
 
     @GetMapping("/game-servers")
     public ResponseEntity<List<GameServerData>> getGameServers(
-            @RequestHeader(value = "X-Game-Version-Id", required = false) Long gameVersionId) {
+            @RequestHeader(value = "X-Game-Version-Id", required = true) Long gameVersionId) {
         return ResponseEntity.ok(getGameServersByVersionUseCase.execute(gameVersionId));
     }
 }

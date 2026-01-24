@@ -25,7 +25,8 @@ public class CorsConfig {
         cfg.setAllowedHeaders(List.of(
             "Authorization",
             "Content-Type",
-            "X-Game-Version-Id"
+            "X-Game-Version-Id",
+            "X-Game-Serve-Id"
         ));
         cfg.setAllowCredentials(true);
 
