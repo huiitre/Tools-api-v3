@@ -7,6 +7,8 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import fr.huiitre.tools.modules.dofus.almanax.application.ports.AlmanaxRepository;
 import fr.huiitre.tools.modules.dofus.almanax.infrastructure.PostgresAlmanaxRepository;
+import fr.huiitre.tools.modules.dofus.catalogue.application.ports.CatalogueItemRepository;
+import fr.huiitre.tools.modules.dofus.catalogue.infrastructure.PostgresCatalogueItemRepository;
 import fr.huiitre.tools.modules.dofus.game.application.ports.GameServerRepository;
 import fr.huiitre.tools.modules.dofus.game.application.ports.GameVersionRepository;
 import fr.huiitre.tools.modules.dofus.game.infrastructure.PostgresGameServerRepository;
@@ -59,6 +61,13 @@ public class DofusConfig {
         public ItemPriceRepository itemPriceRepository(
                         NamedParameterJdbcTemplate jdbcTemplate) {
                 return new PostgresItemPriceRepository(
+                                jdbcTemplate);
+        }
+
+        @Bean
+        public CatalogueItemRepository catalogueItemRepository(
+                        NamedParameterJdbcTemplate jdbcTemplate) {
+                return new PostgresCatalogueItemRepository(
                                 jdbcTemplate);
         }
 }
