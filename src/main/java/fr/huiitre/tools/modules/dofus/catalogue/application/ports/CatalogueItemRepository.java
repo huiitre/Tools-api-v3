@@ -18,4 +18,6 @@ public interface CatalogueItemRepository {
         Long userId,
         Long gameServerId
     );
+
+    public List<CatalogueItemDto> findRecipeByItemId(Long itemId);
 }

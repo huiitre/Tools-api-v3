@@ -7,10 +7,12 @@ import fr.huiitre.tools.modules.dofus.almanax.infrastructure.Dofus3AlmanaxDataPr
 import fr.huiitre.tools.modules.dofus.assets.application.ports.AlmanaxDataProvider;
 import fr.huiitre.tools.modules.dofus.assets.application.ports.ItemDataProvider;
 import fr.huiitre.tools.modules.dofus.assets.application.ports.ItemTypeDataProvider;
+import fr.huiitre.tools.modules.dofus.assets.application.ports.RecipeDataProvider;
 import fr.huiitre.tools.modules.dofus.assets.infrastructure.dofus3.Dofus3ItemDataProvider;
 import fr.huiitre.tools.modules.dofus.assets.infrastructure.dofus3.Dofus3ItemTypeDataProvider;
 import fr.huiitre.tools.modules.dofus.assets.infrastructure.dofus3.Dofus3LanguageDataProviderImpl;
 import fr.huiitre.tools.modules.dofus.assets.infrastructure.dofus3.Dofus3LocalAssetsReader;
+import fr.huiitre.tools.modules.dofus.assets.infrastructure.dofus3.Dofus3RecipeDataProvider;
 import fr.huiitre.tools.modules.dofus.sync.application.ports.Dofus3LanguageDataProvider;
 
 @Configuration
@@ -46,5 +48,11 @@ public class DofusSyncConfig {
             Dofus3LocalAssetsReader assetsReader,
             Dofus3LanguageDataProvider languageDataProvider) {
         return new Dofus3AlmanaxDataProvider(assetsReader, languageDataProvider);
+    }
+
+    @Bean
+    public RecipeDataProvider recipeDataProvider(
+            Dofus3LocalAssetsReader assetsReader) {
+        return new Dofus3RecipeDataProvider(assetsReader);
     }
 }

@@ -82,6 +82,18 @@ public final class CatalogueColumnsDefinition {
             ),
 
             new CatalogueColumnDto(
+                "quantity",
+                "Qté",
+                "Quantité requise",
+                true,
+                false,
+                false,
+                50,
+                40,
+                60
+            ),
+
+            new CatalogueColumnDto(
                 "description",
                 "Description",
                 "Description de l'objet",
@@ -116,9 +128,9 @@ public final class CatalogueColumnsDefinition {
                 true,
                 true,
                 false,
-                120,
-                110,
-                140
+                80,
+                70,
+                90
             ),
 
             new CatalogueColumnDto(
@@ -128,9 +140,9 @@ public final class CatalogueColumnsDefinition {
                 true,
                 true,
                 false,
-                120,
-                110,
-                140
+                80,
+                70,
+                90
             ),
 
             /* =========================
@@ -144,9 +156,9 @@ public final class CatalogueColumnsDefinition {
                 true,
                 true,
                 false,
-                130,
-                120,
-                160
+                90,
+                80,
+                100
             ),
 
             new CatalogueColumnDto(
@@ -156,9 +168,9 @@ public final class CatalogueColumnsDefinition {
                 true,
                 true,
                 false,
-                130,
-                120,
-                160
+                90,
+                80,
+                100
             ),
 
             new CatalogueColumnDto(
@@ -168,9 +180,9 @@ public final class CatalogueColumnsDefinition {
                 true,
                 true,
                 false,
-                130,
-                120,
-                160
+                90,
+                80,
+                100
             ),
 
             new CatalogueColumnDto(
@@ -180,9 +192,9 @@ public final class CatalogueColumnsDefinition {
                 true,
                 true,
                 false,
-                130,
-                120,
-                160
+                90,
+                80,
+                100
             )
         );
     }

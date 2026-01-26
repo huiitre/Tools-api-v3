@@ -22,6 +22,7 @@ import fr.huiitre.tools.modules.core.role.domain.RoleCode;
 import fr.huiitre.tools.modules.dofus.game.application.view.GameVersionData;
 import fr.huiitre.tools.modules.dofus.sync.application.ports.Dofus3LanguageDataProvider;
 import fr.huiitre.tools.modules.dofus.sync.application.usecase.almanax.SyncAlmanaxUseCase;
+import fr.huiitre.tools.modules.dofus.sync.application.usecase.recipe.SyncRecipesUseCase;
 
 @Service
 @Transactional
@@ -40,6 +41,7 @@ public class SyncDofus3DataUseCase implements SecuredUseCase {
     private final SyncItemTypesUseCase syncItemTypesUseCase;
     private final SyncItemUseCase syncItemUseCase;
     private final SyncAlmanaxUseCase syncAlmanaxUseCase;
+    private final SyncRecipesUseCase syncRecipeUseCase;
 
     public SyncDofus3DataUseCase(
             ReportFileGenerator reportFileGenerator,
@@ -47,13 +49,15 @@ public class SyncDofus3DataUseCase implements SecuredUseCase {
             SyncItemTypesUseCase syncItemTypesUseCase,
             SyncItemUseCase syncItemDataUseCase,
             Dofus3LanguageDataProvider languageDataProvider,
-            SyncAlmanaxUseCase syncAlmanaxUseCase) {
+            SyncAlmanaxUseCase syncAlmanaxUseCase,
+            SyncRecipesUseCase syncRecipeUseCase) {
         this.reportFileGenerator = reportFileGenerator;
         this.mailSenderService = mailSenderService;
         this.syncItemTypesUseCase = syncItemTypesUseCase;
         this.syncItemUseCase = syncItemDataUseCase;
         this.languageDataProvider = languageDataProvider;
         this.syncAlmanaxUseCase = syncAlmanaxUseCase;
+        this.syncRecipeUseCase = syncRecipeUseCase;
     }
 
     @Override
@@ -81,9 +85,14 @@ public class SyncDofus3DataUseCase implements SecuredUseCase {
         SyncReport itemReport = syncItemUseCase.execute(gameVersion);
 
         // =====================================================
-        // ITEMS
+        // ALMANAX
         // =====================================================
         SyncReport almanaxReport = syncAlmanaxUseCase.execute(gameVersion);
+
+        // =====================================================
+        // RECIPES
+        // =====================================================
+        SyncReport recipeReport = syncRecipeUseCase.execute(gameVersion);
 
         // =====================================================
         // FUTUR : AUTRES JSON
@@ -165,6 +174,31 @@ public class SyncDofus3DataUseCase implements SecuredUseCase {
                     buildAttachmentHeader(gameVersion, almanaxReport)
                             + "\n"
                             + almanaxReport.toAttachmentContent());
+            attachments.add(new Attachment(filename, file));
+            body.append("Détails       : voir pièce jointe \"")
+                    .append(filename)
+                    .append("\"\n\n");
+        }
+
+        // ------------- RECIPES -------------
+        globalCreated += recipeReport.createdCount();
+        globalUpdated += recipeReport.updatedCount();
+
+        body.append(recipeReport.label()).append('\n');
+        body.append("Ajouts        : ").append(recipeReport.createdCount()).append('\n');
+        body.append("Modifications : ").append(recipeReport.updatedCount()).append('\n');
+
+        if (recipeReport.totalChanges() == 0) {
+            body.append("Détails       : aucun changement\n\n");
+        } else if (recipeReport.totalChanges() <= INLINE_LIMIT) {
+            body.append('\n').append(recipeReport.toInlineDetails()).append('\n');
+        } else {
+            String filename = buildAttachmentFilename(gameVersion, recipeReport.code());
+            Path file = reportFileGenerator.generate(
+                    filename,
+                    buildAttachmentHeader(gameVersion, recipeReport)
+                            + "\n"
+                            + recipeReport.toAttachmentContent());
             attachments.add(new Attachment(filename, file));
             body.append("Détails       : voir pièce jointe \"")
                     .append(filename)

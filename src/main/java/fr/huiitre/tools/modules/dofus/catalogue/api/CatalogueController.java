@@ -5,14 +5,18 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import fr.huiitre.tools.modules.dofus.catalogue.api.dto.CatalogueSearchQuery;
 import fr.huiitre.tools.modules.dofus.catalogue.application.dto.CatalogueColumnDto;
+import fr.huiitre.tools.modules.dofus.catalogue.application.dto.CatalogueItemDto;
 import fr.huiitre.tools.modules.dofus.catalogue.application.dto.CatalogueSearchResponse;
+import fr.huiitre.tools.modules.dofus.catalogue.application.ports.CatalogueItemRepository;
 import fr.huiitre.tools.modules.dofus.catalogue.application.usecase.GetCatalogueColumnsUseCase;
+import fr.huiitre.tools.modules.dofus.catalogue.application.usecase.GetCatalogueRecipeItemUseCase;
 import fr.huiitre.tools.modules.dofus.catalogue.application.usecase.SearchCatalogueItemsUseCase;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -21,12 +25,15 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RequestMapping("/dofus/catalogue")
 public class CatalogueController {
 
+    private final GetCatalogueRecipeItemUseCase getCatalogueRecipeItemUseCase;
+
     private final GetCatalogueColumnsUseCase getCatalogueColumnsUseCase;
     private final SearchCatalogueItemsUseCase searchCatalogueItemsUseCase;
 
-    public CatalogueController(GetCatalogueColumnsUseCase getCatalogueColumnsUseCase, SearchCatalogueItemsUseCase searchCatalogueItemsUseCase) {
+    public CatalogueController(GetCatalogueColumnsUseCase getCatalogueColumnsUseCase, SearchCatalogueItemsUseCase searchCatalogueItemsUseCase, GetCatalogueRecipeItemUseCase getCatalogueRecipeItemUseCase) {
         this.getCatalogueColumnsUseCase = getCatalogueColumnsUseCase;
         this.searchCatalogueItemsUseCase = searchCatalogueItemsUseCase;
+        this.getCatalogueRecipeItemUseCase = getCatalogueRecipeItemUseCase;
     }
 
     @GetMapping("/search")
@@ -45,4 +52,13 @@ public class CatalogueController {
             getCatalogueColumnsUseCase.execute()
         );
     }
+
+    @GetMapping("/item/{itemId}/recipe")
+    public ResponseEntity<List<CatalogueItemDto>> getItemRecipe(
+        @PathVariable Long itemId
+) {
+    return ResponseEntity.ok(
+        getCatalogueRecipeItemUseCase.execute(itemId)
+    );
+}
 }

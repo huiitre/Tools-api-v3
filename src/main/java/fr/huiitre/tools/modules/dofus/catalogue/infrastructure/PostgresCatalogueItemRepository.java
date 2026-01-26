@@ -30,7 +30,20 @@ public class PostgresCatalogueItemRepository implements CatalogueItemRepository 
             rs.getString("name"),
             rs.getString("description"),
             rs.getLong("level"),
-            rs.getBoolean("has_recipe")
+            rs.getBoolean("has_recipe"),
+            null
+        );
+
+    private static final RowMapper<CatalogueItemDto> CATALOGUE_INGREDIENT_ROW_MAPPER =
+        (rs, rowNum) -> new CatalogueItemDto(
+            rs.getLong("id"),
+            rs.getLong("asset_id"),
+            rs.getString("type"),
+            rs.getString("name"),
+            rs.getString("description"),
+            rs.getLong("level"),
+            rs.getBoolean("has_recipe"),
+            rs.getLong("quantity")
         );
 
     /**
@@ -133,5 +146,37 @@ public class PostgresCatalogueItemRepository implements CatalogueItemRepository 
             .addValue("qLike", qLike);
 
         return jdbcTemplate.queryForObject(sql, params, Long.class);
+    }
+
+    @Override
+    public List<CatalogueItemDto> findRecipeByItemId(Long itemId) {
+        String sql = """
+            SELECT
+                i.id,
+                i.asset_id,
+                it.name AS type,
+                i.name,
+                i.description,
+                i.level,
+
+                EXISTS (
+                    SELECT 1
+                    FROM tools_dofus.recipe r
+                    WHERE r.item_id = i.id
+                ) AS has_recipe,
+
+                r.quantity
+
+            FROM tools_dofus.item i
+            LEFT JOIN tools_dofus.item_type it ON it.id = i.item_type_id
+
+            INNER JOIN tools_dofus.recipe r ON r.ingredient_id = i.id
+            WHERE r.item_id = :itemId
+        """;
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("itemId", itemId);
+
+        return jdbcTemplate.query(sql, params, CATALOGUE_INGREDIENT_ROW_MAPPER);
     }
 }

@@ -13,6 +13,8 @@ public class CatalogueItemDto {
     private final String description;
     private final Long level;
 
+    private final Long quantity;
+
     private List<ItemImageDto> images;
 
     private final boolean hasRecipe;
@@ -24,7 +26,8 @@ public class CatalogueItemDto {
         String name,
         String description,
         Long level,
-        boolean hasRecipe
+        boolean hasRecipe,
+        Long quantity
     ) {
         this.id = id;
         this.assetId = assetId;
@@ -33,6 +36,7 @@ public class CatalogueItemDto {
         this.description = description;
         this.level = level;
         this.hasRecipe = hasRecipe;
+        this.quantity = quantity;
     }
 
     public long getId() {
@@ -69,5 +73,9 @@ public class CatalogueItemDto {
 
     public boolean isHasRecipe() {
         return hasRecipe;
+    }
+
+    public Long getQuantity() {
+        return quantity;
     }
 }

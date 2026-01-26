@@ -19,6 +19,8 @@ import fr.huiitre.tools.modules.dofus.itemtype.application.ports.ItemTypeReposit
 import fr.huiitre.tools.modules.dofus.itemtype.infrastructure.PostgresItemTypeRepository;
 import fr.huiitre.tools.modules.dofus.pricing.application.ports.ItemPriceRepository;
 import fr.huiitre.tools.modules.dofus.pricing.infrastructure.PostgresItemPriceRepository;
+import fr.huiitre.tools.modules.dofus.recipe.application.ports.RecipeRepository;
+import fr.huiitre.tools.modules.dofus.recipe.infrastructure.PostgresRecipeRepository;
 
 @Configuration
 public class DofusConfig {
@@ -68,6 +70,13 @@ public class DofusConfig {
         public CatalogueItemRepository catalogueItemRepository(
                         NamedParameterJdbcTemplate jdbcTemplate) {
                 return new PostgresCatalogueItemRepository(
+                                jdbcTemplate);
+        }
+
+        @Bean
+        public RecipeRepository recipeRepository(
+                        JdbcTemplate jdbcTemplate) {
+                return new PostgresRecipeRepository(
                                 jdbcTemplate);
         }
 }
