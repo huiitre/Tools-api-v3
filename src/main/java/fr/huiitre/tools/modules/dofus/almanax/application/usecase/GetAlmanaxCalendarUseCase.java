@@ -24,7 +24,7 @@ import fr.huiitre.tools.modules.dofus.item.application.usecase.GetItemUseCase;
 import fr.huiitre.tools.modules.dofus.item.application.view.ItemView;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 public class GetAlmanaxCalendarUseCase implements SecuredUseCase {
 
     private final AlmanaxRepository almanaxRepository;

@@ -14,7 +14,7 @@ import fr.huiitre.tools.modules.dofus.pricing.application.ports.ItemPriceReposit
 import fr.huiitre.tools.modules.dofus.pricing.application.view.ItemPriceDto;
 
 @Service
-@Transactional
+@Transactional(readOnly = true)
 public class GetItemPricesUseCase implements SecuredUseCase {
 
     private final AuthenticatedUserProvider authenticatedUserProvider;
