@@ -24,6 +24,7 @@ public class PostgresCatalogueItemRepository implements CatalogueItemRepository 
 
     private static final RowMapper<CatalogueItemDto> CATALOGUE_ITEM_DTO_ROW_MAPPER =
         (rs, rowNum) -> new CatalogueItemDto(
+            null,
             rs.getLong("id"),
             rs.getLong("asset_id"),
             rs.getString("type"),
@@ -36,6 +37,7 @@ public class PostgresCatalogueItemRepository implements CatalogueItemRepository 
 
     private static final RowMapper<CatalogueItemDto> CATALOGUE_INGREDIENT_ROW_MAPPER =
         (rs, rowNum) -> new CatalogueItemDto(
+            rs.getLong("parent_item_id"),
             rs.getLong("id"),
             rs.getLong("asset_id"),
             rs.getString("type"),
@@ -81,6 +83,8 @@ public class PostgresCatalogueItemRepository implements CatalogueItemRepository 
         WHERE (
             CAST(:qLike AS TEXT) IS NULL
             OR i.name ILIKE :qLike
+            OR CAST(i.id AS TEXT) = :qExact
+            OR CAST(i.asset_id AS TEXT) = :qExact
             -- OR i.description ILIKE :qLike
         )
         """;
@@ -101,21 +105,27 @@ public class PostgresCatalogueItemRepository implements CatalogueItemRepository 
 
         String orderBy = hasSort
             ? " ORDER BY " + SORT_COLUMNS.get(query.getSort()) + " " +
-              (query.getDir() == CatalogueSearchQuery.Direction.DESC ? "DESC" : "ASC") +
-              ", i.id ASC"
+            (query.getDir() == CatalogueSearchQuery.Direction.DESC ? "DESC" : "ASC") +
+            ", i.id ASC"
             : " ORDER BY i.id ASC";
-
-        logger.info("Ligne #90 || orderBy : {}", orderBy);
 
         String sql = BASE_QUERY + orderBy + " LIMIT :limit OFFSET :offset";
 
+        String q = query.getQ();
+
         String qLike =
-            query.getQ() == null || query.getQ().isBlank()
+            q == null || q.isBlank()
                 ? null
-                : "%" + query.getQ() + "%";
+                : "%" + q + "%";
+
+        String qExact =
+            q == null || q.isBlank()
+                ? null
+                : q;
 
         MapSqlParameterSource params = new MapSqlParameterSource()
             .addValue("qLike", qLike)
+            .addValue("qExact", qExact)
             .addValue("limit", pageSize)
             .addValue("offset", offset);
 
@@ -135,15 +145,21 @@ public class PostgresCatalogueItemRepository implements CatalogueItemRepository 
             ) sub
         """;
 
-        logger.info("Ligne #123 || sql : {}", sql);
+        String q = query.getQ();
 
         String qLike =
-            query.getQ() == null || query.getQ().isBlank()
+            q == null || q.isBlank()
                 ? null
-                : "%" + query.getQ() + "%";
+                : "%" + q + "%";
+
+        String qExact =
+            q == null || q.isBlank()
+                ? null
+                : q;
 
         MapSqlParameterSource params = new MapSqlParameterSource()
-            .addValue("qLike", qLike);
+            .addValue("qLike", qLike)
+            .addValue("qExact", qExact);
 
         return jdbcTemplate.queryForObject(sql, params, Long.class);
     }
@@ -152,6 +168,7 @@ public class PostgresCatalogueItemRepository implements CatalogueItemRepository 
     public List<CatalogueItemDto> findRecipeByItemId(Long itemId) {
         String sql = """
             SELECT
+                r.item_id as parent_item_id,
                 i.id,
                 i.asset_id,
                 it.name AS type,

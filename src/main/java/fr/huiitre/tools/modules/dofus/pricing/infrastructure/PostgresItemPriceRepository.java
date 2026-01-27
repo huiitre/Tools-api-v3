@@ -18,18 +18,29 @@ public class PostgresItemPriceRepository implements ItemPriceRepository {
     }
 
     private static final RowMapper<ItemPriceDto> ITEM_PRICE_DTO_ROW_MAPPER =
-        (rs, rowNum) -> new ItemPriceDto(
-            rs.getLong("item_id"),
+        (rs, rowNum) -> {
 
-            rs.getLong("user_price"),
-            rs.getLong("community_average_price"),
-            rs.getLong("last_updated_price"),
+            java.sql.Array sqlArray = rs.getArray("parent_item_ids");
+            Long[] parentItemIds = null;
 
-            rs.getLong("craft_user_price"),
-            rs.getLong("craft_community_price"),
-            rs.getLong("craft_last_price"),
-            rs.getLong("craft_calculated_price")
-        );
+            if (sqlArray != null) {
+                parentItemIds = (Long[]) sqlArray.getArray();
+            }
+
+            return new ItemPriceDto(
+                rs.getLong("item_id"),
+                parentItemIds,
+
+                rs.getLong("user_price"),
+                rs.getLong("community_average_price"),
+                rs.getLong("last_updated_price"),
+
+                rs.getLong("craft_user_price"),
+                rs.getLong("craft_community_price"),
+                rs.getLong("craft_last_price"),
+                rs.getLong("craft_calculated_price")
+            );
+        };
 
     @Override
     public List<ItemPriceDto> findPricesByItemIds(
@@ -41,21 +52,58 @@ public class PostgresItemPriceRepository implements ItemPriceRepository {
         String sql = """
             SELECT
                 i.id AS item_id,
+                parent.parent_item_ids,
 
-                /* PRIX DIRECTS */
+                /* =========================
+                PRIX DIRECTS
+                ========================= */
+
                 COALESCE(up.price, 0)::bigint AS user_price,
                 COALESCE(cp.avg_price, 0)::bigint AS community_average_price,
                 COALESCE(lp.price, 0)::bigint AS last_updated_price,
 
-                /* CRAFT — UNIQUEMENT SI RECETTE */
+                /* =========================
+                CRAFT — USER
+                (craft enfant si existe, sinon PU)
+                ========================= */
+
                 CASE WHEN has_recipe THEN COALESCE(cu.price, 0)::bigint ELSE 0 END AS craft_user_price,
+
+                /* =========================
+                CRAFT — COMMU
+                ========================= */
+
                 CASE WHEN has_recipe THEN COALESCE(cc.price, 0)::bigint ELSE 0 END AS craft_community_price,
+
+                /* =========================
+                CRAFT — DERNIER
+                ========================= */
+
                 CASE WHEN has_recipe THEN COALESCE(cl.price, 0)::bigint ELSE 0 END AS craft_last_price,
+
+                /* =========================
+                CRAFT — BEST
+                (PU ou craft, peu importe la source)
+                ========================= */
+
                 CASE WHEN has_recipe THEN COALESCE(cbest.price, 0)::bigint ELSE 0 END AS craft_calculated_price
 
             FROM tools_dofus.item i
 
-            /* Détection recette */
+            /* =========================
+            PARENTS
+            ========================= */
+
+            LEFT JOIN LATERAL (
+                SELECT ARRAY_AGG(r.item_id) AS parent_item_ids
+                FROM tools_dofus.recipe r
+                WHERE r.ingredient_id = i.id
+            ) parent ON TRUE
+
+            /* =========================
+            HAS RECIPE
+            ========================= */
+
             LEFT JOIN LATERAL (
                 SELECT EXISTS (
                     SELECT 1
@@ -64,91 +112,265 @@ public class PostgresItemPriceRepository implements ItemPriceRepository {
                 ) AS has_recipe
             ) rflag ON TRUE
 
-            /* PRIX UTILISATEUR */
+            /* =========================
+            PU USER
+            ========================= */
+
             LEFT JOIN LATERAL (
                 SELECT price
                 FROM tools_dofus.item_price_user
                 WHERE item_id = i.id
-                  AND user_id = :userId
-                  AND game_server_id = :serverId
+                AND user_id = :userId
+                AND game_server_id = :serverId
                 ORDER BY created_at DESC
                 LIMIT 1
             ) up ON TRUE
 
-            /* MOYENNE COMMU */
+            /* =========================
+            PU COMMU
+            ========================= */
+
             LEFT JOIN LATERAL (
                 SELECT AVG(price) AS avg_price
                 FROM tools_dofus.item_price_user
                 WHERE item_id = i.id
-                  AND game_server_id = :serverId
+                AND game_server_id = :serverId
             ) cp ON TRUE
 
-            /* DERNIER PRIX GLOBAL */
+            /* =========================
+            PU LAST
+            ========================= */
+
             LEFT JOIN LATERAL (
                 SELECT price
                 FROM tools_dofus.item_price_user
                 WHERE item_id = i.id
-                  AND game_server_id = :serverId
+                AND game_server_id = :serverId
                 ORDER BY created_at DESC, id DESC
                 LIMIT 1
             ) lp ON TRUE
 
-            /* CRAFT — USER */
+            /* =========================
+            CRAFT USER (PU ou craft enfant)
+            ========================= */
+
             LEFT JOIN LATERAL (
-                SELECT SUM(r.quantity * COALESCE(p.price, 0)) AS price
+                SELECT SUM(
+                    r.quantity * COALESCE(
+                        lvl2.price,
+                        lvl1.price,
+                        pu.price,
+                        0
+                    )
+                ) AS price
                 FROM tools_dofus.recipe r
+
+                /* craft niveau 1 */
+                LEFT JOIN LATERAL (
+                    SELECT SUM(rr.quantity * p.price) AS price
+                    FROM tools_dofus.recipe rr
+                    LEFT JOIN LATERAL (
+                        SELECT price
+                        FROM tools_dofus.item_price_user
+                        WHERE item_id = rr.ingredient_id
+                        AND user_id = :userId
+                        AND game_server_id = :serverId
+                        ORDER BY created_at DESC
+                        LIMIT 1
+                    ) p ON TRUE
+                    WHERE rr.item_id = r.ingredient_id
+                ) lvl1 ON TRUE
+
+                /* craft niveau 2 */
+                LEFT JOIN LATERAL (
+                    SELECT SUM(rr2.quantity * p2.price) AS price
+                    FROM tools_dofus.recipe rr1
+                    JOIN tools_dofus.recipe rr2 ON rr2.item_id = rr1.ingredient_id
+                    LEFT JOIN LATERAL (
+                        SELECT price
+                        FROM tools_dofus.item_price_user
+                        WHERE item_id = rr2.ingredient_id
+                        AND user_id = :userId
+                        AND game_server_id = :serverId
+                        ORDER BY created_at DESC
+                        LIMIT 1
+                    ) p2 ON TRUE
+                    WHERE rr1.item_id = r.ingredient_id
+                ) lvl2 ON TRUE
+
+                /* PU fallback */
                 LEFT JOIN LATERAL (
                     SELECT price
                     FROM tools_dofus.item_price_user
                     WHERE item_id = r.ingredient_id
-                      AND user_id = :userId
-                      AND game_server_id = :serverId
+                    AND user_id = :userId
+                    AND game_server_id = :serverId
                     ORDER BY created_at DESC
                     LIMIT 1
-                ) p ON TRUE
+                ) pu ON TRUE
+
                 WHERE r.item_id = i.id
             ) cu ON TRUE
 
-            /* CRAFT — COMMU */
+            /* =========================
+            CRAFT COMMU
+            ========================= */
+
             LEFT JOIN LATERAL (
-                SELECT SUM(r.quantity * COALESCE(p.avg_price, 0)) AS price
+                SELECT SUM(
+                    r.quantity * COALESCE(
+                        lvl2.price,
+                        lvl1.price,
+                        pu.avg_price,
+                        0
+                    )
+                ) AS price
                 FROM tools_dofus.recipe r
+
+                LEFT JOIN LATERAL (
+                    SELECT SUM(rr.quantity * p.avg_price) AS price
+                    FROM tools_dofus.recipe rr
+                    LEFT JOIN LATERAL (
+                        SELECT AVG(price) AS avg_price
+                        FROM tools_dofus.item_price_user
+                        WHERE item_id = rr.ingredient_id
+                        AND game_server_id = :serverId
+                    ) p ON TRUE
+                    WHERE rr.item_id = r.ingredient_id
+                ) lvl1 ON TRUE
+
+                LEFT JOIN LATERAL (
+                    SELECT SUM(rr2.quantity * p2.avg_price) AS price
+                    FROM tools_dofus.recipe rr1
+                    JOIN tools_dofus.recipe rr2 ON rr2.item_id = rr1.ingredient_id
+                    LEFT JOIN LATERAL (
+                        SELECT AVG(price) AS avg_price
+                        FROM tools_dofus.item_price_user
+                        WHERE item_id = rr2.ingredient_id
+                        AND game_server_id = :serverId
+                    ) p2 ON TRUE
+                    WHERE rr1.item_id = r.ingredient_id
+                ) lvl2 ON TRUE
+
                 LEFT JOIN LATERAL (
                     SELECT AVG(price) AS avg_price
                     FROM tools_dofus.item_price_user
                     WHERE item_id = r.ingredient_id
-                      AND game_server_id = :serverId
-                ) p ON TRUE
+                    AND game_server_id = :serverId
+                ) pu ON TRUE
+
                 WHERE r.item_id = i.id
             ) cc ON TRUE
 
-            /* CRAFT — DERNIER */
+            /* =========================
+            CRAFT LAST
+            ========================= */
+
             LEFT JOIN LATERAL (
-                SELECT SUM(r.quantity * COALESCE(p.price, 0)) AS price
+                SELECT SUM(
+                    r.quantity * COALESCE(
+                        lvl2.price,
+                        lvl1.price,
+                        pu.price,
+                        0
+                    )
+                ) AS price
                 FROM tools_dofus.recipe r
+
+                LEFT JOIN LATERAL (
+                    SELECT SUM(rr.quantity * p.price) AS price
+                    FROM tools_dofus.recipe rr
+                    LEFT JOIN LATERAL (
+                        SELECT price
+                        FROM tools_dofus.item_price_user
+                        WHERE item_id = rr.ingredient_id
+                        AND game_server_id = :serverId
+                        ORDER BY created_at DESC, id DESC
+                        LIMIT 1
+                    ) p ON TRUE
+                    WHERE rr.item_id = r.ingredient_id
+                ) lvl1 ON TRUE
+
+                LEFT JOIN LATERAL (
+                    SELECT SUM(rr2.quantity * p2.price) AS price
+                    FROM tools_dofus.recipe rr1
+                    JOIN tools_dofus.recipe rr2 ON rr2.item_id = rr1.ingredient_id
+                    LEFT JOIN LATERAL (
+                        SELECT price
+                        FROM tools_dofus.item_price_user
+                        WHERE item_id = rr2.ingredient_id
+                        AND game_server_id = :serverId
+                        ORDER BY created_at DESC, id DESC
+                        LIMIT 1
+                    ) p2 ON TRUE
+                    WHERE rr1.item_id = r.ingredient_id
+                ) lvl2 ON TRUE
+
                 LEFT JOIN LATERAL (
                     SELECT price
                     FROM tools_dofus.item_price_user
                     WHERE item_id = r.ingredient_id
-                      AND game_server_id = :serverId
+                    AND game_server_id = :serverId
                     ORDER BY created_at DESC, id DESC
                     LIMIT 1
-                ) p ON TRUE
+                ) pu ON TRUE
+
                 WHERE r.item_id = i.id
             ) cl ON TRUE
 
-            /* CRAFT — BEST (fallback simple = dernier) */
+            /* =========================
+            CRAFT BEST (PU OU CRAFT, PEU IMPORTE)
+            ========================= */
+
             LEFT JOIN LATERAL (
-                SELECT SUM(r.quantity * COALESCE(p.price, 0)) AS price
+                SELECT SUM(
+                    r.quantity * COALESCE(
+                        lvl2.price,
+                        lvl1.price,
+                        pu.price,
+                        0
+                    )
+                ) AS price
                 FROM tools_dofus.recipe r
+
+                LEFT JOIN LATERAL (
+                    SELECT SUM(rr.quantity * p.price) AS price
+                    FROM tools_dofus.recipe rr
+                    LEFT JOIN LATERAL (
+                        SELECT price
+                        FROM tools_dofus.item_price_user
+                        WHERE item_id = rr.ingredient_id
+                        AND game_server_id = :serverId
+                        ORDER BY created_at DESC, id DESC
+                        LIMIT 1
+                    ) p ON TRUE
+                    WHERE rr.item_id = r.ingredient_id
+                ) lvl1 ON TRUE
+
+                LEFT JOIN LATERAL (
+                    SELECT SUM(rr2.quantity * p2.price) AS price
+                    FROM tools_dofus.recipe rr1
+                    JOIN tools_dofus.recipe rr2 ON rr2.item_id = rr1.ingredient_id
+                    LEFT JOIN LATERAL (
+                        SELECT price
+                        FROM tools_dofus.item_price_user
+                        WHERE item_id = rr2.ingredient_id
+                        AND game_server_id = :serverId
+                        ORDER BY created_at DESC, id DESC
+                        LIMIT 1
+                    ) p2 ON TRUE
+                    WHERE rr1.item_id = r.ingredient_id
+                ) lvl2 ON TRUE
+
                 LEFT JOIN LATERAL (
                     SELECT price
                     FROM tools_dofus.item_price_user
                     WHERE item_id = r.ingredient_id
-                      AND game_server_id = :serverId
+                    AND game_server_id = :serverId
                     ORDER BY created_at DESC, id DESC
                     LIMIT 1
-                ) p ON TRUE
+                ) pu ON TRUE
+
                 WHERE r.item_id = i.id
             ) cbest ON TRUE
 

@@ -6,6 +6,7 @@ import fr.huiitre.tools.modules.dofus.item.application.view.ItemImageDto;
 
 public class CatalogueItemDto {
 
+    private final Long parentItemId;
     private final long id;
     private final long assetId;
     private final String type;
@@ -20,6 +21,7 @@ public class CatalogueItemDto {
     private final boolean hasRecipe;
 
     public CatalogueItemDto(
+        Long parentItemId,
         long id,
         long assetId,
         String type,
@@ -29,6 +31,7 @@ public class CatalogueItemDto {
         boolean hasRecipe,
         Long quantity
     ) {
+        this.parentItemId = parentItemId;
         this.id = id;
         this.assetId = assetId;
         this.type = type;
@@ -37,6 +40,10 @@ public class CatalogueItemDto {
         this.level = level;
         this.hasRecipe = hasRecipe;
         this.quantity = quantity;
+    }
+
+    public Long getParentItemId() {
+        return parentItemId;
     }
 
     public long getId() {

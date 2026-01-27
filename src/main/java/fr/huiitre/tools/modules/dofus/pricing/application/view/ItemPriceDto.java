@@ -3,6 +3,7 @@ package fr.huiitre.tools.modules.dofus.pricing.application.view;
 public class ItemPriceDto {
 
     private final Long itemId;
+    private final Long[] parentItemIds;
 
     /* prix directs */
     private final Long userPrice;
@@ -17,6 +18,7 @@ public class ItemPriceDto {
 
     public ItemPriceDto(
         Long itemId,
+        Long[] parentItemIds,
         Long userPrice,
         Long communityAveragePrice,
         Long lastUpdatedPrice,
@@ -26,6 +28,7 @@ public class ItemPriceDto {
         Long craftCalculatedPrice
     ) {
         this.itemId = itemId;
+        this.parentItemIds = parentItemIds;
         this.userPrice = userPrice;
         this.communityAveragePrice = communityAveragePrice;
         this.lastUpdatedPrice = lastUpdatedPrice;
@@ -37,6 +40,10 @@ public class ItemPriceDto {
 
     public Long getItemId() {
         return itemId;
+    }
+
+    public Long[] getParentItemIds() {
+        return parentItemIds;
     }
 
     public Long getUserPrice() {
