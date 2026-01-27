@@ -10,10 +10,13 @@ import fr.huiitre.tools.modules.dofus.pricing.application.usecase.GetItemPricesU
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 
+import fr.huiitre.tools.modules.dofus.pricing.api.dto.ItemPricesBatchRequest;
 import fr.huiitre.tools.modules.dofus.pricing.api.dto.ItemPricesRequest;
+import fr.huiitre.tools.modules.dofus.pricing.application.usecase.UpdateItemPricesUseCase;
 import fr.huiitre.tools.modules.dofus.pricing.application.view.ItemPriceDto;
 
 
@@ -23,9 +26,11 @@ import fr.huiitre.tools.modules.dofus.pricing.application.view.ItemPriceDto;
 public class ItemPricesController {
     
     private final GetItemPricesUseCase getItemPricesUseCase;
+    private final UpdateItemPricesUseCase updateItemPricesUseCase;
 
-    public ItemPricesController(GetItemPricesUseCase getItemPricesUseCase) {
+    public ItemPricesController(GetItemPricesUseCase getItemPricesUseCase, UpdateItemPricesUseCase updateItemPricesUseCase) {
         this.getItemPricesUseCase = getItemPricesUseCase;
+        this.updateItemPricesUseCase = updateItemPricesUseCase;
     }
 
     @PostMapping
@@ -35,5 +40,14 @@ public class ItemPricesController {
     ) {
         List<Long> itemIds = request == null || request.itemIds() == null ? List.of() : request.itemIds();
         return ResponseEntity.ok(getItemPricesUseCase.execute(gameServerId, itemIds));
+    }
+
+    @PutMapping("/batch")
+    public ResponseEntity<Void> getItemPricesBatch(
+        @RequestHeader(value = "X-Game-Serve-Id") Long gameServerId,
+        @RequestBody List<ItemPricesBatchRequest> requests
+    ) {
+        updateItemPricesUseCase.execute(gameServerId, requests);
+        return ResponseEntity.ok().build();
     }
 }

@@ -162,4 +162,26 @@ public class PostgresItemPriceRepository implements ItemPriceRepository {
 
         return jdbcTemplate.query(sql, params, ITEM_PRICE_DTO_ROW_MAPPER);
     }
+
+    @Override
+    public void updateItemPrice(Long itemId, Long serverId, Long userId, Long price) {
+        String sql = """
+            INSERT INTO tools_dofus.item_price_user
+                (item_id, game_server_id, user_id, price, created_at)
+            VALUES
+                (:itemId, :serverId, :userId, :price, NOW())
+            ON CONFLICT (item_id, game_server_id, user_id)
+            DO UPDATE SET
+                price = EXCLUDED.price,
+                created_at = NOW()
+        """;
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("itemId", itemId)
+            .addValue("serverId", serverId)
+            .addValue("userId", userId)
+            .addValue("price", price);
+
+        jdbcTemplate.update(sql, params);
+    }
 }
