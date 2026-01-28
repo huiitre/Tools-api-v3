@@ -2,6 +2,8 @@ package fr.huiitre.tools.modules.dofus.pricing.infrastructure;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
@@ -12,6 +14,7 @@ import fr.huiitre.tools.modules.dofus.pricing.application.view.ItemPriceDto;
 public class PostgresItemPriceRepository implements ItemPriceRepository {
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
+    private static final Logger logger = LoggerFactory.getLogger(PostgresItemPriceRepository.class);
 
     public PostgresItemPriceRepository(NamedParameterJdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;

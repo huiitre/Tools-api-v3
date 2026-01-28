@@ -2,7 +2,11 @@ package fr.huiitre.tools.modules.dofus.item.infrastructure;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -296,6 +300,49 @@ public class PostgresItemRepository implements ItemRepository {
                 sql,
                 ITEM_IMAGE_DTO_ROW_MAPPER,
                 itemId);
+    }
+
+    @Override
+    public Map<Long, ItemView> findByGameVersionIdAndItemIds(Long gameVersionId, Set<Long> itemIds) {
+        if (itemIds == null || itemIds.isEmpty()) {
+            return Map.of();
+        }
+
+        final String sql = """
+                SELECT
+                    i.id,
+                    i.asset_id,
+                    i.game_version_id,
+                    i.name,
+                    i.level,
+                    i.description,
+                    it.id AS item_type_id,
+                    it.asset_id AS item_type_asset_id,
+                    it.name AS item_type_name,
+                    it.game_version_id AS item_type_game_version_id,
+                    EXISTS (
+                        SELECT 1
+                        FROM tools_dofus.recipe r
+                        WHERE r.item_id = i.id
+                    ) AS has_recipe
+                FROM tools_dofus.item i
+                JOIN tools_dofus.item_type it
+                    ON i.item_type_id = it.id
+                    AND i.game_version_id = it.game_version_id
+                WHERE i.game_version_id = ?
+                AND i.id = ANY(?)
+                """;
+
+        Long[] itemIdsArray = itemIds.toArray(new Long[0]);
+
+        List<ItemView> items = jdbcTemplate.query(
+                sql,
+                ITEM_VIEW_ROW_MAPPER,
+                gameVersionId,
+                itemIdsArray);
+
+        return items.stream()
+                .collect(Collectors.toMap(ItemView::getId, Function.identity()));
     }
 
     private record ImageExistence(boolean has1x, boolean has2x) {

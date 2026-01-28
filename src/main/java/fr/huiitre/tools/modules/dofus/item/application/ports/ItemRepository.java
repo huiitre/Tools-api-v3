@@ -1,7 +1,9 @@
 package fr.huiitre.tools.modules.dofus.item.application.ports;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import fr.huiitre.tools.modules.dofus.item.application.view.ItemImageDto;
 import fr.huiitre.tools.modules.dofus.item.application.view.ItemView;
@@ -22,4 +24,6 @@ public interface ItemRepository {
     ItemView findById(Long itemId, Long gameVersionId, Long userId);
 
     List<ItemImageDto> findImageByItemId(Long itemId);
+
+    Map<Long, ItemView> findByGameVersionIdAndItemIds(Long gameVersionId, Set<Long> itemIds);
 }

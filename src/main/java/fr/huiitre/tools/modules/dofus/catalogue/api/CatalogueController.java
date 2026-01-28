@@ -14,7 +14,6 @@ import fr.huiitre.tools.modules.dofus.catalogue.api.dto.CatalogueSearchQuery;
 import fr.huiitre.tools.modules.dofus.catalogue.application.dto.CatalogueColumnDto;
 import fr.huiitre.tools.modules.dofus.catalogue.application.dto.CatalogueItemDto;
 import fr.huiitre.tools.modules.dofus.catalogue.application.dto.CatalogueSearchResponse;
-import fr.huiitre.tools.modules.dofus.catalogue.application.ports.CatalogueItemRepository;
 import fr.huiitre.tools.modules.dofus.catalogue.application.usecase.GetCatalogueColumnsUseCase;
 import fr.huiitre.tools.modules.dofus.catalogue.application.usecase.GetCatalogueRecipeItemUseCase;
 import fr.huiitre.tools.modules.dofus.catalogue.application.usecase.SearchCatalogueItemsUseCase;
