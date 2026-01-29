@@ -23,9 +23,12 @@ import fr.huiitre.tools.modules.dofus.almanax.application.ports.AlmanaxRepositor
 import fr.huiitre.tools.modules.dofus.almanax.application.view.AlmanaxDto;
 import fr.huiitre.tools.modules.dofus.almanax.domain.Almanax;
 import fr.huiitre.tools.modules.dofus.almanax.domain.DatePattern;
+import fr.huiitre.tools.modules.dofus.assets.application.view.AssetImageUrlBuilder;
+import fr.huiitre.tools.modules.dofus.assets.application.view.AssetResolution;
 import fr.huiitre.tools.modules.dofus.game.application.ports.GameVersionRepository;
 import fr.huiitre.tools.modules.dofus.game.application.view.GameVersionData;
 import fr.huiitre.tools.modules.dofus.item.application.ports.ItemRepository;
+import fr.huiitre.tools.modules.dofus.item.application.view.ItemImageDto;
 import fr.huiitre.tools.modules.dofus.item.application.view.ItemView;
 
 @Service
@@ -37,6 +40,8 @@ public class GetAlmanaxCalendarUseCase implements SecuredUseCase {
     private final GameVersionRepository gameVersionRepository;
 
     private final ItemRepository itemRepository;
+
+    private final AssetImageUrlBuilder assetImageUrlBuilder;
 
     private static final Logger logger = LoggerFactory.getLogger(GetAlmanaxCalendarUseCase.class);
 
@@ -56,11 +61,13 @@ public class GetAlmanaxCalendarUseCase implements SecuredUseCase {
             AlmanaxRepository almanaxRepository,
             AuthenticatedUserProvider authenticatedUserProvider,
             GameVersionRepository gameVersionRepository,
-            ItemRepository itemRepository) {
+            ItemRepository itemRepository,
+            AssetImageUrlBuilder assetImageUrlBuilder) {
         this.almanaxRepository = almanaxRepository;
         this.authenticatedUserProvider = authenticatedUserProvider;
         this.gameVersionRepository = gameVersionRepository;
         this.itemRepository = itemRepository;
+        this.assetImageUrlBuilder = assetImageUrlBuilder;
     }
 
     public List<AlmanaxDto> execute() {
@@ -93,18 +100,47 @@ public class GetAlmanaxCalendarUseCase implements SecuredUseCase {
         Map<Long, ItemView> itemsById = itemRepository
                 .findByGameVersionIdAndItemIds(gameVersion.getId(), itemIds);
 
-        // 4. Assembler les DTOs
+        // 4. Charger toutes les images en UNE requête
+        Map<Long, List<ItemImageDto>> imagesByItemId = itemRepository
+                .findImageByItemIds(itemIds)
+                .stream()
+                .collect(Collectors.groupingBy(ItemImageDto::getItemId));
+
+        for (List<ItemImageDto> images : imagesByItemId.values()) {
+            for (ItemImageDto image : images) {
+                String url = assetImageUrlBuilder.build(
+                        "item",
+                        image.getIconId(),
+                        AssetResolution.fromDb(image.getResolution()));
+                image.setUrl(url);
+            }
+        }
+
+        // 5. Assembler les DTOs
         List<AlmanaxDto> result = new ArrayList<>();
         for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
             Almanax almanax = dateToAlmanax.get(date);
             if (almanax != null) {
-                ItemView itemView = itemsById.get(almanax.getItemId());
+                ItemView item = itemsById.get(almanax.getItemId());
+                List<ItemImageDto> images = imagesByItemId.getOrDefault(almanax.getItemId(), List.of());
+                
+                ItemView itemWithImages = new ItemView(
+                        item.getId(),
+                        item.getAssetId(),
+                        item.getGameVersionId(),
+                        item.getName(),
+                        item.getLevel(),
+                        item.getDescription(),
+                        item.getItemType(),
+                        images,
+                        item.isHasRecipe());
+                
                 result.add(new AlmanaxDto(
                         almanax.getId(),
                         almanax.getName(),
                         almanax.getDescription(),
                         date,
-                        itemView,
+                        itemWithImages,
                         almanax.getItemQuantity()));
             }
         }

@@ -47,9 +47,10 @@ public class DofusConfig {
 
         @Bean
         public ItemRepository itemRepository(
-                        JdbcTemplate jdbcTemplate) {
+                        JdbcTemplate jdbcTemplate,
+                        NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
                 return new PostgresItemRepository(
-                                jdbcTemplate);
+                                jdbcTemplate, namedParameterJdbcTemplate);
         }
 
         @Bean

@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import fr.huiitre.tools.modules.core.filesystem.infrastructure.FileSystemChecker;
 import fr.huiitre.tools.modules.dofus.item.application.ports.ItemRepository;
@@ -30,8 +32,11 @@ public class PostgresItemRepository implements ItemRepository {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public PostgresItemRepository(JdbcTemplate jdbcTemplate) {
+    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+
+    public PostgresItemRepository(JdbcTemplate jdbcTemplate, NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
+        this.namedParameterJdbcTemplate = namedParameterJdbcTemplate;
     }
 
     private static final RowMapper<Item> ITEM_ROW_MAPPER = (rs, rowNum) -> Item.rehydrate(
@@ -300,6 +305,28 @@ public class PostgresItemRepository implements ItemRepository {
                 sql,
                 ITEM_IMAGE_DTO_ROW_MAPPER,
                 itemId);
+    }
+
+    @Override
+    public List<ItemImageDto> findImageByItemIds(Set<Long> itemIds) {
+        if (itemIds == null || itemIds.isEmpty()) {
+            return List.of();
+        }
+        
+        final String sql = """
+            SELECT
+                id,
+                item_id,
+                icon_id,
+                resolution
+            FROM tools_dofus.item_image
+            WHERE item_id = ANY(:itemIds)
+        """;
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+            .addValue("itemIds", itemIds.toArray(new Long[0]));
+
+        return namedParameterJdbcTemplate.query(sql, params, ITEM_IMAGE_DTO_ROW_MAPPER);
     }
 
     @Override

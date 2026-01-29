@@ -25,5 +25,7 @@ public interface ItemRepository {
 
     List<ItemImageDto> findImageByItemId(Long itemId);
 
+    List<ItemImageDto> findImageByItemIds(Set<Long> itemIds);
+
     Map<Long, ItemView> findByGameVersionIdAndItemIds(Long gameVersionId, Set<Long> itemIds);
 }
