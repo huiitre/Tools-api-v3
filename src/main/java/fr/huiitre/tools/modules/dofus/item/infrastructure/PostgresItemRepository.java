@@ -194,14 +194,18 @@ public class PostgresItemRepository implements ItemRepository {
 
         return new ItemView(
                 rs.getLong("id"),
+                rs.getString("name"),
+                rs.getString("description"),
+                rs.getBoolean("has_recipe"),
                 rs.getLong("asset_id"),
                 rs.getLong("game_version_id"),
-                rs.getString("name"),
                 rs.getLong("level"),
-                rs.getString("description"),
                 itemTypeDto,
                 List.of(),
-                rs.getBoolean("has_recipe"));
+                null,
+                null,
+                null
+        );
     };
 
     @Override

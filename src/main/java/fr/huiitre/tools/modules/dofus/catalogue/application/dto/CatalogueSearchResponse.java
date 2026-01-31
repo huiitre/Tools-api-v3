@@ -2,10 +2,12 @@ package fr.huiitre.tools.modules.dofus.catalogue.application.dto;
 
 import java.util.List;
 
+import fr.huiitre.tools.modules.dofus.item.application.view.ItemView;
+
 public class CatalogueSearchResponse {
 
     private final List<CatalogueColumnDto> columns;
-    private final List<CatalogueItemDto> items;
+    private final List<ItemView> items;
 
     private final int page;
     private final int pageSize;
@@ -17,7 +19,7 @@ public class CatalogueSearchResponse {
 
     public CatalogueSearchResponse(
         List<CatalogueColumnDto> columns,
-        List<CatalogueItemDto> items,
+        List<ItemView> items,
         int page,
         int pageSize,
         long total,
@@ -39,7 +41,7 @@ public class CatalogueSearchResponse {
         return columns;
     }
 
-    public List<CatalogueItemDto> getItems() {
+    public List<ItemView> getItems() {
         return items;
     }
 

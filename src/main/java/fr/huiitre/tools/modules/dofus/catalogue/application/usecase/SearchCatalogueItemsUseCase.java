@@ -12,11 +12,11 @@ import fr.huiitre.tools.modules.core.security.application.ports.AuthenticatedUse
 import fr.huiitre.tools.modules.core.security.application.usecase.SecuredUseCase;
 import fr.huiitre.tools.modules.dofus.catalogue.api.dto.CatalogueSearchQuery;
 import fr.huiitre.tools.modules.dofus.catalogue.application.data.CatalogueColumnsDefinition;
-import fr.huiitre.tools.modules.dofus.catalogue.application.dto.CatalogueItemDto;
 import fr.huiitre.tools.modules.dofus.catalogue.application.dto.CatalogueSearchResponse;
 import fr.huiitre.tools.modules.dofus.catalogue.application.ports.CatalogueItemRepository;
 import fr.huiitre.tools.modules.dofus.item.application.ports.ItemRepository;
 import fr.huiitre.tools.modules.dofus.item.application.view.ItemImageDto;
+import fr.huiitre.tools.modules.dofus.item.application.view.ItemView;
 import fr.huiitre.tools.modules.dofus.sync.application.views.AssetImageUrlBuilder;
 import fr.huiitre.tools.modules.dofus.sync.application.views.AssetResolution;
 
@@ -69,12 +69,12 @@ public class SearchCatalogueItemsUseCase implements SecuredUseCase {
         query.setPage(page);
         query.setPageSize(pageSize);
 
-        List<CatalogueItemDto> items = catalogueItemRepository.search(
+        List<ItemView> items = catalogueItemRepository.search(
                 query,
                 userId,
                 gameServerId);
 
-        for (CatalogueItemDto item : items) {
+        for (ItemView item : items) {
             List<ItemImageDto> itemImages = itemRepository.findImageByItemId(item.getId());
 
             for (ItemImageDto image : itemImages) {
@@ -85,9 +85,22 @@ public class SearchCatalogueItemsUseCase implements SecuredUseCase {
                 image.setUrl(url);
             }
 
-            if (!itemImages.isEmpty()) {
-                item.setImages(itemImages);
-            }
+            ItemView itemWithImages = new ItemView(
+                item.getId(),
+                item.getName(),
+                item.getDescription(),
+                item.isHasRecipe(),
+                item.getAssetId(),
+                item.getGameVersionId(),
+                item.getLevel(),
+                item.getItemType(),
+                itemImages,  // ✅ Images hydratées
+                item.getParentItemId(),
+                item.getQuantity(),
+                item.getFarmZones()
+            );
+
+            items.set(items.indexOf(item), itemWithImages);
         }
 
         long total = catalogueItemRepository.count(

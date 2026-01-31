@@ -3,11 +3,11 @@ package fr.huiitre.tools.modules.dofus.catalogue.application.ports;
 import java.util.List;
 
 import fr.huiitre.tools.modules.dofus.catalogue.api.dto.CatalogueSearchQuery;
-import fr.huiitre.tools.modules.dofus.catalogue.application.dto.CatalogueItemDto;
+import fr.huiitre.tools.modules.dofus.item.application.view.ItemView;
 
 public interface CatalogueItemRepository {
     
-    public List<CatalogueItemDto> search(
+    public List<ItemView> search(
         CatalogueSearchQuery query,
         Long userId,
         Long gameServerId
@@ -19,5 +19,5 @@ public interface CatalogueItemRepository {
         Long gameServerId
     );
 
-    public List<CatalogueItemDto> findRecipeByItemId(Long itemId);
+    public List<ItemView> findRecipeByItemId(Long itemId);
 }

@@ -12,11 +12,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import fr.huiitre.tools.modules.dofus.catalogue.api.dto.CatalogueSearchQuery;
 import fr.huiitre.tools.modules.dofus.catalogue.application.dto.CatalogueColumnDto;
-import fr.huiitre.tools.modules.dofus.catalogue.application.dto.CatalogueItemDto;
 import fr.huiitre.tools.modules.dofus.catalogue.application.dto.CatalogueSearchResponse;
 import fr.huiitre.tools.modules.dofus.catalogue.application.usecase.GetCatalogueColumnsUseCase;
 import fr.huiitre.tools.modules.dofus.catalogue.application.usecase.GetCatalogueRecipeItemUseCase;
 import fr.huiitre.tools.modules.dofus.catalogue.application.usecase.SearchCatalogueItemsUseCase;
+import fr.huiitre.tools.modules.dofus.item.application.view.ItemView;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "Dofus - Catalogue")
@@ -53,7 +53,7 @@ public class CatalogueController {
     }
 
     @GetMapping("/item/{itemId}/recipe")
-    public ResponseEntity<List<CatalogueItemDto>> getItemRecipe(
+    public ResponseEntity<List<ItemView>> getItemRecipe(
         @PathVariable Long itemId
 ) {
     return ResponseEntity.ok(

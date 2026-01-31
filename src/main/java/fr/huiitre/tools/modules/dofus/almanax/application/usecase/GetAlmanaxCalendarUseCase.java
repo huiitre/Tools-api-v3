@@ -125,14 +125,18 @@ public class GetAlmanaxCalendarUseCase implements SecuredUseCase {
 
                 ItemView itemWithImages = new ItemView(
                         item.getId(),
+                        item.getName(),
+                        item.getDescription(),
+                        item.isHasRecipe(),
                         item.getAssetId(),
                         item.getGameVersionId(),
-                        item.getName(),
                         item.getLevel(),
-                        item.getDescription(),
                         item.getItemType(),
                         images,
-                        item.isHasRecipe());
+                        null,
+                        null,
+                        null
+                );
 
                 result.add(new AlmanaxDto(
                         almanax.getId(),
