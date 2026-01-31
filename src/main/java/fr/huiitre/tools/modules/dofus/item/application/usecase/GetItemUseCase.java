@@ -6,17 +6,17 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import fr.huiitre.tools.modules.core.security.application.ports.AuthenticatedUserProvider;
-import fr.huiitre.tools.modules.core.security.application.usecase.SecuredUseCase;
 import fr.huiitre.tools.modules.core.module.domain.ModuleCode;
 import fr.huiitre.tools.modules.core.role.domain.RoleCode;
-import fr.huiitre.tools.modules.dofus.assets.application.view.AssetImageUrlBuilder;
-import fr.huiitre.tools.modules.dofus.assets.application.view.AssetResolution;
+import fr.huiitre.tools.modules.core.security.application.ports.AuthenticatedUserProvider;
+import fr.huiitre.tools.modules.core.security.application.usecase.SecuredUseCase;
 import fr.huiitre.tools.modules.dofus.item.application.ports.ItemRepository;
 import fr.huiitre.tools.modules.dofus.item.application.view.ItemImageDto;
 import fr.huiitre.tools.modules.dofus.item.application.view.ItemView;
 import fr.huiitre.tools.modules.dofus.item.domain.Item;
 import fr.huiitre.tools.modules.dofus.itemtype.application.view.ItemTypeDto;
+import fr.huiitre.tools.modules.dofus.sync.application.views.AssetImageUrlBuilder;
+import fr.huiitre.tools.modules.dofus.sync.application.views.AssetResolution;
 
 @Service
 @Transactional

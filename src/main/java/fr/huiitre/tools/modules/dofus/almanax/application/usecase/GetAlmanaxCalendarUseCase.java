@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -15,21 +14,21 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import fr.huiitre.tools.modules.core.security.application.ports.AuthenticatedUserProvider;
-import fr.huiitre.tools.modules.core.security.application.usecase.SecuredUseCase;
 import fr.huiitre.tools.modules.core.module.domain.ModuleCode;
 import fr.huiitre.tools.modules.core.role.domain.RoleCode;
+import fr.huiitre.tools.modules.core.security.application.ports.AuthenticatedUserProvider;
+import fr.huiitre.tools.modules.core.security.application.usecase.SecuredUseCase;
 import fr.huiitre.tools.modules.dofus.almanax.application.ports.AlmanaxRepository;
 import fr.huiitre.tools.modules.dofus.almanax.application.view.AlmanaxDto;
 import fr.huiitre.tools.modules.dofus.almanax.domain.Almanax;
 import fr.huiitre.tools.modules.dofus.almanax.domain.DatePattern;
-import fr.huiitre.tools.modules.dofus.assets.application.view.AssetImageUrlBuilder;
-import fr.huiitre.tools.modules.dofus.assets.application.view.AssetResolution;
 import fr.huiitre.tools.modules.dofus.game.application.ports.GameVersionRepository;
 import fr.huiitre.tools.modules.dofus.game.application.view.GameVersionData;
 import fr.huiitre.tools.modules.dofus.item.application.ports.ItemRepository;
 import fr.huiitre.tools.modules.dofus.item.application.view.ItemImageDto;
 import fr.huiitre.tools.modules.dofus.item.application.view.ItemView;
+import fr.huiitre.tools.modules.dofus.sync.application.views.AssetImageUrlBuilder;
+import fr.huiitre.tools.modules.dofus.sync.application.views.AssetResolution;
 
 @Service
 @Transactional(readOnly = true)
@@ -123,7 +122,7 @@ public class GetAlmanaxCalendarUseCase implements SecuredUseCase {
             if (almanax != null) {
                 ItemView item = itemsById.get(almanax.getItemId());
                 List<ItemImageDto> images = imagesByItemId.getOrDefault(almanax.getItemId(), List.of());
-                
+
                 ItemView itemWithImages = new ItemView(
                         item.getId(),
                         item.getAssetId(),
@@ -134,7 +133,7 @@ public class GetAlmanaxCalendarUseCase implements SecuredUseCase {
                         item.getItemType(),
                         images,
                         item.isHasRecipe());
-                
+
                 result.add(new AlmanaxDto(
                         almanax.getId(),
                         almanax.getName(),
@@ -163,7 +162,8 @@ public class GetAlmanaxCalendarUseCase implements SecuredUseCase {
                     .max()
                     .orElse(0);
 
-            if (score == 0) continue;
+            if (score == 0)
+                continue;
 
             int patternCount = almanax.getDates().size();
             if (score > bestScore || (score == bestScore && patternCount < bestPatternCount)) {

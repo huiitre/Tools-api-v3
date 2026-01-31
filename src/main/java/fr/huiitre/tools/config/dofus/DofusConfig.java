@@ -7,6 +7,8 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import fr.huiitre.tools.modules.dofus.almanax.application.ports.AlmanaxRepository;
 import fr.huiitre.tools.modules.dofus.almanax.infrastructure.PostgresAlmanaxRepository;
+import fr.huiitre.tools.modules.dofus.area.application.ports.AreaRepository;
+import fr.huiitre.tools.modules.dofus.area.infrastructure.PostgresAreaRepository;
 import fr.huiitre.tools.modules.dofus.catalogue.application.ports.CatalogueItemRepository;
 import fr.huiitre.tools.modules.dofus.catalogue.infrastructure.PostgresCatalogueItemRepository;
 import fr.huiitre.tools.modules.dofus.game.application.ports.GameServerRepository;
@@ -17,10 +19,15 @@ import fr.huiitre.tools.modules.dofus.item.application.ports.ItemRepository;
 import fr.huiitre.tools.modules.dofus.item.infrastructure.PostgresItemRepository;
 import fr.huiitre.tools.modules.dofus.itemtype.application.ports.ItemTypeRepository;
 import fr.huiitre.tools.modules.dofus.itemtype.infrastructure.PostgresItemTypeRepository;
+import fr.huiitre.tools.modules.dofus.monster.application.ports.MonsterRepository;
+import fr.huiitre.tools.modules.dofus.monster.domain.Monster;
+import fr.huiitre.tools.modules.dofus.monster.infrastructure.PostgresMonsterRepository;
 import fr.huiitre.tools.modules.dofus.pricing.application.ports.ItemPriceRepository;
 import fr.huiitre.tools.modules.dofus.pricing.infrastructure.PostgresItemPriceRepository;
 import fr.huiitre.tools.modules.dofus.recipe.application.ports.RecipeRepository;
 import fr.huiitre.tools.modules.dofus.recipe.infrastructure.PostgresRecipeRepository;
+import fr.huiitre.tools.modules.dofus.subarea.application.ports.SubareaRepository;
+import fr.huiitre.tools.modules.dofus.subarea.infrastructure.PostgresSubareaRepository;
 
 @Configuration
 public class DofusConfig {
@@ -79,5 +86,26 @@ public class DofusConfig {
                         JdbcTemplate jdbcTemplate) {
                 return new PostgresRecipeRepository(
                                 jdbcTemplate);
+        }
+
+        @Bean
+        public AreaRepository areaRepository(
+                JdbcTemplate jdbcTemplate) {
+                return new PostgresAreaRepository(
+                jdbcTemplate);
+        }
+
+        @Bean
+        public SubareaRepository subareaRepository(
+                        JdbcTemplate jdbcTemplate) {
+                return new PostgresSubareaRepository(
+                        jdbcTemplate);
+        }
+
+        @Bean
+        public MonsterRepository monsterRepository(
+                        JdbcTemplate jdbcTemplate) {
+                return new PostgresMonsterRepository(
+                        jdbcTemplate);
         }
 }

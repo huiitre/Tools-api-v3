@@ -23,7 +23,7 @@ public class Almanax {
         this.id = id;
         this.assetId = assetId;
         this.name = name;
-        this.description = description;
+        this.description = parseDescription(description);
         this.dates = dates;
         this.itemId = itemId;
         this.itemQuantity = itemQuantity;
@@ -79,7 +79,7 @@ public class Almanax {
         }
 
         if (description != null && !description.isBlank()) {
-            this.description = description;
+            this.description = parseDescription(description);
         }
 
         if (dates != null && !dates.isEmpty()) {
@@ -113,6 +113,10 @@ public class Almanax {
         if (itemQuantity == null) {
             throw new IllegalArgumentException("ALMANAX_ITEM_QUANTITY_REQUIRED");
         }
+    }
+
+    private String parseDescription(String raw) {
+        return raw.replaceAll("\\{\\{monsterRace,\\d+::([^}]+)\\}\\}", "<b>$1</b>");
     }
 
     public Long getId() {

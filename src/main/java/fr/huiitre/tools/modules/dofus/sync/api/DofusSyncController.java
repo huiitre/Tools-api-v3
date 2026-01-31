@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import fr.huiitre.tools.modules.core.common.api.RequiredRole;
 import fr.huiitre.tools.modules.core.role.domain.RoleCode;
-import fr.huiitre.tools.modules.dofus.sync.application.usecase.SyncDofusDataUseCase;
+import fr.huiitre.tools.modules.dofus.sync.application.sync.usecase.SyncDofusDataUseCase;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "Dofus - Sync")

@@ -6,15 +6,15 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import fr.huiitre.tools.modules.core.security.application.usecase.SecuredUseCase;
 import fr.huiitre.tools.modules.core.module.domain.ModuleCode;
 import fr.huiitre.tools.modules.core.role.domain.RoleCode;
-import fr.huiitre.tools.modules.dofus.assets.application.view.AssetImageUrlBuilder;
-import fr.huiitre.tools.modules.dofus.assets.application.view.AssetResolution;
+import fr.huiitre.tools.modules.core.security.application.usecase.SecuredUseCase;
 import fr.huiitre.tools.modules.dofus.catalogue.application.dto.CatalogueItemDto;
 import fr.huiitre.tools.modules.dofus.catalogue.application.ports.CatalogueItemRepository;
 import fr.huiitre.tools.modules.dofus.item.application.ports.ItemRepository;
 import fr.huiitre.tools.modules.dofus.item.application.view.ItemImageDto;
+import fr.huiitre.tools.modules.dofus.sync.application.views.AssetImageUrlBuilder;
+import fr.huiitre.tools.modules.dofus.sync.application.views.AssetResolution;
 
 @Service
 @Transactional
@@ -35,10 +35,9 @@ public class GetCatalogueRecipeItemUseCase implements SecuredUseCase {
     }
 
     public GetCatalogueRecipeItemUseCase(
-        CatalogueItemRepository catalogueItemRepository,
-        ItemRepository itemRepository,
-        AssetImageUrlBuilder assetImageUrlBuilder
-    ) {
+            CatalogueItemRepository catalogueItemRepository,
+            ItemRepository itemRepository,
+            AssetImageUrlBuilder assetImageUrlBuilder) {
         this.catalogueItemRepository = catalogueItemRepository;
         this.itemRepository = itemRepository;
         this.assetImageUrlBuilder = assetImageUrlBuilder;
@@ -49,16 +48,15 @@ public class GetCatalogueRecipeItemUseCase implements SecuredUseCase {
         List<CatalogueItemDto> ingredients = catalogueItemRepository.findRecipeByItemId(itemId);
 
         for (CatalogueItemDto ingredient : ingredients) {
-            
+
             List<ItemImageDto> images = itemRepository.findImageByItemId(ingredient.getId());
 
             for (ItemImageDto image : images) {
 
                 String url = assetImageUrlBuilder.build(
-                    "item",
-                    image.getIconId(),
-                    AssetResolution.fromDb(image.getResolution())
-                );
+                        "item",
+                        image.getIconId(),
+                        AssetResolution.fromDb(image.getResolution()));
 
                 image.setUrl(url);
             }
