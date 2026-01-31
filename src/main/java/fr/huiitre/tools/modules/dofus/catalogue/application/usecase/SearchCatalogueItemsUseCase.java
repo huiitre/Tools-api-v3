@@ -93,7 +93,7 @@ public class SearchCatalogueItemsUseCase implements SecuredUseCase {
                 item.getAssetId(),
                 item.getGameVersionId(),
                 item.getLevel(),
-                item.getItemType(),
+                item.getType(),
                 itemImages,  // ✅ Images hydratées
                 item.getParentItemId(),
                 item.getQuantity(),

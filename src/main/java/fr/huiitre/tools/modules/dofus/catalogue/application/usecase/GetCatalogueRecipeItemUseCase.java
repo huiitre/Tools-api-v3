@@ -69,7 +69,7 @@ public class GetCatalogueRecipeItemUseCase implements SecuredUseCase {
                 ingredient.getAssetId(),
                 ingredient.getGameVersionId(),
                 ingredient.getLevel(),
-                ingredient.getItemType(),
+                ingredient.getType(),
                 images,  // ✅
                 ingredient.getParentItemId(),
                 ingredient.getQuantity(),

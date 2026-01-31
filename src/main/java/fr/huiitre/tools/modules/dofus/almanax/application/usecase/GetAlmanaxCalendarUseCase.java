@@ -131,7 +131,7 @@ public class GetAlmanaxCalendarUseCase implements SecuredUseCase {
                         item.getAssetId(),
                         item.getGameVersionId(),
                         item.getLevel(),
-                        item.getItemType(),
+                        item.getType(),
                         images,
                         null,
                         null,

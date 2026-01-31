@@ -29,7 +29,7 @@ public class ItemView {
         Long assetId,
         Long gameVersionId,
         Long level,
-        ItemTypeDto itemType,
+        ItemTypeDto type,
         List<ItemImageDto> images,
         Long parentItemId,
         Long quantity,
@@ -41,7 +41,7 @@ public class ItemView {
         this.name = name;
         this.level = level;
         this.description = description;
-        this.itemType = itemType;
+        this.itemType = type;
         this.images = images;
         this.hasRecipe = hasRecipe;
         this.parentItemId = parentItemId;
@@ -72,7 +72,7 @@ public class ItemView {
         return description;
     }
 
-    public ItemTypeDto getItemType() {
+    public ItemTypeDto getType() {
         return itemType;
     }
 
