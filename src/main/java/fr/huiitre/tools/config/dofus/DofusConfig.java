@@ -106,6 +106,7 @@ public class DofusConfig {
         public MonsterRepository monsterRepository(
                         JdbcTemplate jdbcTemplate) {
                 return new PostgresMonsterRepository(
-                        jdbcTemplate);
+                        jdbcTemplate,
+                new NamedParameterJdbcTemplate(jdbcTemplate));
         }
 }

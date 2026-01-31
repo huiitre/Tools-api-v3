@@ -24,9 +24,11 @@ import fr.huiitre.tools.modules.dofus.almanax.domain.Almanax;
 import fr.huiitre.tools.modules.dofus.almanax.domain.DatePattern;
 import fr.huiitre.tools.modules.dofus.game.application.ports.GameVersionRepository;
 import fr.huiitre.tools.modules.dofus.game.application.view.GameVersionData;
+import fr.huiitre.tools.modules.dofus.item.application.dto.FarmZoneDto;
+import fr.huiitre.tools.modules.dofus.item.application.dto.ItemDto;
+import fr.huiitre.tools.modules.dofus.item.application.dto.ItemImageDto;
 import fr.huiitre.tools.modules.dofus.item.application.ports.ItemRepository;
-import fr.huiitre.tools.modules.dofus.item.application.view.ItemImageDto;
-import fr.huiitre.tools.modules.dofus.item.application.view.ItemView;
+import fr.huiitre.tools.modules.dofus.item.application.service.ItemEnrichmentService;
 import fr.huiitre.tools.modules.dofus.sync.application.views.AssetImageUrlBuilder;
 import fr.huiitre.tools.modules.dofus.sync.application.views.AssetResolution;
 
@@ -35,10 +37,10 @@ import fr.huiitre.tools.modules.dofus.sync.application.views.AssetResolution;
 public class GetAlmanaxCalendarUseCase implements SecuredUseCase {
 
     private final AlmanaxRepository almanaxRepository;
-
     private final GameVersionRepository gameVersionRepository;
-
     private final ItemRepository itemRepository;
+
+    private final ItemEnrichmentService itemEnrichmentService;
 
     private final AssetImageUrlBuilder assetImageUrlBuilder;
 
@@ -61,12 +63,14 @@ public class GetAlmanaxCalendarUseCase implements SecuredUseCase {
             AuthenticatedUserProvider authenticatedUserProvider,
             GameVersionRepository gameVersionRepository,
             ItemRepository itemRepository,
-            AssetImageUrlBuilder assetImageUrlBuilder) {
+            AssetImageUrlBuilder assetImageUrlBuilder,
+            ItemEnrichmentService itemEnrichmentService) {
         this.almanaxRepository = almanaxRepository;
         this.authenticatedUserProvider = authenticatedUserProvider;
         this.gameVersionRepository = gameVersionRepository;
         this.itemRepository = itemRepository;
         this.assetImageUrlBuilder = assetImageUrlBuilder;
+        this.itemEnrichmentService = itemEnrichmentService;
     }
 
     public List<AlmanaxDto> execute() {
@@ -77,7 +81,7 @@ public class GetAlmanaxCalendarUseCase implements SecuredUseCase {
         LocalDate start = LocalDate.now();
         LocalDate end = start.plusYears(2);
 
-        // 1. Calculer les associations date → almanax en mémoire
+        // * on calcule les associations date → almanax en mémoire */
         Map<LocalDate, Almanax> dateToAlmanax = new HashMap<>();
         List<LocalDate> missingDates = new ArrayList<>();
 
@@ -90,53 +94,43 @@ public class GetAlmanaxCalendarUseCase implements SecuredUseCase {
             }
         }
 
-        // 2. Collecter tous les itemIds uniques
+        // * on récupère tous les itemids uniques
         Set<Long> itemIds = dateToAlmanax.values().stream()
                 .map(Almanax::getItemId)
                 .collect(Collectors.toSet());
 
-        // 3. Charger tous les items en UNE requête
-        Map<Long, ItemView> itemsById = itemRepository
+        // * on récupère tous les items */
+        Map<Long, ItemDto> itemsById = itemRepository
                 .findByGameVersionIdAndItemIds(gameVersion.getId(), itemIds);
 
-        // 4. Charger toutes les images en UNE requête
-        Map<Long, List<ItemImageDto>> imagesByItemId = itemRepository
-                .findImageByItemIds(itemIds)
-                .stream()
-                .collect(Collectors.groupingBy(ItemImageDto::getItemId));
+        // * on récupère toutes les zones par itemIds */
+        Map<Long, List<FarmZoneDto>> farmZonesByItemId = itemEnrichmentService.loadFarmZones(new ArrayList<>(itemIds));
 
-        for (List<ItemImageDto> images : imagesByItemId.values()) {
-            for (ItemImageDto image : images) {
-                String url = assetImageUrlBuilder.build(
-                        "item",
-                        image.getIconId(),
-                        AssetResolution.fromDb(image.getResolution()));
-                image.setUrl(url);
-            }
-        }
+        // * on récupère toutes les images */
+        Map<Long, List<ItemImageDto>> imagesByItemId = itemEnrichmentService.loadItemImages(new ArrayList<>(itemIds));
 
-        // 5. Assembler les DTOs
+        // * on assemble les DTOs */
         List<AlmanaxDto> result = new ArrayList<>();
         for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
             Almanax almanax = dateToAlmanax.get(date);
             if (almanax != null) {
-                ItemView item = itemsById.get(almanax.getItemId());
+                ItemDto item = itemsById.get(almanax.getItemId());
                 List<ItemImageDto> images = imagesByItemId.getOrDefault(almanax.getItemId(), List.of());
+                List<FarmZoneDto> farmZones = farmZonesByItemId.getOrDefault(almanax.getItemId(), List.of());
 
-                ItemView itemWithImages = new ItemView(
-                        item.getId(),
-                        item.getName(),
-                        item.getDescription(),
-                        item.isHasRecipe(),
-                        item.getAssetId(),
-                        item.getGameVersionId(),
-                        item.getLevel(),
-                        item.getType(),
-                        images,
-                        null,
-                        null,
-                        null
-                );
+                ItemDto itemWithImages = new ItemDto(
+                    item.getId(),
+                    item.getName(),
+                    item.getDescription(),
+                    item.isHasRecipe(),
+                    item.getAssetId(),
+                    item.getGameVersionId(),
+                    item.getLevel(),
+                    item.getType(),
+                    images,
+                    null,
+                    null,
+                    farmZones);
 
                 result.add(new AlmanaxDto(
                         almanax.getId(),

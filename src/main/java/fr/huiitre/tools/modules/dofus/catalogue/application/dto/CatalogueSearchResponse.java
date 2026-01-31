@@ -2,12 +2,12 @@ package fr.huiitre.tools.modules.dofus.catalogue.application.dto;
 
 import java.util.List;
 
-import fr.huiitre.tools.modules.dofus.item.application.view.ItemView;
+import fr.huiitre.tools.modules.dofus.item.application.dto.ItemDto;
 
 public class CatalogueSearchResponse {
 
     private final List<CatalogueColumnDto> columns;
-    private final List<ItemView> items;
+    private final List<ItemDto> items;
 
     private final int page;
     private final int pageSize;
@@ -18,15 +18,14 @@ public class CatalogueSearchResponse {
     private final Integer lastPage;
 
     public CatalogueSearchResponse(
-        List<CatalogueColumnDto> columns,
-        List<ItemView> items,
-        int page,
-        int pageSize,
-        long total,
-        Integer previousPage,
-        Integer nextPage,
-        Integer lastPage
-    ) {
+            List<CatalogueColumnDto> columns,
+            List<ItemDto> items,
+            int page,
+            int pageSize,
+            long total,
+            Integer previousPage,
+            Integer nextPage,
+            Integer lastPage) {
         this.columns = columns;
         this.items = items;
         this.page = page;
@@ -41,7 +40,7 @@ public class CatalogueSearchResponse {
         return columns;
     }
 
-    public List<ItemView> getItems() {
+    public List<ItemDto> getItems() {
         return items;
     }
 

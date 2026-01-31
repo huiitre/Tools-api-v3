@@ -2,7 +2,7 @@ package fr.huiitre.tools.modules.dofus.almanax.application.view;
 
 import java.time.LocalDate;
 
-import fr.huiitre.tools.modules.dofus.item.application.view.ItemView;
+import fr.huiitre.tools.modules.dofus.item.application.dto.ItemDto;
 
 public class AlmanaxDto {
 
@@ -10,7 +10,7 @@ public class AlmanaxDto {
     private final String name;
     private final String description;
     private final LocalDate date;
-    private final ItemView item;
+    private final ItemDto item;
     private final Long quantity;
 
     public AlmanaxDto(
@@ -18,7 +18,7 @@ public class AlmanaxDto {
             String name,
             String description,
             LocalDate date,
-            ItemView item,
+            ItemDto item,
             Long quantity) {
         this.id = id;
         this.name = name;
@@ -44,7 +44,7 @@ public class AlmanaxDto {
         return date;
     }
 
-    public ItemView getItem() {
+    public ItemDto getItem() {
         return item;
     }
 

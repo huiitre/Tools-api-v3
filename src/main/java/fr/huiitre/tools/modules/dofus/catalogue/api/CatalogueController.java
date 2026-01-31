@@ -16,7 +16,7 @@ import fr.huiitre.tools.modules.dofus.catalogue.application.dto.CatalogueSearchR
 import fr.huiitre.tools.modules.dofus.catalogue.application.usecase.GetCatalogueColumnsUseCase;
 import fr.huiitre.tools.modules.dofus.catalogue.application.usecase.GetCatalogueRecipeItemUseCase;
 import fr.huiitre.tools.modules.dofus.catalogue.application.usecase.SearchCatalogueItemsUseCase;
-import fr.huiitre.tools.modules.dofus.item.application.view.ItemView;
+import fr.huiitre.tools.modules.dofus.item.application.dto.ItemDto;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 @Tag(name = "Dofus - Catalogue")
@@ -29,7 +29,9 @@ public class CatalogueController {
     private final GetCatalogueColumnsUseCase getCatalogueColumnsUseCase;
     private final SearchCatalogueItemsUseCase searchCatalogueItemsUseCase;
 
-    public CatalogueController(GetCatalogueColumnsUseCase getCatalogueColumnsUseCase, SearchCatalogueItemsUseCase searchCatalogueItemsUseCase, GetCatalogueRecipeItemUseCase getCatalogueRecipeItemUseCase) {
+    public CatalogueController(GetCatalogueColumnsUseCase getCatalogueColumnsUseCase,
+            SearchCatalogueItemsUseCase searchCatalogueItemsUseCase,
+            GetCatalogueRecipeItemUseCase getCatalogueRecipeItemUseCase) {
         this.getCatalogueColumnsUseCase = getCatalogueColumnsUseCase;
         this.searchCatalogueItemsUseCase = searchCatalogueItemsUseCase;
         this.getCatalogueRecipeItemUseCase = getCatalogueRecipeItemUseCase;
@@ -38,8 +40,7 @@ public class CatalogueController {
     @GetMapping("/search")
     public ResponseEntity<CatalogueSearchResponse> searchItems(
             @ModelAttribute CatalogueSearchQuery query,
-            @RequestHeader(value = "X-Game-Serve-Id") Long gameServerId
-    ) {
+            @RequestHeader(value = "X-Game-Serve-Id") Long gameServerId) {
         CatalogueSearchResponse response = searchCatalogueItemsUseCase.execute(query, gameServerId);
 
         return ResponseEntity.ok(response);
@@ -48,16 +49,13 @@ public class CatalogueController {
     @GetMapping("/columns")
     public ResponseEntity<List<CatalogueColumnDto>> getColumns() {
         return ResponseEntity.ok(
-            getCatalogueColumnsUseCase.execute()
-        );
+                getCatalogueColumnsUseCase.execute());
     }
 
     @GetMapping("/item/{itemId}/recipe")
-    public ResponseEntity<List<ItemView>> getItemRecipe(
-        @PathVariable Long itemId
-) {
-    return ResponseEntity.ok(
-        getCatalogueRecipeItemUseCase.execute(itemId)
-    );
-}
+    public ResponseEntity<List<ItemDto>> getItemRecipe(
+            @PathVariable Long itemId) {
+        return ResponseEntity.ok(
+                getCatalogueRecipeItemUseCase.execute(itemId));
+    }
 }

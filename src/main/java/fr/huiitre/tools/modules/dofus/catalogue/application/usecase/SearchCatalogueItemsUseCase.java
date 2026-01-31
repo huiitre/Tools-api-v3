@@ -1,7 +1,10 @@
 package fr.huiitre.tools.modules.dofus.catalogue.application.usecase;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,9 +17,12 @@ import fr.huiitre.tools.modules.dofus.catalogue.api.dto.CatalogueSearchQuery;
 import fr.huiitre.tools.modules.dofus.catalogue.application.data.CatalogueColumnsDefinition;
 import fr.huiitre.tools.modules.dofus.catalogue.application.dto.CatalogueSearchResponse;
 import fr.huiitre.tools.modules.dofus.catalogue.application.ports.CatalogueItemRepository;
+import fr.huiitre.tools.modules.dofus.item.application.dto.FarmZoneDto;
+import fr.huiitre.tools.modules.dofus.item.application.dto.ItemDto;
+import fr.huiitre.tools.modules.dofus.item.application.dto.ItemImageDto;
 import fr.huiitre.tools.modules.dofus.item.application.ports.ItemRepository;
-import fr.huiitre.tools.modules.dofus.item.application.view.ItemImageDto;
-import fr.huiitre.tools.modules.dofus.item.application.view.ItemView;
+import fr.huiitre.tools.modules.dofus.item.application.service.ItemEnrichmentService;
+import fr.huiitre.tools.modules.dofus.item.domain.Item;
 import fr.huiitre.tools.modules.dofus.sync.application.views.AssetImageUrlBuilder;
 import fr.huiitre.tools.modules.dofus.sync.application.views.AssetResolution;
 
@@ -30,17 +36,20 @@ public class SearchCatalogueItemsUseCase implements SecuredUseCase {
     private final AuthenticatedUserProvider authenticatedUserProvider;
     private final CatalogueItemRepository catalogueItemRepository;
     private final ItemRepository itemRepository;
+    private final ItemEnrichmentService itemEnrichmentService;
     private final AssetImageUrlBuilder assetImageUrlBuilder;
 
     public SearchCatalogueItemsUseCase(
             AuthenticatedUserProvider authenticatedUserProvider,
             CatalogueItemRepository catalogueItemRepository,
             ItemRepository itemRepository,
-            AssetImageUrlBuilder assetImageUrlBuilder) {
+            AssetImageUrlBuilder assetImageUrlBuilder,
+            ItemEnrichmentService itemEnrichmentService) {
         this.authenticatedUserProvider = authenticatedUserProvider;
         this.catalogueItemRepository = catalogueItemRepository;
         this.itemRepository = itemRepository;
         this.assetImageUrlBuilder = assetImageUrlBuilder;
+        this.itemEnrichmentService = itemEnrichmentService;
     }
 
     @Override
@@ -69,23 +78,25 @@ public class SearchCatalogueItemsUseCase implements SecuredUseCase {
         query.setPage(page);
         query.setPageSize(pageSize);
 
-        List<ItemView> items = catalogueItemRepository.search(
+        List<ItemDto> items = catalogueItemRepository.search(
                 query,
                 userId,
                 gameServerId);
 
-        for (ItemView item : items) {
-            List<ItemImageDto> itemImages = itemRepository.findImageByItemId(item.getId());
+        List<Long> itemIds = items.stream()
+                .map(ItemDto::getId)
+                .collect(Collectors.toList());
 
-            for (ItemImageDto image : itemImages) {
-                String url = assetImageUrlBuilder.build(
-                        "item",
-                        image.getIconId(),
-                        AssetResolution.fromDb(image.getResolution()));
-                image.setUrl(url);
-            }
+        Map<Long, List<FarmZoneDto>> farmZonesByItemId = itemEnrichmentService.loadFarmZones(new ArrayList<>(itemIds));
+        Map<Long, List<ItemImageDto>> imagesByItemId = itemEnrichmentService.loadItemImages(new ArrayList<>(itemIds));
 
-            ItemView itemWithImages = new ItemView(
+        for (ItemDto item : items) {
+
+            List<ItemImageDto> itemImages = imagesByItemId.get(item.getId());
+
+            List<FarmZoneDto> farmZones = farmZonesByItemId.get(item.getId());
+
+            ItemDto itemWithImages = new ItemDto(
                 item.getId(),
                 item.getName(),
                 item.getDescription(),
@@ -94,11 +105,10 @@ public class SearchCatalogueItemsUseCase implements SecuredUseCase {
                 item.getGameVersionId(),
                 item.getLevel(),
                 item.getType(),
-                itemImages,  // ✅ Images hydratées
+                itemImages,
                 item.getParentItemId(),
                 item.getQuantity(),
-                item.getFarmZones()
-            );
+                farmZones);
 
             items.set(items.indexOf(item), itemWithImages);
         }

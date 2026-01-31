@@ -1,8 +1,9 @@
 package fr.huiitre.tools.modules.dofus.monster.application.ports;
 
+import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
+import fr.huiitre.tools.modules.dofus.monster.application.dto.MonsterImageDto;
 import fr.huiitre.tools.modules.dofus.monster.domain.Monster;
 
 public interface MonsterRepository {
@@ -15,7 +16,11 @@ public interface MonsterRepository {
 
     boolean refreshImages(Long monsterId, Long iconId);
 
-    boolean refreshSubareas(Long monsterId, Set<Long> subareaIds);
+    boolean refreshSubareas(Long monsterId, Collection<Long> subareaIds);
 
-    boolean refreshDrops(Long monsterId, Set<Long> itemIds);
+    boolean refreshDrops(Long monsterId, Collection<Long> itemIds);
+
+    List<MonsterImageDto> findImageByMonsterId(Long monsterId);
+
+    List<MonsterImageDto> findImageByMonsterIds(Collection<Long> monsterIds);
 }

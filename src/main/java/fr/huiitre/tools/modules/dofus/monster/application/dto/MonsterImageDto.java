@@ -1,20 +1,20 @@
-package fr.huiitre.tools.modules.dofus.item.application.view;
+package fr.huiitre.tools.modules.dofus.monster.application.dto;
 
-public class ItemImageDto {
-
+public class MonsterImageDto {
+    
     private final Long id;
-    private final Long itemId;
-    private final String resolution; // X1 / X2
+    private final Long monsterId;
+    private final String resolution;
     private final Long iconId;
     private String url;
 
-    public ItemImageDto(
+    public MonsterImageDto(
             Long id,
-            Long itemId,
+            Long monsterId,
             String resolution,
             Long iconId) {
         this.id = id;
-        this.itemId = itemId;
+        this.monsterId = monsterId;
         this.resolution = resolution;
         this.iconId = iconId;
     }
@@ -23,8 +23,8 @@ public class ItemImageDto {
         return id;
     }
 
-    public Long getItemId() {
-        return itemId;
+    public Long getMonsterId() {
+        return monsterId;
     }
 
     public String getResolution() {

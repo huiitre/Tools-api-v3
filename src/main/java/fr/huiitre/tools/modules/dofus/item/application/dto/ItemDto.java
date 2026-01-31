@@ -1,10 +1,10 @@
-package fr.huiitre.tools.modules.dofus.item.application.view;
+package fr.huiitre.tools.modules.dofus.item.application.dto;
 
 import java.util.List;
 
 import fr.huiitre.tools.modules.dofus.itemtype.application.view.ItemTypeDto;
 
-public class ItemView {
+public class ItemDto {
 
     private final Long id;
     private final String name;
@@ -21,20 +21,19 @@ public class ItemView {
     private final Long quantity;
     private final List<FarmZoneDto> farmZones;
 
-    public ItemView(
-        Long id,
-        String name,
-        String description,
-        boolean hasRecipe,
-        Long assetId,
-        Long gameVersionId,
-        Long level,
-        ItemTypeDto type,
-        List<ItemImageDto> images,
-        Long parentItemId,
-        Long quantity,
-        List<FarmZoneDto> farmZones
-    ) {
+    public ItemDto(
+            Long id,
+            String name,
+            String description,
+            boolean hasRecipe,
+            Long assetId,
+            Long gameVersionId,
+            Long level,
+            ItemTypeDto type,
+            List<ItemImageDto> images,
+            Long parentItemId,
+            Long quantity,
+            List<FarmZoneDto> farmZones) {
         this.id = id;
         this.assetId = assetId;
         this.gameVersionId = gameVersionId;
@@ -52,6 +51,7 @@ public class ItemView {
     public Long getId() {
         return id;
     }
+
     public Long getAssetId() {
         return assetId;
     }
@@ -83,6 +83,7 @@ public class ItemView {
     public boolean isHasRecipe() {
         return hasRecipe;
     }
+
     public Long getParentItemId() {
         return parentItemId;
     }

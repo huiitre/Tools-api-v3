@@ -1,7 +1,10 @@
 package fr.huiitre.tools.modules.dofus.catalogue.application.usecase;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,19 +13,22 @@ import fr.huiitre.tools.modules.core.module.domain.ModuleCode;
 import fr.huiitre.tools.modules.core.role.domain.RoleCode;
 import fr.huiitre.tools.modules.core.security.application.usecase.SecuredUseCase;
 import fr.huiitre.tools.modules.dofus.catalogue.application.ports.CatalogueItemRepository;
+import fr.huiitre.tools.modules.dofus.item.application.dto.FarmZoneDto;
+import fr.huiitre.tools.modules.dofus.item.application.dto.ItemDto;
+import fr.huiitre.tools.modules.dofus.item.application.dto.ItemImageDto;
 import fr.huiitre.tools.modules.dofus.item.application.ports.ItemRepository;
-import fr.huiitre.tools.modules.dofus.item.application.view.ItemImageDto;
-import fr.huiitre.tools.modules.dofus.item.application.view.ItemView;
+import fr.huiitre.tools.modules.dofus.item.application.service.ItemEnrichmentService;
 import fr.huiitre.tools.modules.dofus.sync.application.views.AssetImageUrlBuilder;
 import fr.huiitre.tools.modules.dofus.sync.application.views.AssetResolution;
 
 @Service
-@Transactional(readOnly = true)  // ✅ Corrigé
+@Transactional(readOnly = true)
 public class GetCatalogueRecipeItemUseCase implements SecuredUseCase {
 
     private final CatalogueItemRepository catalogueItemRepository;
     private final ItemRepository itemRepository;
     private final AssetImageUrlBuilder assetImageUrlBuilder;
+    private final ItemEnrichmentService itemEnrichmentService;
 
     @Override
     public Optional<ModuleCode> requiredModule() {
@@ -37,46 +43,47 @@ public class GetCatalogueRecipeItemUseCase implements SecuredUseCase {
     public GetCatalogueRecipeItemUseCase(
             CatalogueItemRepository catalogueItemRepository,
             ItemRepository itemRepository,
-            AssetImageUrlBuilder assetImageUrlBuilder) {
+            AssetImageUrlBuilder assetImageUrlBuilder,
+            ItemEnrichmentService itemEnrichmentService) {
         this.catalogueItemRepository = catalogueItemRepository;
         this.itemRepository = itemRepository;
         this.assetImageUrlBuilder = assetImageUrlBuilder;
+        this.itemEnrichmentService = itemEnrichmentService;
     }
 
-    public List<ItemView> execute(Long itemId) {
+    public List<ItemDto> execute(Long itemId) {
 
-        List<ItemView> ingredients = catalogueItemRepository.findRecipeByItemId(itemId);
+        List<ItemDto> ingredients = catalogueItemRepository.findRecipeByItemId(itemId);
 
-        for (int i = 0; i < ingredients.size(); i++) {  // ✅ Corrigé
-            ItemView ingredient = ingredients.get(i);
+        List<Long> itemIds = ingredients.stream()
+                .map(ItemDto::getId)
+                .collect(Collectors.toList());
 
-            List<ItemImageDto> images = itemRepository.findImageByItemId(ingredient.getId());
+        Map<Long, List<FarmZoneDto>> farmZonesByItemId = itemEnrichmentService.loadFarmZones(new ArrayList<>(itemIds));
+        Map<Long, List<ItemImageDto>> imagesByItemId = itemEnrichmentService.loadItemImages(new ArrayList<>(itemIds));
 
-            for (ItemImageDto image : images) {
-                String url = assetImageUrlBuilder.build(
-                    "item",
-                    image.getIconId(),
-                    AssetResolution.fromDb(image.getResolution())
-                );
-                image.setUrl(url);
-            }
+        for (int i = 0; i < ingredients.size(); i++) {
 
-            ItemView itemWithImages = new ItemView(
-                ingredient.getId(),
-                ingredient.getName(),
-                ingredient.getDescription(),
-                ingredient.isHasRecipe(),
-                ingredient.getAssetId(),
-                ingredient.getGameVersionId(),
-                ingredient.getLevel(),
-                ingredient.getType(),
-                images,  // ✅
-                ingredient.getParentItemId(),
-                ingredient.getQuantity(),
-                ingredient.getFarmZones()
-            );
+            ItemDto ingredient = ingredients.get(i);
 
-            ingredients.set(i, itemWithImages);  // ✅ Corrigé
+            List<FarmZoneDto> farmZones = farmZonesByItemId.get(ingredient.getId());
+            List<ItemImageDto> images = imagesByItemId.get(ingredient.getId());
+
+            ItemDto itemWithImages = new ItemDto(
+                    ingredient.getId(),
+                    ingredient.getName(),
+                    ingredient.getDescription(),
+                    ingredient.isHasRecipe(),
+                    ingredient.getAssetId(),
+                    ingredient.getGameVersionId(),
+                    ingredient.getLevel(),
+                    ingredient.getType(),
+                    images,
+                    ingredient.getParentItemId(),
+                    ingredient.getQuantity(),
+                    farmZones);
+
+            ingredients.set(i, itemWithImages);
         }
 
         return ingredients;

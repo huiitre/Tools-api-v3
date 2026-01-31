@@ -1,12 +1,14 @@
 package fr.huiitre.tools.modules.dofus.item.application.ports;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import fr.huiitre.tools.modules.dofus.item.application.view.ItemImageDto;
-import fr.huiitre.tools.modules.dofus.item.application.view.ItemView;
+import fr.huiitre.tools.modules.dofus.item.application.dto.FarmZoneDto;
+import fr.huiitre.tools.modules.dofus.item.application.dto.ItemDto;
+import fr.huiitre.tools.modules.dofus.item.application.dto.ItemImageDto;
 import fr.huiitre.tools.modules.dofus.item.domain.Item;
 
 public interface ItemRepository {
@@ -21,11 +23,13 @@ public interface ItemRepository {
 
     Optional<Item> findByAssetId(Long assetId, long gameVersionId);
 
-    ItemView findById(Long itemId, Long gameVersionId, Long userId);
+    ItemDto findById(Long itemId, Long gameVersionId, Long userId);
 
     List<ItemImageDto> findImageByItemId(Long itemId);
 
-    List<ItemImageDto> findImageByItemIds(Set<Long> itemIds);
+    List<ItemImageDto> findImageByItemIds(Collection<Long> itemIds);
 
-    Map<Long, ItemView> findByGameVersionIdAndItemIds(Long gameVersionId, Set<Long> itemIds);
+    Map<Long, ItemDto> findByGameVersionIdAndItemIds(Long gameVersionId, Collection<Long> itemIds);
+
+    Map<Long, List<FarmZoneDto>> findFarmZonesByItemIds(Collection<Long> itemIds);
 }

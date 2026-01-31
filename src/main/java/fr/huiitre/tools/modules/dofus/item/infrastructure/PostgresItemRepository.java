@@ -1,6 +1,10 @@
 package fr.huiitre.tools.modules.dofus.item.infrastructure;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -17,11 +21,15 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import fr.huiitre.tools.modules.core.filesystem.infrastructure.FileSystemChecker;
+import fr.huiitre.tools.modules.dofus.area.application.dto.AreaDto;
+import fr.huiitre.tools.modules.dofus.item.application.dto.FarmZoneDto;
+import fr.huiitre.tools.modules.dofus.item.application.dto.ItemDto;
+import fr.huiitre.tools.modules.dofus.item.application.dto.ItemImageDto;
 import fr.huiitre.tools.modules.dofus.item.application.ports.ItemRepository;
-import fr.huiitre.tools.modules.dofus.item.application.view.ItemImageDto;
-import fr.huiitre.tools.modules.dofus.item.application.view.ItemView;
 import fr.huiitre.tools.modules.dofus.item.domain.Item;
 import fr.huiitre.tools.modules.dofus.itemtype.application.view.ItemTypeDto;
+import fr.huiitre.tools.modules.dofus.monster.application.dto.MonsterDto;
+import fr.huiitre.tools.modules.dofus.subarea.application.dto.SubareaDto;
 
 public class PostgresItemRepository implements ItemRepository {
 
@@ -184,7 +192,7 @@ public class PostgresItemRepository implements ItemRepository {
         }
     }
 
-    private static final RowMapper<ItemView> ITEM_VIEW_ROW_MAPPER = (rs, rowNum) -> {
+    private static final RowMapper<ItemDto> ITEM_VIEW_ROW_MAPPER = (rs, rowNum) -> {
 
         ItemTypeDto itemTypeDto = new ItemTypeDto(
                 rs.getLong("item_type_id"),
@@ -192,7 +200,7 @@ public class PostgresItemRepository implements ItemRepository {
                 rs.getLong("item_type_game_version_id"),
                 rs.getString("item_type_name"));
 
-        return new ItemView(
+        return new ItemDto(
                 rs.getLong("id"),
                 rs.getString("name"),
                 rs.getString("description"),
@@ -204,12 +212,11 @@ public class PostgresItemRepository implements ItemRepository {
                 List.of(),
                 null,
                 null,
-                null
-        );
+                null);
     };
 
     @Override
-    public ItemView findById(Long itemId, Long gameVersionId, Long userId) {
+    public ItemDto findById(Long itemId, Long gameVersionId, Long userId) {
         final String sql = """
                     SELECT
                         i.id,
@@ -312,29 +319,29 @@ public class PostgresItemRepository implements ItemRepository {
     }
 
     @Override
-    public List<ItemImageDto> findImageByItemIds(Set<Long> itemIds) {
+    public List<ItemImageDto> findImageByItemIds(Collection<Long> itemIds) {
         if (itemIds == null || itemIds.isEmpty()) {
             return List.of();
         }
-        
+
         final String sql = """
-            SELECT
-                id,
-                item_id,
-                icon_id,
-                resolution
-            FROM tools_dofus.item_image
-            WHERE item_id = ANY(:itemIds)
-        """;
+                    SELECT
+                        id,
+                        item_id,
+                        icon_id,
+                        resolution
+                    FROM tools_dofus.item_image
+                    WHERE item_id = ANY(:itemIds)
+                """;
 
         MapSqlParameterSource params = new MapSqlParameterSource()
-            .addValue("itemIds", itemIds.toArray(new Long[0]));
+                .addValue("itemIds", itemIds.toArray(new Long[0]));
 
         return namedParameterJdbcTemplate.query(sql, params, ITEM_IMAGE_DTO_ROW_MAPPER);
     }
 
     @Override
-    public Map<Long, ItemView> findByGameVersionIdAndItemIds(Long gameVersionId, Set<Long> itemIds) {
+    public Map<Long, ItemDto> findByGameVersionIdAndItemIds(Long gameVersionId, Collection<Long> itemIds) {
         if (itemIds == null || itemIds.isEmpty()) {
             return Map.of();
         }
@@ -366,14 +373,114 @@ public class PostgresItemRepository implements ItemRepository {
 
         Long[] itemIdsArray = itemIds.toArray(new Long[0]);
 
-        List<ItemView> items = jdbcTemplate.query(
+        List<ItemDto> items = jdbcTemplate.query(
                 sql,
                 ITEM_VIEW_ROW_MAPPER,
                 gameVersionId,
                 itemIdsArray);
 
         return items.stream()
-                .collect(Collectors.toMap(ItemView::getId, Function.identity()));
+                .collect(Collectors.toMap(ItemDto::getId, Function.identity()));
+    }
+
+    @Override
+    public Map<Long, List<FarmZoneDto>> findFarmZonesByItemIds(Collection<Long> itemIds) {
+        if (itemIds == null || itemIds.isEmpty()) {
+            return Map.of();
+        }
+
+        final String sql = """
+                    SELECT DISTINCT
+                        md.item_id,
+
+                        a.id AS area_id,
+                        a.asset_id AS area_asset_id,
+                        a.game_version_id AS area_game_version_id,
+                        a.name AS area_name,
+
+                        s.id AS subarea_id,
+                        s.asset_id AS subarea_asset_id,
+                        s.name AS subarea_name,
+
+                        m.id AS monster_id,
+                        m.name AS monster_name
+
+                    FROM tools_dofus.monster_drop md
+                    INNER JOIN tools_dofus.monster m ON md.monster_id = m.id
+                    INNER JOIN tools_dofus.monster_subarea ms ON m.id = ms.monster_id
+                    INNER JOIN tools_dofus.subarea s ON ms.subarea_id = s.id
+                    INNER JOIN tools_dofus.area a ON s.area_id = a.id
+
+                    WHERE md.item_id = ANY(:itemIds)
+                    AND a.name NOT IN ('Expéditions')
+
+                    ORDER BY md.item_id, a.name, s.name, m.name
+                """;
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("itemIds", itemIds.toArray(new Long[0]));
+
+        List<Map<String, Object>> rows = namedParameterJdbcTemplate.queryForList(sql, params);
+
+        Map<Long, Map<String, FarmZoneDto>> farmZonesByItemIdAndKey = new HashMap<>();
+
+        for (Map<String, Object> row : rows) {
+            Long itemId = ((Number) row.get("item_id")).longValue();
+            Long areaId = ((Number) row.get("area_id")).longValue();
+            Long subareaId = ((Number) row.get("subarea_id")).longValue();
+
+            String key = areaId + "-" + subareaId;
+
+            farmZonesByItemIdAndKey
+                    .computeIfAbsent(itemId, k -> new HashMap<>())
+                    .compute(key, (k, existingZone) -> {
+                        if (existingZone == null) {
+                            AreaDto area = new AreaDto(
+                                    areaId,
+                                    ((Number) row.get("area_asset_id")).longValue(),
+                                    (String) row.get("area_name"));
+
+                            SubareaDto subarea = new SubareaDto(
+                                    subareaId,
+                                    areaId,
+                                    ((Number) row.get("subarea_asset_id")).longValue(),
+                                    (String) row.get("subarea_name"));
+
+                            existingZone = new FarmZoneDto(area, subarea, new ArrayList<>(), false);
+                        }
+
+                        MonsterDto monster = new MonsterDto(
+                                ((Number) row.get("monster_id")).longValue(),
+                                (String) row.get("monster_name"),
+                                null);
+
+                        existingZone.getMonsters().add(monster);
+
+                        return existingZone;
+                    });
+        }
+
+        Map<Long, List<FarmZoneDto>> result = new HashMap<>();
+
+        for (Map.Entry<Long, Map<String, FarmZoneDto>> entry : farmZonesByItemIdAndKey.entrySet()) {
+            Long itemId = entry.getKey();
+            List<FarmZoneDto> zones = new ArrayList<>(entry.getValue().values());
+
+            zones.sort(Comparator.comparing(z -> -z.getMonsters().size()));
+
+            if (!zones.isEmpty()) {
+                FarmZoneDto primary = zones.get(0);
+                zones.set(0, new FarmZoneDto(
+                        primary.getArea(),
+                        primary.getSubarea(),
+                        primary.getMonsters(),
+                        true));
+            }
+
+            result.put(itemId, zones);
+        }
+
+        return result;
     }
 
     private record ImageExistence(boolean has1x, boolean has2x) {
