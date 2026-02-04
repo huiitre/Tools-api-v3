@@ -45,4 +45,8 @@ public interface WorkshopRepository {
     void updateIngredientQuantityObtained(Long userId, Long ingredientId, Long quantityObtained);
 
     void deleteIngredientsByParentId(Long userId, Long parentIngredientId);
+
+    void addTagsToWorkshop(Long userId, Long workshopId, List<Long> tagIds);
+
+    void removeTagFromWorkshop(Long userId, Long workshopId, Long tagId);
 }

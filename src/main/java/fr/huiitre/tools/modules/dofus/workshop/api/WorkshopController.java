@@ -27,9 +27,11 @@ import fr.huiitre.tools.modules.dofus.workshop.api.dto.UpdateWorkshopRequest;
 import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopDto;
 import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopIngredientDetailDto;
 import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopItemDetailDto;
+import fr.huiitre.tools.modules.dofus.workshop.application.usecase.AddTagsToWorkshopUseCase;
 import fr.huiitre.tools.modules.dofus.workshop.application.usecase.CreateWorkshopUseCase;
 import fr.huiitre.tools.modules.dofus.workshop.application.usecase.DeleteWorkshopUseCase;
 import fr.huiitre.tools.modules.dofus.workshop.application.usecase.ListWorkshopsUseCase;
+import fr.huiitre.tools.modules.dofus.workshop.application.usecase.RemoveTagFromWorkshopUseCase;
 import fr.huiitre.tools.modules.dofus.workshop.application.usecase.UpdateWorkshopUseCase;
 import fr.huiitre.tools.modules.dofus.workshop.application.usecase.item.AddItemsToWorkshopUseCase;
 import fr.huiitre.tools.modules.dofus.workshop.application.usecase.item.CraftIngredientUseCase;
@@ -58,6 +60,8 @@ public class WorkshopController {
     private final CraftIngredientUseCase craftIngredientUseCase;
     private final UncraftIngredientUseCase uncraftIngredientUseCase;
     private final UpdateIngredientQuantityObtainedUseCase updateIngredientQuantityObtainedUseCase;
+    private final AddTagsToWorkshopUseCase addTagsToWorkshopUseCase;
+    private final RemoveTagFromWorkshopUseCase removeTagFromWorkshopUseCase;
 
     public WorkshopController(
         CreateWorkshopUseCase createWorkshopUseCase,
@@ -71,7 +75,9 @@ public class WorkshopController {
         UpdateWorkshopItemQuantityUseCase updateWorkshopItemQuantityUseCase,
         CraftIngredientUseCase craftIngredientUseCase,
         UncraftIngredientUseCase uncraftIngredientUseCase,
-        UpdateIngredientQuantityObtainedUseCase updateIngredientQuantityObtainedUseCase
+        UpdateIngredientQuantityObtainedUseCase updateIngredientQuantityObtainedUseCase,
+        AddTagsToWorkshopUseCase addTagsToWorkshopUseCase,
+        RemoveTagFromWorkshopUseCase removeTagFromWorkshopUseCase
     ) {
         this.createWorkshopUseCase = createWorkshopUseCase;
         this.updateWorkshopUseCase = updateWorkshopUseCase;
@@ -85,6 +91,8 @@ public class WorkshopController {
         this.craftIngredientUseCase = craftIngredientUseCase;
         this.uncraftIngredientUseCase = uncraftIngredientUseCase;
         this.updateIngredientQuantityObtainedUseCase = updateIngredientQuantityObtainedUseCase;
+        this.addTagsToWorkshopUseCase = addTagsToWorkshopUseCase;
+        this.removeTagFromWorkshopUseCase = removeTagFromWorkshopUseCase;
     }
 
     @RequiredRole(RoleCode.USER)
@@ -197,5 +205,23 @@ public class WorkshopController {
             @PathVariable Long ingredientId,
             @PathVariable Long quantityObtained) {
         updateIngredientQuantityObtainedUseCase.execute(workshopId, ingredientId, quantityObtained);
+    }
+
+    @RequiredRole(RoleCode.USER)
+    @PostMapping("/{workshopId}/tags")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public WorkshopDto addTagsToWorkshop(
+            @PathVariable Long workshopId,
+            @RequestBody List<Long> tagIds) {
+        return addTagsToWorkshopUseCase.execute(workshopId, tagIds);
+    }
+
+    @RequiredRole(RoleCode.USER)
+    @DeleteMapping("/{workshopId}/tags/{tagId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public WorkshopDto removeTagFromWorkshop(
+            @PathVariable Long workshopId,
+            @PathVariable Long tagId) {
+        return removeTagFromWorkshopUseCase.execute(workshopId, tagId);
     }
 }

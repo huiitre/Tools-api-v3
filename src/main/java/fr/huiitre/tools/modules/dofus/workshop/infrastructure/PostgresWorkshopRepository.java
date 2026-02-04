@@ -311,6 +311,50 @@ public class PostgresWorkshopRepository implements WorkshopRepository {
         jdbcTemplate.update(sql, parentIngredientId, userId);
     }
 
+    @Override
+    public void addTagsToWorkshop(Long userId, Long workshopId, List<Long> tagIds) {
+        if (tagIds == null || tagIds.isEmpty()) {
+            return;
+        }
+
+        String sql = """
+            INSERT INTO tools_dofus.workshop_has_tag (workshop_id, tag_id)
+            SELECT ?, ?
+            FROM tools_dofus.workshop w
+            WHERE w.id = ? AND w.user_id = ?
+            ON CONFLICT DO NOTHING
+        """;
+
+        jdbcTemplate.batchUpdate(sql, new BatchPreparedStatementSetter() {
+            @Override
+            public void setValues(PreparedStatement ps, int i) throws SQLException {
+                ps.setLong(1, workshopId);
+                ps.setLong(2, tagIds.get(i));
+                ps.setLong(3, workshopId);
+                ps.setLong(4, userId);
+            }
+
+            @Override
+            public int getBatchSize() {
+                return tagIds.size();
+            }
+        });
+    }
+
+    @Override
+    public void removeTagFromWorkshop(Long userId, Long workshopId, Long tagId) {
+        String sql = """
+            DELETE FROM tools_dofus.workshop_has_tag wht
+            USING tools_dofus.workshop w
+            WHERE wht.workshop_id = ?
+            AND wht.tag_id = ?
+            AND w.id = wht.workshop_id
+            AND w.user_id = ?
+        """;
+
+        jdbcTemplate.update(sql, workshopId, tagId, userId);
+    }
+
     private static final RowMapper<WorkshopItemIngredient> WORKSHOP_ITEM_INGREDIENT_ROW_MAPPER = (rs, rowNum) -> WorkshopItemIngredient.rehydrate(
         rs.getLong("id"),
         rs.getLong("workshop_item_id"),
