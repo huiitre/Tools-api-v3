@@ -28,6 +28,11 @@ import fr.huiitre.tools.modules.dofus.recipe.application.ports.RecipeRepository;
 import fr.huiitre.tools.modules.dofus.recipe.infrastructure.PostgresRecipeRepository;
 import fr.huiitre.tools.modules.dofus.subarea.application.ports.SubareaRepository;
 import fr.huiitre.tools.modules.dofus.subarea.infrastructure.PostgresSubareaRepository;
+import fr.huiitre.tools.modules.dofus.workshop.application.repository.WorkshopRepository;
+import fr.huiitre.tools.modules.dofus.workshop.application.repository.WorkshopTagRepository;
+import fr.huiitre.tools.modules.dofus.workshop.domain.WorkshopTag;
+import fr.huiitre.tools.modules.dofus.workshop.infrastructure.PostgresWorkshopRepository;
+import fr.huiitre.tools.modules.dofus.workshop.infrastructure.PostgresWorkshopTagRepository;
 
 @Configuration
 public class DofusConfig {
@@ -108,5 +113,19 @@ public class DofusConfig {
                 return new PostgresMonsterRepository(
                         jdbcTemplate,
                 new NamedParameterJdbcTemplate(jdbcTemplate));
+        }
+
+        @Bean
+        public WorkshopTagRepository workshopTagRepository(
+                        JdbcTemplate jdbcTemplate) {
+                return new PostgresWorkshopTagRepository(
+                        jdbcTemplate);
+        }
+
+        @Bean
+        public WorkshopRepository workshopRepository(
+                        JdbcTemplate jdbcTemplate) {
+                return new PostgresWorkshopRepository(
+                        jdbcTemplate);
         }
 }

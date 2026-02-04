@@ -1,8 +1,12 @@
 package fr.huiitre.tools.modules.dofus.recipe.infrastructure;
 
+import java.util.List;
+
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 
 import fr.huiitre.tools.modules.dofus.recipe.application.ports.RecipeRepository;
+import fr.huiitre.tools.modules.dofus.recipe.domain.Recipe;
 
 public class PostgresRecipeRepository implements RecipeRepository {
 
@@ -31,4 +35,21 @@ public class PostgresRecipeRepository implements RecipeRepository {
         return count != null && count > 0;
     }
     
+    @Override
+    public List<Recipe> findByItemId(Long itemId) {
+        String sql = """
+            SELECT id, item_id, ingredient_id, quantity
+            FROM tools_dofus.recipe
+            WHERE item_id = ?
+        """;
+
+        return jdbcTemplate.query(sql, RECIPE_ROW_MAPPER, itemId);
+    }
+
+    private static final RowMapper<Recipe> RECIPE_ROW_MAPPER = (rs, rowNum) -> Recipe.rehydrate(
+        rs.getLong("id"),
+        rs.getLong("item_id"),
+        rs.getLong("ingredient_id"),
+        rs.getLong("quantity")
+    );
 }

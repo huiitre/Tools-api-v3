@@ -23,8 +23,6 @@ public interface ItemRepository {
 
     Optional<Item> findByAssetId(Long assetId, long gameVersionId);
 
-    ItemDto findById(Long itemId, Long gameVersionId, Long userId);
-
     List<ItemImageDto> findImageByItemId(Long itemId);
 
     List<ItemImageDto> findImageByItemIds(Collection<Long> itemIds);
@@ -32,4 +30,6 @@ public interface ItemRepository {
     Map<Long, ItemDto> findByGameVersionIdAndItemIds(Long gameVersionId, Collection<Long> itemIds);
 
     Map<Long, List<FarmZoneDto>> findFarmZonesByItemIds(Collection<Long> itemIds);
+
+    List<ItemDto> findCraftableItemsByGameVersionIdAndName(Long gameVersionId, Long workshopId, String query);
 }

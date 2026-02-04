@@ -68,24 +68,24 @@ public class SearchCatalogueItemsUseCase implements SecuredUseCase {
         Long userId = authenticatedUserProvider.getUserId();
 
         int page = query.getPage() == null || query.getPage() < 1
-                ? DEFAULT_PAGE
-                : query.getPage();
+            ? DEFAULT_PAGE
+            : query.getPage();
 
         int pageSize = query.getPageSize() == null || query.getPageSize() < 1
-                ? DEFAULT_PAGE_SIZE
-                : query.getPageSize();
+            ? DEFAULT_PAGE_SIZE
+            : query.getPageSize();
 
         query.setPage(page);
         query.setPageSize(pageSize);
 
         List<ItemDto> items = catalogueItemRepository.search(
-                query,
-                userId,
-                gameServerId);
+            query,
+            userId,
+            gameServerId);
 
         List<Long> itemIds = items.stream()
-                .map(ItemDto::getId)
-                .collect(Collectors.toList());
+            .map(ItemDto::getId)
+            .collect(Collectors.toList());
 
         Map<Long, List<FarmZoneDto>> farmZonesByItemId = itemEnrichmentService.loadFarmZones(new ArrayList<>(itemIds));
         Map<Long, List<ItemImageDto>> imagesByItemId = itemEnrichmentService.loadItemImages(new ArrayList<>(itemIds));
@@ -112,6 +112,7 @@ public class SearchCatalogueItemsUseCase implements SecuredUseCase {
 
             items.set(items.indexOf(item), itemWithImages);
         }
+
 
         long total = catalogueItemRepository.count(
                 query,

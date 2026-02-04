@@ -215,82 +215,6 @@ public class PostgresItemRepository implements ItemRepository {
                 null);
     };
 
-    @Override
-    public ItemDto findById(Long itemId, Long gameVersionId, Long userId) {
-        final String sql = """
-                    SELECT
-                        i.id,
-                        i.asset_id,
-                        i.game_version_id,
-                        i.name,
-                        i.level,
-                        i.description,
-                        it.id AS item_type_id,
-                        it.asset_id AS item_type_asset_id,
-                        it.name AS item_type_name,
-                        it.game_version_id AS item_type_game_version_id,
-                        COALESCE(MAX(user_price.price), 0)::bigint AS user_price,
-                        COALESCE(ROUND(AVG(community_price.price)), 0)::bigint AS community_price,
-                        COALESCE(MAX(last_price.price), 0)::bigint AS last_updated_price,
-                        EXISTS (
-                            SELECT 1
-                            FROM tools_dofus.recipe r
-                            WHERE r.item_id = i.id
-                        ) AS has_recipe
-                    FROM tools_dofus.item i
-                    JOIN tools_dofus.item_type it
-                        ON i.item_type_id = it.id
-                    AND i.game_version_id = it.game_version_id
-
-                    /* Prix personnalisé de l'utilisateur */
-                    LEFT JOIN tools_dofus.item_price_user user_price
-                        ON i.id = user_price.item_id
-                    AND user_price.user_id = ?
-                    AND user_price.game_server_id = 1
-
-                    /* Prix moyen de tous les joueurs */
-                    LEFT JOIN tools_dofus.item_price_user community_price
-                        ON i.id = community_price.item_id
-                    AND community_price.game_server_id = 1
-
-                    /* Dernier prix ajouté pour l'objet (tous utilisateurs confondus) */
-                    LEFT JOIN LATERAL (
-                        SELECT ipu.price
-                        FROM tools_dofus.item_price_user ipu
-                        WHERE ipu.item_id = i.id
-                        AND ipu.game_server_id = 1
-                        ORDER BY
-                            ipu.created_at DESC,
-                            (ipu.user_id = ?) DESC,
-                            ipu.id DESC
-                        LIMIT 1
-                    ) last_price ON TRUE
-
-                    WHERE i.id = ?
-                    AND i.game_version_id = ?
-
-                    GROUP BY
-                        i.id,
-                        i.asset_id,
-                        i.game_version_id,
-                        i.name,
-                        i.level,
-                        i.description,
-                        it.id,
-                        it.asset_id,
-                        it.name,
-                        it.game_version_id
-                """;
-
-        return jdbcTemplate.queryForObject(
-                sql,
-                ITEM_VIEW_ROW_MAPPER,
-                userId,
-                userId,
-                itemId,
-                gameVersionId);
-    }
-
     private static final RowMapper<ItemImageDto> ITEM_IMAGE_DTO_ROW_MAPPER = (rs, rowNum) -> {
 
         return new ItemImageDto(
@@ -481,6 +405,55 @@ public class PostgresItemRepository implements ItemRepository {
         }
 
         return result;
+    }
+
+    @Override
+    public List<ItemDto> findCraftableItemsByGameVersionIdAndName(Long gameVersionId, Long workshopId, String query) {
+        final String sql = """
+            SELECT
+                i.id,
+                i.asset_id,
+                i.game_version_id,
+                i.name,
+                i.level,
+                i.description,
+                it.id AS item_type_id,
+                it.asset_id AS item_type_asset_id,
+                it.name AS item_type_name,
+                it.game_version_id AS item_type_game_version_id,
+                TRUE AS has_recipe
+            FROM tools_dofus.item i
+            JOIN tools_dofus.item_type it
+                ON i.item_type_id = it.id
+                AND i.game_version_id = it.game_version_id
+            WHERE i.game_version_id = ?
+            AND EXISTS (
+                SELECT 1
+                FROM tools_dofus.recipe r
+                WHERE r.item_id = i.id
+            )
+            AND NOT EXISTS (
+                SELECT 1
+                FROM tools_dofus.workshop_item wi
+                WHERE wi.item_id = i.id
+                AND wi.workshop_id = ?
+            )
+            AND i.name ILIKE ?
+            ORDER BY i.name
+            LIMIT 100
+        """;
+        
+        if (query == null || query.isBlank()) {
+            query = "";
+        }
+        String likeQuery = "%" + query + "%";
+
+        return jdbcTemplate.query(
+            sql,
+            ITEM_VIEW_ROW_MAPPER,
+            gameVersionId,
+            workshopId,
+            likeQuery);
     }
 
     private record ImageExistence(boolean has1x, boolean has2x) {

@@ -36,7 +36,7 @@ public class ApiSecurityExceptionHandler {
                         "timestamp", Instant.now().toString(),
                         "status", HttpStatus.FORBIDDEN.value(),
                         "error", "Forbidden",
-                        "message", "Access forbidden",
+                        "message", ex.getMessage(),
                         "path", request.getRequestURI()));
     }
 
