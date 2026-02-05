@@ -69,7 +69,7 @@ public class PostgresWorkshopRepository implements WorkshopRepository {
     public Long create(Long gameVersionId, Long userId, Workshop workshop) {
         String sql = """
             INSERT INTO tools_dofus.workshop (game_version_id, user_id, name, is_active, is_pinned)
-            VALUES (?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?)
             RETURNING id
         """;
 
