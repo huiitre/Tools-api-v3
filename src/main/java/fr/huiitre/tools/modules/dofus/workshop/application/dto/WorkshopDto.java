@@ -7,20 +7,21 @@ public class WorkshopDto {
     private final Long id;
     private final String name;
     private final boolean active;
-
     private final List<WorkshopTagDto> tags;
+    private final boolean pinned;
 
     public WorkshopDto(
         Long id,
         String name,
         boolean active,
-        List<WorkshopTagDto> tags
+        List<WorkshopTagDto> tags,
+        boolean pinned
     ) {
         this.id = id;
         this.name = name;
         this.active = active;
-
         this.tags = tags;
+        this.pinned = pinned;
     }
 
     public Long getId() {
@@ -37,5 +38,9 @@ public class WorkshopDto {
 
     public List<WorkshopTagDto> getTags() {
         return tags;
+    }
+
+    public boolean isPinned() {
+        return pinned;
     }
 }

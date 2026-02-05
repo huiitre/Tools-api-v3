@@ -5,26 +5,29 @@ public class Workshop {
     private final Long id;
     private String name;
     private boolean active;
+    private boolean pinned;
 
-    private Workshop(Long id, String name, boolean active) {
+    private Workshop(Long id, String name, boolean active, boolean pinned) {
         validateName(name);
         this.id = id;
         this.name = name;
         this.active = active;
+        this.pinned = pinned;
     }
 
-    public static Workshop rehydrate(Long id, String name, boolean active) {
-        return new Workshop(id, name, active);
+    public static Workshop rehydrate(Long id, String name, boolean active, boolean pinned) {
+        return new Workshop(id, name, active, pinned);
     }
 
     public static Workshop create(String name) {
-        return new Workshop(null, name, true);
+        return new Workshop(null, name, true, false);
     }
 
-    public void update(String name, boolean active) {
+    public void update(String name, boolean active, boolean pinned) {
         validateName(name);
         this.name = name;
         this.active = active;
+        this.pinned = pinned;
     }
 
     private void validateName(String name) {
@@ -47,5 +50,9 @@ public class Workshop {
 
     public boolean isActive() {
         return active;
+    }
+
+    public boolean isPinned() {
+        return pinned;
     }
 }

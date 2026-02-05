@@ -58,9 +58,14 @@ public class UpdateWorkshopUseCase implements SecuredUseCase {
             throw new IllegalArgumentException("Un atelier avec ce nom existe déjà.");
         }
 
+        boolean activeValue = request.active() != null ? request.active() : current.isActive();
+        boolean pinnedValue = request.pinned() != null ? request.pinned() : current.isPinned();
+
         current.update(
-                request.name(),
-                request.active());
+            request.name(),
+            activeValue,
+            pinnedValue
+        );
 
         workshopRepository.update(userId, current);
 
@@ -70,9 +75,11 @@ public class UpdateWorkshopUseCase implements SecuredUseCase {
                 .toList();
 
         return new WorkshopDto(
-                current.getId(),
-                current.getName(),
-                current.isActive(),
-                tagsDto);
+            current.getId(),
+            current.getName(),
+            current.isActive(),
+            tagsDto,
+            current.isPinned()
+        );
     }
 }

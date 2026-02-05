@@ -61,7 +61,8 @@ public class RemoveTagFromWorkshopUseCase implements SecuredUseCase {
             workshop.getId(),
             workshop.getName(),
             workshop.isActive(),
-            tagsDto
+            tagsDto,
+            workshop.isPinned()
         );
     }
 }

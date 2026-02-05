@@ -68,7 +68,7 @@ public class PostgresWorkshopRepository implements WorkshopRepository {
     @Override
     public Long create(Long gameVersionId, Long userId, Workshop workshop) {
         String sql = """
-            INSERT INTO tools_dofus.workshop (game_version_id, user_id, name, is_active)
+            INSERT INTO tools_dofus.workshop (game_version_id, user_id, name, is_active, is_pinned)
             VALUES (?, ?, ?, ?)
             RETURNING id
         """;
@@ -79,14 +79,15 @@ public class PostgresWorkshopRepository implements WorkshopRepository {
             gameVersionId,
             userId,
             workshop.getName(),
-            workshop.isActive()
+            workshop.isActive(),
+            workshop.isPinned()
         );
     }
 
     public void update(Long userId, Workshop workshop) {
         String sql = """
             UPDATE tools_dofus.workshop
-            SET name = ?, is_active = ?
+            SET name = ?, is_active = ?, is_pinned = ?
             WHERE id = ? AND user_id = ?
         """;
 
@@ -94,6 +95,7 @@ public class PostgresWorkshopRepository implements WorkshopRepository {
             sql,
             workshop.getName(),
             workshop.isActive(),
+            workshop.isPinned(),
             workshop.getId(),
             userId
         );
@@ -112,7 +114,7 @@ public class PostgresWorkshopRepository implements WorkshopRepository {
     @Override
     public Optional<Workshop> findByIdAndUserId(Long userId, Long workshopId) {
         String sql = """
-            SELECT id, name, is_active
+            SELECT id, name, is_active, is_pinned
             FROM tools_dofus.workshop
             WHERE id = ? AND user_id = ?
         """;
@@ -125,9 +127,10 @@ public class PostgresWorkshopRepository implements WorkshopRepository {
     @Override
     public List<Workshop> findAllByUserIdAndGameVersionId(Long userId, Long gameVersionId) {
         String sql = """
-            SELECT id, name, is_active
+            SELECT id, name, is_active, is_pinned
             FROM tools_dofus.workshop
             WHERE user_id = ? AND game_version_id = ?
+            ORDER BY is_pinned DESC, name ASC
         """;
 
         return jdbcTemplate.query(sql, WORKSHOP_ROW_MAPPER, userId, gameVersionId);
@@ -366,7 +369,8 @@ public class PostgresWorkshopRepository implements WorkshopRepository {
     private static final RowMapper<Workshop> WORKSHOP_ROW_MAPPER = (rs, rowNum) -> Workshop.rehydrate(
         rs.getLong("id"),
         rs.getString("name"),
-        rs.getBoolean("is_active")
+        rs.getBoolean("is_active"),
+        rs.getBoolean("is_pinned")
     );
     
     private static final RowMapper<WorkshopTag> WORKSHOP_TAG_ROW_MAPPER = (rs, rowNum) -> WorkshopTag.rehydrate(
