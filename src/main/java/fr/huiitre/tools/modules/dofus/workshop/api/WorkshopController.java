@@ -24,6 +24,7 @@ import fr.huiitre.tools.modules.core.role.domain.RoleCode;
 import fr.huiitre.tools.modules.dofus.item.application.dto.ItemDto;
 import fr.huiitre.tools.modules.dofus.workshop.api.dto.CreateWorkshopRequest;
 import fr.huiitre.tools.modules.dofus.workshop.api.dto.UpdateWorkshopRequest;
+import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopDetailResponse;
 import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopDto;
 import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopIngredientDetailDto;
 import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopItemDetailDto;
@@ -131,7 +132,7 @@ public class WorkshopController {
 
     @RequiredRole(RoleCode.USER)
     @GetMapping("/{workshopId}")
-    public ResponseEntity<List<WorkshopItemDetailDto>> getWorkshopDetail(
+    public ResponseEntity<WorkshopDetailResponse> getWorkshopDetail(
             @PathVariable Long workshopId,
             @RequestHeader(value = "X-Game-Version-Id", required = true) Long gameVersionId) {
         return ResponseEntity.ok(

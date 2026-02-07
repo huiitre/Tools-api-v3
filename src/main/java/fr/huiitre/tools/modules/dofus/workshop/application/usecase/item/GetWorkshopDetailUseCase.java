@@ -22,10 +22,12 @@ import fr.huiitre.tools.modules.dofus.item.application.ports.ItemRepository;
 import fr.huiitre.tools.modules.dofus.item.application.service.ItemEnrichmentService;
 import fr.huiitre.tools.modules.dofus.recipe.application.ports.RecipeRepository;
 import fr.huiitre.tools.modules.dofus.recipe.domain.Recipe;
+import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopDetailResponse;
 import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopIngredientDetailDto;
 import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopItemDetailDto;
 import fr.huiitre.tools.modules.dofus.workshop.application.exception.WorkshopNotFoundException;
 import fr.huiitre.tools.modules.dofus.workshop.application.repository.WorkshopRepository;
+import fr.huiitre.tools.modules.dofus.workshop.domain.Workshop;
 import fr.huiitre.tools.modules.dofus.workshop.domain.WorkshopItem;
 import fr.huiitre.tools.modules.dofus.workshop.domain.WorkshopItemIngredient;
 
@@ -62,16 +64,20 @@ public class GetWorkshopDetailUseCase implements SecuredUseCase {
         this.itemEnrichmentService = itemEnrichmentService;
     }
 
-    public List<WorkshopItemDetailDto> execute(Long workshopId, Long gameVersionId) {
+    public WorkshopDetailResponse execute(Long workshopId, Long gameVersionId) {
 
         Long userId = authenticatedUserProvider.getUserId();
 
-        boolean workshopExists = workshopRepository.existsByIdAndUserId(userId, workshopId);
-        if (!workshopExists) {
-            throw new WorkshopNotFoundException();
-        }
+        workshopRepository.findById(workshopId)
+            .orElseThrow(WorkshopNotFoundException::new);
 
-        List<WorkshopItem> items = workshopRepository.findAllItemsByUserIdAndWorkshopId(userId, workshopId);
+        Long ownerUserId = workshopRepository.findOwnerUserId(workshopId);
+
+        boolean isOwner = ownerUserId.equals(userId);
+
+        Long effectiveUserId = isOwner ? userId : ownerUserId;
+
+        List<WorkshopItem> items = workshopRepository.findAllItemsByUserIdAndWorkshopId(effectiveUserId, workshopId);
 
         // Récupérer tous les ingrédients + Map par ID
         Map<Long, List<WorkshopItemIngredient>> ingredientsByWorkshopItemId = new HashMap<>();
@@ -81,7 +87,7 @@ public class GetWorkshopDetailUseCase implements SecuredUseCase {
         for (WorkshopItem item : items) {
             allItemIds.add(item.getItemId());
             List<WorkshopItemIngredient> ingredients = workshopRepository
-                    .findAllIngredientsByUserIdAndWorkshopItemId(userId, item.getId());
+                    .findAllIngredientsByUserIdAndWorkshopItemId(effectiveUserId, item.getId());
             ingredientsByWorkshopItemId.put(item.getId(), ingredients);
 
             for (WorkshopItemIngredient ing : ingredients) {
@@ -184,6 +190,6 @@ public class GetWorkshopDetailUseCase implements SecuredUseCase {
             itemList.add(itemDetail);
         }
 
-        return itemList;
+        return new WorkshopDetailResponse(itemList, isOwner);
     }
 }

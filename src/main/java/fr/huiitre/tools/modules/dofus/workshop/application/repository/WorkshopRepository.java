@@ -49,4 +49,8 @@ public interface WorkshopRepository {
     void addTagsToWorkshop(Long userId, Long workshopId, List<Long> tagIds);
 
     void removeTagFromWorkshop(Long userId, Long workshopId, Long tagId);
+
+    Optional<Workshop> findById(Long id);
+
+    Long findOwnerUserId(Long workshopId);
 }

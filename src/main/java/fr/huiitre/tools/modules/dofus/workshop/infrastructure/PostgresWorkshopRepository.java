@@ -358,6 +358,30 @@ public class PostgresWorkshopRepository implements WorkshopRepository {
         jdbcTemplate.update(sql, workshopId, tagId, userId);
     }
 
+    @Override
+    public Long findOwnerUserId(Long workshopId) {
+        String sql = """
+            SELECT user_id
+            FROM tools_dofus.workshop
+            WHERE id = ?
+        """;
+
+        return jdbcTemplate.queryForObject(sql, Long.class, workshopId);
+    }
+
+    @Override
+    public Optional<Workshop> findById(Long id) {
+        String sql = """
+            SELECT id, name, is_active, is_pinned
+            FROM tools_dofus.workshop
+            WHERE id = ?
+        """;
+
+        return jdbcTemplate.query(sql, WORKSHOP_ROW_MAPPER, id)
+            .stream()
+            .findFirst();
+    }
+
     private static final RowMapper<WorkshopItemIngredient> WORKSHOP_ITEM_INGREDIENT_ROW_MAPPER = (rs, rowNum) -> WorkshopItemIngredient.rehydrate(
         rs.getLong("id"),
         rs.getLong("workshop_item_id"),
