@@ -147,9 +147,20 @@ public class GetWorkshopDetailUseCase implements SecuredUseCase {
                     parentItemId = parentIngredient.getItemId();
                 }
                 
-                Long quantityRequired = recipesByItemId
+                Long baseQuantityRequired = recipesByItemId
                     .getOrDefault(parentItemId, Map.of())
                     .getOrDefault(ingredient.getItemId(), 0L);
+
+                Long quantityRequired;
+                //* Ingrédient direct de l'item principal
+                if (ingredient.getParentIngredientId() == null) {
+                    quantityRequired = baseQuantityRequired * item.getQuantity();
+                }
+                //* Sous-ingrédient d'un ingrédient crafté
+                else {    
+                    quantityRequired = baseQuantityRequired * calculateParentMultiplier(ingredient, ingredientsById, recipesByItemId, item);
+                }
+
 
                 ItemDto ingredientItemDto = itemsById.get(ingredient.getItemId());
                 List<ItemImageDto> imagesIngredientDto = imagesByItemId.getOrDefault(ingredient.getItemId(), List.of());
@@ -167,7 +178,7 @@ public class GetWorkshopDetailUseCase implements SecuredUseCase {
                         ingredientItemDto.getType(),
                         imagesIngredientDto,
                         ingredientItemDto.getParentItemId(),
-                        quantityRequired,
+                        baseQuantityRequired,
                         farmZonesIngredientDto);
 
                 ingredientList.add(
@@ -191,5 +202,34 @@ public class GetWorkshopDetailUseCase implements SecuredUseCase {
         }
 
         return new WorkshopDetailResponse(itemList, isOwner);
+    }
+
+    private Long calculateParentMultiplier(
+        WorkshopItemIngredient ingredient,
+        Map<Long, WorkshopItemIngredient> ingredientsById,
+        Map<Long, Map<Long, Long>> recipesByItemId,
+        WorkshopItem mainItem
+    ) {
+        if (ingredient.getParentIngredientId() == null) {
+            return mainItem.getQuantity();
+        }
+        
+        WorkshopItemIngredient parent = ingredientsById.get(ingredient.getParentIngredientId());
+        Long parentMultiplier = calculateParentMultiplier(parent, ingredientsById, recipesByItemId, mainItem);
+        
+        // Déterminer l'item parent du parent
+        Long parentItemId;
+        if (parent.getParentIngredientId() == null) {
+            parentItemId = mainItem.getItemId();
+        } else {
+            WorkshopItemIngredient grandParent = ingredientsById.get(parent.getParentIngredientId());
+            parentItemId = grandParent.getItemId();
+        }
+        
+        Long parentBaseQuantity = recipesByItemId
+            .getOrDefault(parentItemId, Map.of())
+            .getOrDefault(parent.getItemId(), 1L);
+        
+        return parentBaseQuantity * parentMultiplier;
     }
 }

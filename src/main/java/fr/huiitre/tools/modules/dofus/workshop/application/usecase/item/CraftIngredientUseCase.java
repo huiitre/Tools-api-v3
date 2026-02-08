@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +33,8 @@ import fr.huiitre.tools.modules.dofus.workshop.domain.WorkshopItemIngredient;
 @Service
 @Transactional
 public class CraftIngredientUseCase implements SecuredUseCase {
+
+    private final static Logger logger = LoggerFactory.getLogger(CraftIngredientUseCase.class);
 
     private final AuthenticatedUserProvider authenticatedUserProvider;
     private final WorkshopRepository workshopRepository;
@@ -93,30 +97,51 @@ public class CraftIngredientUseCase implements SecuredUseCase {
 
         workshopRepository.addIngredients(userId, ingredients);
 
-        // Calculer quantityRequired du parentIngredient
+        List<WorkshopItem> items = workshopRepository.findAllItemsByUserIdAndWorkshopId(userId, workshopId);
+        WorkshopItem mainItem = items.stream()
+            .filter(i -> i.getId().equals(workshopItemId))
+            .findFirst()
+            .orElseThrow();
+
+        List<WorkshopItemIngredient> allIngredients = workshopRepository.findAllIngredientsByUserIdAndWorkshopItemId(userId, workshopItemId);
+        Map<Long, WorkshopItemIngredient> ingredientsById = new HashMap<>();
+        Set<Long> allItemIds = new HashSet<>();
+
+        ingredientsById.put(parentIngredient.getId(), parentIngredient);
+        allItemIds.add(parentIngredient.getItemId());
+        allItemIds.add(mainItem.getItemId());
+        for (WorkshopItemIngredient ing : allIngredients) {
+            ingredientsById.put(ing.getId(), ing);
+            allItemIds.add(ing.getItemId());
+        }
+
+        Map<Long, Map<Long, Long>> recipesByItemId = new HashMap<>();
+        for (Long itemId : allItemIds) {
+            List<Recipe> recipesForItem = recipeRepository.findByItemId(itemId);
+            Map<Long, Long> ingredientQuantities = new HashMap<>();
+            for (Recipe recipe : recipesForItem) {
+                ingredientQuantities.put(recipe.getIngredientId(), recipe.getQuantity());
+            }
+            recipesByItemId.put(itemId, ingredientQuantities);
+        }
+
         Long parentOfParentItemId;
         if (parentIngredient.getParentIngredientId() == null) {
-            List<WorkshopItem> items = workshopRepository.findAllItemsByUserIdAndWorkshopId(userId, workshopId);
-            WorkshopItem mainItem = items.stream()
-                .filter(i -> i.getId().equals(workshopItemId))
-                .findFirst()
-                .orElseThrow();
             parentOfParentItemId = mainItem.getItemId();
         } else {
-            WorkshopItemIngredient grandParent = workshopRepository
-                .findIngredientByIdAndUserId(userId, parentIngredient.getParentIngredientId())
-                .orElseThrow();
+            WorkshopItemIngredient grandParent = ingredientsById.get(parentIngredient.getParentIngredientId());
             parentOfParentItemId = grandParent.getItemId();
         }
 
-        List<Recipe> recipesOfParent = recipeRepository.findByItemId(parentOfParentItemId);
-        Long quantityRequired = recipesOfParent.stream()
-            .filter(r -> r.getIngredientId().equals(itemIdToCraft))
-            .map(Recipe::getQuantity)
-            .findFirst()
-            .orElse(0L);
+        Long baseQuantityRequired = recipesByItemId
+            .getOrDefault(parentOfParentItemId, Map.of())
+            .getOrDefault(itemIdToCraft, 0L);
 
-        workshopRepository.updateIngredientQuantityObtained(userId, ingredientId, quantityRequired);
+        Long multipliedQuantity = baseQuantityRequired * calculateParentMultiplier(parentIngredient, ingredientsById, recipesByItemId, mainItem);
+
+        logger.debug("Ligne #134 || multipliedQuantity : {}", multipliedQuantity);
+
+        workshopRepository.updateIngredientQuantityObtained(userId, ingredientId, multipliedQuantity);
 
         return enrichCreatedIngredients(userId, ingredientId, gameVersionId);
     }
@@ -192,5 +217,33 @@ public class CraftIngredientUseCase implements SecuredUseCase {
         }
 
         return result;
+    }
+
+    private Long calculateParentMultiplier(
+        WorkshopItemIngredient ingredient,
+        Map<Long, WorkshopItemIngredient> ingredientsById,
+        Map<Long, Map<Long, Long>> recipesByItemId,
+        WorkshopItem mainItem
+    ) {
+        if (ingredient.getParentIngredientId() == null) {
+            return mainItem.getQuantity();
+        }
+        
+        WorkshopItemIngredient parent = ingredientsById.get(ingredient.getParentIngredientId());
+        Long parentMultiplier = calculateParentMultiplier(parent, ingredientsById, recipesByItemId, mainItem);
+        
+        Long parentItemId;
+        if (parent.getParentIngredientId() == null) {
+            parentItemId = mainItem.getItemId();
+        } else {
+            WorkshopItemIngredient grandParent = ingredientsById.get(parent.getParentIngredientId());
+            parentItemId = grandParent.getItemId();
+        }
+        
+        Long parentBaseQuantity = recipesByItemId
+            .getOrDefault(parentItemId, Map.of())
+            .getOrDefault(parent.getItemId(), 1L);
+        
+        return parentBaseQuantity * parentMultiplier;
     }
 }

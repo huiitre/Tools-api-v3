@@ -3,6 +3,8 @@ package fr.huiitre.tools.modules.dofus.workshop.application.usecase.item;
 import java.util.List;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +22,8 @@ import fr.huiitre.tools.modules.dofus.workshop.domain.WorkshopItemIngredient;
 @Service
 @Transactional
 public class UpdateIngredientQuantityObtainedUseCase implements SecuredUseCase {
+
+    private final static Logger logger = LoggerFactory.getLogger(UpdateIngredientQuantityObtainedUseCase.class);
 
     private final AuthenticatedUserProvider authenticatedUserProvider;
     private final WorkshopRepository workshopRepository;
@@ -56,35 +60,43 @@ public class UpdateIngredientQuantityObtainedUseCase implements SecuredUseCase {
         WorkshopItemIngredient ingredient = workshopRepository.findIngredientByIdAndUserId(userId, ingredientId)
             .orElseThrow(() -> new IllegalArgumentException("Ingredient not found"));
 
-        // Vérifier si l'ingrédient est en mode "crafté" (a des sous-ingrédients)
         List<WorkshopItemIngredient> subIngredients = workshopRepository.findIngredientsByParentIngredientId(userId, ingredientId);
         if (!subIngredients.isEmpty()) {
-            throw new IllegalArgumentException("Cannot update quantity of crafted ingredient");
+            return;
         }
 
-        // Déterminer l'item parent pour récupérer la quantité requise
         Long parentItemId;
+        Long parentMultiplier;
+
         if (ingredient.getParentIngredientId() == null) {
             List<WorkshopItem> items = workshopRepository.findAllItemsByUserIdAndWorkshopId(userId, workshopId);
             WorkshopItem mainItem = items.stream()
                 .filter(i -> i.getId().equals(ingredient.getWorkshopItemId()))
                 .findFirst()
                 .orElseThrow();
+
             parentItemId = mainItem.getItemId();
+            parentMultiplier = mainItem.getQuantity();
+
         } else {
             WorkshopItemIngredient parentIngredient = workshopRepository
                 .findIngredientByIdAndUserId(userId, ingredient.getParentIngredientId())
                 .orElseThrow();
+
             parentItemId = parentIngredient.getItemId();
+            parentMultiplier = parentIngredient.getQuantityObtained();
         }
 
-        // Récupérer la quantité requise depuis la recette du parent
+        // Récupérer la quantité requise depuis la recette du parent (base recette)
         List<Recipe> parentRecipes = recipeRepository.findByItemId(parentItemId);
-        Long quantityRequired = parentRecipes.stream()
+        Long recipeQuantity = parentRecipes.stream()
             .filter(r -> r.getIngredientId().equals(ingredient.getItemId()))
             .map(Recipe::getQuantity)
             .findFirst()
             .orElse(0L);
+
+        // Quantité requise réelle = recette * multiplicateur
+        Long quantityRequired = recipeQuantity * Math.max(0L, parentMultiplier);
 
         // Limiter au maximum requis
         Long finalQuantity = Math.min(quantityObtained, quantityRequired);
