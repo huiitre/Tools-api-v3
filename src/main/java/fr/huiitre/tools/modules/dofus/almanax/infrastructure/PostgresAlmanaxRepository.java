@@ -69,7 +69,7 @@ public class PostgresAlmanaxRepository implements AlmanaxRepository {
                         dates,
                         item_id,
                         item_quantity
-                    ) VALUES (?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?::jsonb, ?, ?)
                     RETURNING id
                 """;
 
