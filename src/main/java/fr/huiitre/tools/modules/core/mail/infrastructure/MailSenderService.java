@@ -1,5 +1,6 @@
 package fr.huiitre.tools.modules.core.mail.infrastructure;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -37,7 +38,11 @@ public class MailSenderService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
 
-            helper.setFrom(from);
+            try {
+                helper.setFrom(from, "Tools - Huiitre.fr");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException("Invalid From encoding", e);
+            }
             helper.setTo(to.toArray(String[]::new));
             helper.setSubject(subject);
             helper.setText(body, false);
@@ -60,7 +65,11 @@ public class MailSenderService {
             MimeMessage message = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, attachment != null);
 
-            helper.setFrom(from);
+            try {
+                helper.setFrom(from, "Tools - Huiitre.fr");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException("Invalid From encoding", e);
+            }
             helper.setTo(to.toArray(String[]::new));
             helper.setSubject(subject);
             helper.setText(body, false);

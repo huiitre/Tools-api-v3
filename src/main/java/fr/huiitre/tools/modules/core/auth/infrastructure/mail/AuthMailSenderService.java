@@ -11,7 +11,7 @@ import jakarta.mail.internet.MimeMessage;
 
 public class AuthMailSenderService implements EmailSender {
 
-    private static final String FROM = "noreply@huiitre.fr";
+    private static final String FROM = "admin@huiitre.fr";
 
     private final JavaMailSender mailSender;
 
