@@ -65,4 +65,20 @@ public class PostgresUserEmailVerificationRepository implements UserEmailVerific
 
         jdbcTemplate.update(sql, now);
     }
+
+    @Override
+    public Optional<LocalDateTime> findLastCreatedAtByUserId(Long userId) {
+        final String sql = """
+                    SELECT created_at
+                    FROM tools_core.user_email_verification
+                    WHERE user_id = ?
+                    ORDER BY created_at DESC
+                    LIMIT 1
+                """;
+
+        return jdbcTemplate.query(
+                sql,
+                rs -> rs.next() ? Optional.of(rs.getTimestamp("created_at").toLocalDateTime()) : Optional.empty(),
+                userId);
+    }
 }

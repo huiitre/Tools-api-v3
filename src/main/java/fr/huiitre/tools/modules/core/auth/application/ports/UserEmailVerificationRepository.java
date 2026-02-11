@@ -15,4 +15,6 @@ public interface UserEmailVerificationRepository {
     Optional<Long> findUserIdByValidToken(String token, LocalDateTime now);
 
     void deleteExpired(LocalDateTime now);
+
+    Optional<LocalDateTime> findLastCreatedAtByUserId(Long userId);
 }

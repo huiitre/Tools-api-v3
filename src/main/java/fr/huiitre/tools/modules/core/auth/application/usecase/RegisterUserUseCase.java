@@ -1,5 +1,7 @@
 package fr.huiitre.tools.modules.core.auth.application.usecase;
 
+import java.util.Optional;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -69,12 +71,15 @@ public class RegisterUserUseCase {
 
         /*
          * ===============================
-         * REGLE FONDAMENTALE
+         * REGLES METIER
          * ===============================
-         * Si l'email existe déjà → REGISTER INTERDIT
+         * Si l'email existe déjà et compte actif → REGISTER INTERDIT
          */
-        if (userRepository.findByEmail(command.getEmail()).isPresent()) {
+        Optional<User> existingUserOpt = userRepository.findByEmail(command.getEmail());
+        if (existingUserOpt.isPresent() && existingUserOpt.get().isActive()) {
             throw new RegisterException("Un compte existe déjà avec cette adresse email.");
+        } else if (existingUserOpt.isPresent() && !existingUserOpt.get().isActive()) {
+            return existingUserOpt.get();
         }
 
         /*
@@ -83,10 +88,11 @@ public class RegisterUserUseCase {
          * ===============================
          */
         User user = new User(
-                command.getName(),
-                command.getEmail(),
-                UserType.HUMAN,
-                AvatarSource.PASSWORD);
+            command.getName(),
+            command.getEmail(),
+            UserType.HUMAN,
+            AvatarSource.PASSWORD
+        );
 
         userRepository.save(user);
 
