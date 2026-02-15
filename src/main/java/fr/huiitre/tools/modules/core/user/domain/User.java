@@ -7,7 +7,7 @@ public class User {
     private Long id;
     private final String name;
     private final String email;
-    private final UserType userType;
+    private UserType userType;
     private boolean active;
     private LocalDateTime createdAt;
     private AvatarSource avatarSource;
@@ -15,7 +15,7 @@ public class User {
     public User(String name, String email, UserType userType, AvatarSource avatarSource) {
         this.name = name;
         this.email = email;
-        this.userType = userType;
+        this.userType = userType != null ? userType : UserType.HUMAN;
         this.active = false;
         this.avatarSource = avatarSource != null ? avatarSource : AvatarSource.PASSWORD;
     }
