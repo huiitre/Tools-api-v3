@@ -1,4 +1,4 @@
-package fr.huiitre.tools.modules.dofus;
+package fr.huiitre.tools.modules.dofus.game.api;
 
 import java.util.List;
 

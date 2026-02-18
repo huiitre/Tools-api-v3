@@ -27,7 +27,6 @@ import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopIngredien
 import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopItemDetailDto;
 import fr.huiitre.tools.modules.dofus.workshop.application.exception.WorkshopNotFoundException;
 import fr.huiitre.tools.modules.dofus.workshop.application.repository.WorkshopRepository;
-import fr.huiitre.tools.modules.dofus.workshop.domain.Workshop;
 import fr.huiitre.tools.modules.dofus.workshop.domain.WorkshopItem;
 import fr.huiitre.tools.modules.dofus.workshop.domain.WorkshopItemIngredient;
 
