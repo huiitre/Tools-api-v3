@@ -20,7 +20,6 @@ import fr.huiitre.tools.modules.dofus.item.infrastructure.PostgresItemRepository
 import fr.huiitre.tools.modules.dofus.itemtype.application.ports.ItemTypeRepository;
 import fr.huiitre.tools.modules.dofus.itemtype.infrastructure.PostgresItemTypeRepository;
 import fr.huiitre.tools.modules.dofus.monster.application.ports.MonsterRepository;
-import fr.huiitre.tools.modules.dofus.monster.domain.Monster;
 import fr.huiitre.tools.modules.dofus.monster.infrastructure.PostgresMonsterRepository;
 import fr.huiitre.tools.modules.dofus.pricing.application.ports.ItemPriceRepository;
 import fr.huiitre.tools.modules.dofus.pricing.infrastructure.PostgresItemPriceRepository;
@@ -30,7 +29,6 @@ import fr.huiitre.tools.modules.dofus.subarea.application.ports.SubareaRepositor
 import fr.huiitre.tools.modules.dofus.subarea.infrastructure.PostgresSubareaRepository;
 import fr.huiitre.tools.modules.dofus.workshop.application.repository.WorkshopRepository;
 import fr.huiitre.tools.modules.dofus.workshop.application.repository.WorkshopTagRepository;
-import fr.huiitre.tools.modules.dofus.workshop.domain.WorkshopTag;
 import fr.huiitre.tools.modules.dofus.workshop.infrastructure.PostgresWorkshopRepository;
 import fr.huiitre.tools.modules.dofus.workshop.infrastructure.PostgresWorkshopTagRepository;
 
