@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import fr.huiitre.tools.modules.core.common.api.RequiredRole;
+import fr.huiitre.tools.modules.core.mail.application.MailReport;
 import fr.huiitre.tools.modules.core.role.domain.RoleCode;
 import fr.huiitre.tools.modules.dofus.sync.application.sync.usecase.SyncDofusDataUseCase;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,9 +31,9 @@ public class DofusSyncController {
 
     @RequiredRole(RoleCode.TECH)
     @PostMapping
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void syncDofusData(
+    @ResponseStatus(HttpStatus.OK)
+    public MailReport syncDofusData(
             @PathVariable Long gameVersionId) {
-        syncDofusDataUseCase.execute(gameVersionId);
+        return syncDofusDataUseCase.execute(gameVersionId);
     }
 }

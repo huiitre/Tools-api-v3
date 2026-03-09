@@ -12,11 +12,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import fr.huiitre.tools.modules.core.security.application.usecase.SecuredUseCase;
+import fr.huiitre.tools.modules.core.mail.application.MailReport;
 import fr.huiitre.tools.modules.core.mail.infrastructure.MailSenderService;
 import fr.huiitre.tools.modules.core.module.domain.ModuleCode;
 import fr.huiitre.tools.modules.core.report.infrastructure.ReportFileGenerator;
 import fr.huiitre.tools.modules.core.role.domain.RoleCode;
+import fr.huiitre.tools.modules.core.security.application.usecase.SecuredUseCase;
 import fr.huiitre.tools.modules.dofus.game.application.view.GameVersionData;
 import fr.huiitre.tools.modules.dofus.sync.application.almanax.SyncAlmanaxUseCase;
 import fr.huiitre.tools.modules.dofus.sync.application.area.SyncAreaUseCase;
@@ -82,7 +83,7 @@ public class SyncDofus3DataUseCase implements SecuredUseCase {
         return RoleCode.TECH;
     }
 
-    public void execute(GameVersionData gameVersion) {
+    public MailReport execute(GameVersionData gameVersion) {
 
         languageDataProvider.reload();
 
@@ -215,17 +216,7 @@ public class SyncDofus3DataUseCase implements SecuredUseCase {
                 ? "[DOFUS3][SYNC][OK] Aucun changement"
                 : "[DOFUS3][SYNC] +" + globalCreated + " ~" + globalUpdated;
 
-        // si tu n’as aucune PJ -> simple mail
-        if (attachments.isEmpty()) {
-            mailSenderService.send(subject, body.toString());
-            return;
-        }
-
-        logger.info("SUBJECT = {}", subject);
-        mailSenderService.sendWithAttachments(
-                subject,
-                body.toString(),
-                attachments.stream().map(Attachment::path).toList());
+        return new MailReport(subject, body.toString());
     }
 
     private void appendReportSection(

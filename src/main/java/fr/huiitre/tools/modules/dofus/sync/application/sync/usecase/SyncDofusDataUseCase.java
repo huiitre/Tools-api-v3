@@ -5,6 +5,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import fr.huiitre.tools.modules.core.mail.application.MailReport;
 import fr.huiitre.tools.modules.core.module.domain.ModuleCode;
 import fr.huiitre.tools.modules.core.role.domain.RoleCode;
 import fr.huiitre.tools.modules.core.security.application.usecase.SecuredUseCase;
@@ -36,7 +37,7 @@ public class SyncDofusDataUseCase implements SecuredUseCase {
         this.gameVersionRepository = gameVersionRepository;
     }
 
-    public void execute(
+    public MailReport execute(
             Long gameVersionId) {
         // * récupération de la version */
         GameVersionData gameVersion = gameVersionRepository.findById(gameVersionId)
@@ -44,10 +45,10 @@ public class SyncDofusDataUseCase implements SecuredUseCase {
 
         switch (gameVersion.getCode()) {
             case "dofus3" -> {
-                syncDofus3DataUseCase.execute(gameVersion);
+                return syncDofus3DataUseCase.execute(gameVersion);
             }
             case "retro" -> {
-
+                throw new IllegalArgumentException("Unsupported game version: retro");
             }
             default -> throw new IllegalArgumentException("Unsupported game version: " + gameVersion.getCode());
         }
