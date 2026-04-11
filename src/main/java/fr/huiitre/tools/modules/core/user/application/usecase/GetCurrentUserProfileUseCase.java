@@ -6,16 +6,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import fr.huiitre.tools.modules.core.auth.api.dto.UserProfileDto;
-import fr.huiitre.tools.modules.core.security.application.ports.AuthenticatedUserProvider;
-import fr.huiitre.tools.modules.core.security.application.usecase.SecuredUseCase;
-import fr.huiitre.tools.modules.core.role.application.ports.UserRoleRepository;
-import fr.huiitre.tools.modules.core.user.application.ports.AvatarResolver;
-import fr.huiitre.tools.modules.core.user.application.ports.UserRepository;
-import fr.huiitre.tools.modules.core.user_module.application.ports.UserModuleRoleRepository;
-import fr.huiitre.tools.modules.core.user_module.application.view.UserModuleView;
 import fr.huiitre.tools.modules.core.auth.application.exception.UserNotFoundException;
 import fr.huiitre.tools.modules.core.role.api.view.RoleView;
+import fr.huiitre.tools.modules.core.role.application.ports.UserRoleRepository;
+import fr.huiitre.tools.modules.core.security.application.ports.AuthenticatedUserProvider;
+import fr.huiitre.tools.modules.core.security.application.usecase.SecuredUseCase;
+import fr.huiitre.tools.modules.core.user.application.ports.AvatarResolver;
+import fr.huiitre.tools.modules.core.user.application.ports.UserRepository;
 import fr.huiitre.tools.modules.core.user.domain.User;
+import fr.huiitre.tools.modules.core.user_module.application.ports.UserModuleRoleRepository;
+import fr.huiitre.tools.modules.core.user_module.application.view.UserModuleView;
 
 @Service
 @Transactional
