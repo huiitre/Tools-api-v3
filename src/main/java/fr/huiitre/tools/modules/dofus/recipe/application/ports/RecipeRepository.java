@@ -13,4 +13,6 @@ public interface RecipeRepository {
     boolean exists(Long itemId, Long ingredientId);
 
     List<Recipe> findByItemId(Long itemId);
+
+    void deleteByItemId(Long itemId);
 }

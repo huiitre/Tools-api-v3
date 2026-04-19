@@ -46,6 +46,14 @@ public class PostgresRecipeRepository implements RecipeRepository {
         return jdbcTemplate.query(sql, RECIPE_ROW_MAPPER, itemId);
     }
 
+    @Override
+    public void deleteByItemId(Long itemId) {
+        String sql = """
+            DELETE FROM tools_dofus.recipe WHERE item_id = ?
+        """;
+        jdbcTemplate.update(sql, itemId);
+    }
+
     private static final RowMapper<Recipe> RECIPE_ROW_MAPPER = (rs, rowNum) -> Recipe.rehydrate(
         rs.getLong("id"),
         rs.getLong("item_id"),

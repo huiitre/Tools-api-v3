@@ -64,17 +64,25 @@ public class SyncRecipesUseCase implements SecuredUseCase {
         List<RecipeSyncData> external = recipeDataProvider.fetchAll();
 
         List<String> created = new ArrayList<>();
-        List<String> updated = new ArrayList<>();
 
-        // 4. Sync
+        // 4. RESET GLOBAL des recettes pour la version
+        for (Item item : items) {
+            recipeRepository.deleteByItemId(item.getId());
+        }
+
+        // 5. REBUILD depuis le JSON
         for (RecipeSyncData recipe : external) {
 
             Item parent = itemsByAssetId.get(recipe.getItemId());
-            Item ingredient = itemsByAssetId.get(recipe.getIngredientId());
+            if (parent == null) {
+                logger.warn("Recipes ignored (missing parent): assetId={}", recipe.getItemId());
+                continue;
+            }
 
-            if (parent == null || ingredient == null) {
+            Item ingredient = itemsByAssetId.get(recipe.getIngredientId());
+            if (ingredient == null) {
                 logger.warn(
-                        "Recipe ignored (missing item): parentAssetId={} ingredientAssetId={}",
+                        "Recipe ignored (missing ingredient): parentAssetId={} ingredientAssetId={}",
                         recipe.getItemId(),
                         recipe.getIngredientId());
                 continue;
@@ -84,21 +92,9 @@ public class SyncRecipesUseCase implements SecuredUseCase {
             Long ingredientId = ingredient.getId();
             Long quantity = recipe.getQuantity();
 
-            if (!recipeRepository.exists(itemId, ingredientId)) {
+            recipeRepository.insert(itemId, ingredientId, quantity);
 
-                recipeRepository.insert(itemId, ingredientId, quantity);
-
-                created.add(
-                        "itemId=" + itemId
-                                + " ingredientId=" + ingredientId
-                                + " quantity=" + quantity);
-
-                continue;
-            }
-
-            recipeRepository.update(itemId, ingredientId, quantity);
-
-            updated.add(
+            created.add(
                     "itemId=" + itemId
                             + " ingredientId=" + ingredientId
                             + " quantity=" + quantity);
@@ -108,6 +104,7 @@ public class SyncRecipesUseCase implements SecuredUseCase {
                 "recipes",
                 "Recipes",
                 created,
-                updated);
+                new ArrayList<>()
+        );
     }
 }
