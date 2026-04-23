@@ -4,8 +4,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
+import fr.huiitre.tools.modules.dofus.game.application.view.GameVersionData;
 import fr.huiitre.tools.modules.dofus.item.application.dto.FarmZoneDto;
 import fr.huiitre.tools.modules.dofus.item.application.dto.ItemDto;
 import fr.huiitre.tools.modules.dofus.item.application.dto.ItemImageDto;
@@ -19,7 +19,7 @@ public interface ItemRepository {
 
     void update(Item item);
 
-    boolean refreshImages(Long itemId, Long iconId);
+    boolean refreshImages(Long itemId, Long iconId, GameVersionData gameVersionData);
 
     Optional<Item> findByAssetId(Long assetId, long gameVersionId);
 

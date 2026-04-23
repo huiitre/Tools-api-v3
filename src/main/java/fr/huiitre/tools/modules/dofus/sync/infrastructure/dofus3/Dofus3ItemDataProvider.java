@@ -34,6 +34,11 @@ public class Dofus3ItemDataProvider implements ItemDataProvider {
     }
 
     @Override
+    public boolean supports(String gameVersionCode) {
+        return "dofus3".equals(gameVersionCode);
+    }
+
+    @Override
     public List<ItemSyncData> fetchAll() {
 
         try {

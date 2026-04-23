@@ -22,7 +22,7 @@ import fr.huiitre.tools.modules.dofus.sync.application.sync.usecase.SyncReport;
 public class SyncItemTypesUseCase implements SecuredUseCase {
 
         private final ItemTypeRepository itemTypeRepository;
-        private final ItemTypeDataProvider itemTypeDataProvider;
+        private final List<ItemTypeDataProvider> itemTypeDataProviders;
 
         @Override
         public Optional<ModuleCode> requiredModule() {
@@ -36,12 +36,17 @@ public class SyncItemTypesUseCase implements SecuredUseCase {
 
         public SyncItemTypesUseCase(
                         ItemTypeRepository itemTypeRepository,
-                        ItemTypeDataProvider itemTypeDataProvider) {
+                        List<ItemTypeDataProvider> itemTypeDataProviders) {
                 this.itemTypeRepository = itemTypeRepository;
-                this.itemTypeDataProvider = itemTypeDataProvider;
+                this.itemTypeDataProviders = itemTypeDataProviders;
         }
 
         public SyncReport execute(GameVersionData gameVersion) {
+
+                ItemTypeDataProvider itemTypeDataProvider = itemTypeDataProviders.stream()
+                                .filter(p -> p.supports(gameVersion.getCode()))
+                                .findFirst()
+                                .orElseThrow(() -> new IllegalArgumentException("No ItemTypeDataProvider found for version: " + gameVersion.getCode()));
 
                 List<ItemTypeSyncData> external = itemTypeDataProvider.fetchAll();
 

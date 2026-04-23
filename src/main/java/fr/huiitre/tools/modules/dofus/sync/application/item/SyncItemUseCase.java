@@ -27,7 +27,7 @@ public class SyncItemUseCase implements SecuredUseCase {
 
         private final static Logger logger = LoggerFactory.getLogger(SyncItemUseCase.class);
 
-        private final ItemDataProvider itemDataProvider;
+        private final List<ItemDataProvider> itemDataProviders;
         private final ItemRepository itemRepository;
         private final ItemTypeRepository itemTypeRepository;
 
@@ -43,14 +43,19 @@ public class SyncItemUseCase implements SecuredUseCase {
 
         public SyncItemUseCase(
                         ItemRepository itemRepository,
-                        ItemDataProvider itemDataProvider,
+                        List<ItemDataProvider> itemDataProviders,
                         ItemTypeRepository itemTypeRepository) {
-                this.itemDataProvider = itemDataProvider;
+                this.itemDataProviders = itemDataProviders;
                 this.itemRepository = itemRepository;
                 this.itemTypeRepository = itemTypeRepository;
         }
 
         public SyncReport execute(GameVersionData gameVersion) {
+
+                ItemDataProvider itemDataProvider = itemDataProviders.stream()
+                                .filter(p -> p.supports(gameVersion.getCode()))
+                                .findFirst()
+                                .orElseThrow(() -> new IllegalArgumentException("No ItemDataProvider found for version: " + gameVersion.getCode()));
 
                 List<ItemSyncData> external = itemDataProvider.fetchAll();
 
@@ -111,8 +116,10 @@ public class SyncItemUseCase implements SecuredUseCase {
                                                                 + " iconId=" + ext.getIconId());
 
                                 itemRepository.refreshImages(
-                                                saved,
-                                                ext.getIconId());
+                                    saved,
+                                    ext.getIconId(),
+                                    gameVersion
+                                );
 
                                 continue;
                         }
@@ -155,7 +162,8 @@ public class SyncItemUseCase implements SecuredUseCase {
 
                                 itemRepository.refreshImages(
                                                 existing.getId(),
-                                                ext.getIconId());
+                                                ext.getIconId(),
+                                                gameVersion);
                         }
                 }
 

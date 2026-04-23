@@ -12,4 +12,6 @@ public interface GameVersionRepository {
     GameVersionData findByCode(String code);
 
     List<GameVersionData> findAll();
+
+    Optional<GameVersionData> findByGameServerId(Long gameServerId); 
 }

@@ -35,27 +35,27 @@ public class ItemEnrichmentService {
         this.assetImageUrlBuilder = assetImageUrlBuilder;
     }
 
-    public Map<Long, List<ItemImageDto>> loadItemImages(List<Long> itemIds) {
+    public Map<Long, List<ItemImageDto>> loadItemImages(List<Long> itemIds, String gameVersionCode) {
         Map<Long, List<ItemImageDto>> imagesByItemId = new HashMap<>();
         
         for (Long itemId : itemIds) {
             List<ItemImageDto> images = itemRepository.findImageByItemId(itemId);
-            buildItemImageUrls(images);
+            buildItemImageUrls(images, gameVersionCode);
             imagesByItemId.put(itemId, images);
         }
         
         return imagesByItemId;
     }
 
-    public Map<Long, List<MonsterImageDto>> loadMonsterImages(Set<Long> monsterIds) {
+    public Map<Long, List<MonsterImageDto>> loadMonsterImages(Set<Long> monsterIds, String gameVersionCode) {
         List<MonsterImageDto> allImages = monsterRepository.findImageByMonsterIds(monsterIds);
-        buildMonsterImageUrls(allImages);
+        buildMonsterImageUrls(allImages, gameVersionCode);
         
         return allImages.stream()
             .collect(Collectors.groupingBy(MonsterImageDto::getMonsterId));
     }
 
-    public Map<Long, List<FarmZoneDto>> loadFarmZones(List<Long> itemIds) {
+    public Map<Long, List<FarmZoneDto>> loadFarmZones(List<Long> itemIds, String gameVersionCode) {
         Map<Long, List<FarmZoneDto>> farmZonesByItemId = itemRepository.findFarmZonesByItemIds(itemIds);
 
         Set<Long> allMonsterIds = farmZonesByItemId.values().stream()
@@ -68,7 +68,7 @@ public class ItemEnrichmentService {
             return farmZonesByItemId;
         }
 
-        Map<Long, List<MonsterImageDto>> imagesByMonsterId = loadMonsterImages(allMonsterIds);
+        Map<Long, List<MonsterImageDto>> imagesByMonsterId = loadMonsterImages(allMonsterIds, gameVersionCode);
 
         return enrichFarmZones(farmZonesByItemId, imagesByMonsterId);
     }
@@ -118,23 +118,24 @@ public class ItemEnrichmentService {
         return enriched;
     }
 
-    private void buildItemImageUrls(List<ItemImageDto> images) {
+    private void buildItemImageUrls(List<ItemImageDto> images, String gameVersionCode) {
         for (ItemImageDto image : images) {
             String url = assetImageUrlBuilder.build(
                 "item",
                 image.getIconId(),
-                AssetResolution.fromDb(image.getResolution())
-            );
+                AssetResolution.fromDb(image.getResolution()),
+                gameVersionCode);
             image.setUrl(url);
         }
     }
 
-    private void buildMonsterImageUrls(List<MonsterImageDto> images) {
+    private void buildMonsterImageUrls(List<MonsterImageDto> images, String gameVersionCode) {
         for (MonsterImageDto image : images) {
             String url = assetImageUrlBuilder.build(
                 "monster",
                 image.getIconId(),
-                AssetResolution.fromDb(image.getResolution())
+                AssetResolution.fromDb(image.getResolution()),
+                gameVersionCode
             );
             image.setUrl(url);
         }

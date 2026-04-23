@@ -21,7 +21,14 @@ public class AssetImageUrlBuilder {
     public String build(
             String category,
             Long iconId,
-            AssetResolution resolution) {
+            AssetResolution resolution,
+            String gameVersionCode) {
+
+        if ("retro".equals(gameVersionCode)) {
+            // Remplace par le bon chemin exact de tes assets SVG
+            return baseUrl + "/tools_dofus/retro/img/items/" + iconId + ".svg";
+        }
+
         String scale = resolution.getFolder();
         int size = resolution.getSize();
 

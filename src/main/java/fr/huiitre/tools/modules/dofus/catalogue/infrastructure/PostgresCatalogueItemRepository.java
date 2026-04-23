@@ -96,7 +96,8 @@ public class PostgresCatalogueItemRepository implements CatalogueItemRepository 
             FROM tools_dofus.item i
             LEFT JOIN tools_dofus.item_type it ON it.id = i.item_type_id
 
-            WHERE (
+            WHERE i.game_version_id = :gameVersionId
+            AND (
                 CAST(:qLike AS TEXT) IS NULL
                 OR i.name ILIKE :qLike
                 OR CAST(i.id AS TEXT) = :qExact
@@ -108,7 +109,7 @@ public class PostgresCatalogueItemRepository implements CatalogueItemRepository 
     public List<ItemDto> search(
             CatalogueSearchQuery query,
             Long userId,
-            Long gameServerId) {
+            Long gameVersionId) {
         int page = query.getPage() == null || query.getPage() < 1 ? 1 : query.getPage();
         int pageSize = query.getPageSize() == null || query.getPageSize() < 1 ? 20 : query.getPageSize();
         int offset = (page - 1) * pageSize;
@@ -131,7 +132,8 @@ public class PostgresCatalogueItemRepository implements CatalogueItemRepository 
                 .addValue("qLike", qLike)
                 .addValue("qExact", qExact)
                 .addValue("limit", pageSize)
-                .addValue("offset", offset);
+                .addValue("offset", offset)
+                .addValue("gameVersionId", gameVersionId);
 
         return jdbcTemplate.query(sql, params, CATALOGUE_ITEM_DTO_ROW_MAPPER);
     }
@@ -140,7 +142,7 @@ public class PostgresCatalogueItemRepository implements CatalogueItemRepository 
     public Long count(
             CatalogueSearchQuery query,
             Long userId,
-            Long gameServerId) {
+            Long gameVersionId) {
         String sql = "SELECT COUNT(*) FROM (" + BASE_QUERY + ") sub";
 
         String q = query.getQ();
@@ -149,7 +151,8 @@ public class PostgresCatalogueItemRepository implements CatalogueItemRepository 
 
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("qLike", qLike)
-                .addValue("qExact", qExact);
+                .addValue("qExact", qExact)
+                .addValue("gameVersionId", gameVersionId);
 
         return jdbcTemplate.queryForObject(sql, params, Long.class);
     }

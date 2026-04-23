@@ -13,13 +13,14 @@ import fr.huiitre.tools.modules.core.module.domain.ModuleCode;
 import fr.huiitre.tools.modules.core.role.domain.RoleCode;
 import fr.huiitre.tools.modules.core.security.application.usecase.SecuredUseCase;
 import fr.huiitre.tools.modules.dofus.catalogue.application.ports.CatalogueItemRepository;
+import fr.huiitre.tools.modules.dofus.game.application.ports.GameVersionRepository;
+import fr.huiitre.tools.modules.dofus.game.application.view.GameVersionData;
 import fr.huiitre.tools.modules.dofus.item.application.dto.FarmZoneDto;
 import fr.huiitre.tools.modules.dofus.item.application.dto.ItemDto;
 import fr.huiitre.tools.modules.dofus.item.application.dto.ItemImageDto;
 import fr.huiitre.tools.modules.dofus.item.application.ports.ItemRepository;
 import fr.huiitre.tools.modules.dofus.item.application.service.ItemEnrichmentService;
 import fr.huiitre.tools.modules.dofus.sync.application.views.AssetImageUrlBuilder;
-import fr.huiitre.tools.modules.dofus.sync.application.views.AssetResolution;
 
 @Service
 @Transactional(readOnly = true)
@@ -29,6 +30,7 @@ public class GetCatalogueRecipeItemUseCase implements SecuredUseCase {
     private final ItemRepository itemRepository;
     private final AssetImageUrlBuilder assetImageUrlBuilder;
     private final ItemEnrichmentService itemEnrichmentService;
+    private final GameVersionRepository gameVersionRepository;
 
     @Override
     public Optional<ModuleCode> requiredModule() {
@@ -44,14 +46,19 @@ public class GetCatalogueRecipeItemUseCase implements SecuredUseCase {
             CatalogueItemRepository catalogueItemRepository,
             ItemRepository itemRepository,
             AssetImageUrlBuilder assetImageUrlBuilder,
-            ItemEnrichmentService itemEnrichmentService) {
+            ItemEnrichmentService itemEnrichmentService,
+            GameVersionRepository gameVersionRepository) {
         this.catalogueItemRepository = catalogueItemRepository;
         this.itemRepository = itemRepository;
         this.assetImageUrlBuilder = assetImageUrlBuilder;
         this.itemEnrichmentService = itemEnrichmentService;
+        this.gameVersionRepository = gameVersionRepository;
     }
 
-    public List<ItemDto> execute(Long itemId) {
+    public List<ItemDto> execute(Long itemId, Long gameServerId) {
+
+        GameVersionData gameVersionData = gameVersionRepository.findByGameServerId(gameServerId)
+                .orElseThrow(() -> new IllegalArgumentException("Game version not found for gameServerId: " + gameServerId));
 
         List<ItemDto> ingredients = catalogueItemRepository.findRecipeByItemId(itemId);
 
@@ -59,8 +66,8 @@ public class GetCatalogueRecipeItemUseCase implements SecuredUseCase {
                 .map(ItemDto::getId)
                 .collect(Collectors.toList());
 
-        Map<Long, List<FarmZoneDto>> farmZonesByItemId = itemEnrichmentService.loadFarmZones(new ArrayList<>(itemIds));
-        Map<Long, List<ItemImageDto>> imagesByItemId = itemEnrichmentService.loadItemImages(new ArrayList<>(itemIds));
+        Map<Long, List<FarmZoneDto>> farmZonesByItemId = itemEnrichmentService.loadFarmZones(new ArrayList<>(itemIds), gameVersionData.getCode());
+        Map<Long, List<ItemImageDto>> imagesByItemId = itemEnrichmentService.loadItemImages(new ArrayList<>(itemIds), gameVersionData.getCode());
 
         for (int i = 0; i < ingredients.size(); i++) {
 

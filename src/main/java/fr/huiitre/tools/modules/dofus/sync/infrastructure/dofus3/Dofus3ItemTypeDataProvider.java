@@ -25,6 +25,11 @@ public class Dofus3ItemTypeDataProvider implements ItemTypeDataProvider {
     }
 
     @Override
+    public boolean supports(String gameVersionCode) {
+        return "dofus3".equals(gameVersionCode);
+    }
+
+    @Override
     public List<ItemTypeSyncData> fetchAll() {
         try {
             String json = assetsReader.readFile("item_types.json");

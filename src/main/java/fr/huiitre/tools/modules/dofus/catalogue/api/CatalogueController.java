@@ -41,6 +41,8 @@ public class CatalogueController {
     public ResponseEntity<CatalogueSearchResponse> searchItems(
             @ModelAttribute CatalogueSearchQuery query,
             @RequestHeader(value = "X-Game-Serve-Id") Long gameServerId) {
+
+        System.out.println("Received search request: " + query + " for gameServerId: " + gameServerId);
         CatalogueSearchResponse response = searchCatalogueItemsUseCase.execute(query, gameServerId);
 
         return ResponseEntity.ok(response);
@@ -54,8 +56,9 @@ public class CatalogueController {
 
     @GetMapping("/item/{itemId}/recipe")
     public ResponseEntity<List<ItemDto>> getItemRecipe(
-            @PathVariable Long itemId) {
+            @PathVariable Long itemId,
+            @RequestHeader(value = "X-Game-Serve-Id") Long gameServerId) {
         return ResponseEntity.ok(
-                getCatalogueRecipeItemUseCase.execute(itemId));
+                getCatalogueRecipeItemUseCase.execute(itemId, gameServerId));
     }
 }

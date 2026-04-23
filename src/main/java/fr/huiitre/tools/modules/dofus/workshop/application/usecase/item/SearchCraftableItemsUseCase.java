@@ -12,6 +12,8 @@ import fr.huiitre.tools.modules.core.module.domain.ModuleCode;
 import fr.huiitre.tools.modules.core.role.domain.RoleCode;
 import fr.huiitre.tools.modules.core.security.application.ports.AuthenticatedUserProvider;
 import fr.huiitre.tools.modules.core.security.application.usecase.SecuredUseCase;
+import fr.huiitre.tools.modules.dofus.game.application.ports.GameVersionRepository;
+import fr.huiitre.tools.modules.dofus.game.application.view.GameVersionData;
 import fr.huiitre.tools.modules.dofus.item.application.dto.FarmZoneDto;
 import fr.huiitre.tools.modules.dofus.item.application.dto.ItemDto;
 import fr.huiitre.tools.modules.dofus.item.application.dto.ItemImageDto;
@@ -26,6 +28,7 @@ public class SearchCraftableItemsUseCase implements SecuredUseCase {
 
     private final ItemRepository itemRepository;
     private final ItemEnrichmentService itemEnrichmentService;
+    private final GameVersionRepository gameVersionRepository;
 
     @Override
     public Optional<ModuleCode> requiredModule() {
@@ -40,13 +43,18 @@ public class SearchCraftableItemsUseCase implements SecuredUseCase {
     public SearchCraftableItemsUseCase(
             AuthenticatedUserProvider authenticatedUserProvider,
             ItemRepository itemRepository,
-            ItemEnrichmentService itemEnrichmentService) {
+            ItemEnrichmentService itemEnrichmentService,
+            GameVersionRepository gameVersionRepository) {
         this.authenticatedUserProvider = authenticatedUserProvider;
         this.itemRepository = itemRepository;
         this.itemEnrichmentService = itemEnrichmentService;
+        this.gameVersionRepository = gameVersionRepository;
     }
 
     public List<ItemDto> execute(Long gameVersionId, Long workshopId, String query) {
+
+        GameVersionData gameVersion = gameVersionRepository.findById(gameVersionId)
+            .orElseThrow(() -> new IllegalArgumentException("Game version not found for id: " + gameVersionId));
 
         List<ItemDto> items = itemRepository.findCraftableItemsByGameVersionIdAndName(gameVersionId, workshopId, query);
 
@@ -56,9 +64,9 @@ public class SearchCraftableItemsUseCase implements SecuredUseCase {
                 .map(ItemDto::getId)
                 .toList();
 
-        Map<Long, List<ItemImageDto>> itemImages = itemEnrichmentService.loadItemImages(itemIds);
+        Map<Long, List<ItemImageDto>> itemImages = itemEnrichmentService.loadItemImages(itemIds, gameVersion.getCode());
 
-        Map<Long, List<FarmZoneDto>> farmZones = itemEnrichmentService.loadFarmZones(itemIds);
+        Map<Long, List<FarmZoneDto>> farmZones = itemEnrichmentService.loadFarmZones(itemIds, gameVersion.getCode());
 
         for (ItemDto item : items) {
             enrichedItems.add(

@@ -80,6 +80,7 @@ public class ItemType {
             throw new IllegalArgumentException("ITEM_TYPE_CATEGORY_ID_REQUIRED");
         }
         if (name == null || name.isBlank()) {
+            System.out.println("WARN: item type assetId=" + assetId + " has no name, skipped");
             throw new IllegalArgumentException("ITEM_TYPE_NAME_REQUIRED");
         }
     }

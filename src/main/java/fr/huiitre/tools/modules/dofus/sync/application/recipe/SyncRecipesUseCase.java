@@ -27,15 +27,15 @@ public class SyncRecipesUseCase implements SecuredUseCase {
     private static final Logger logger = LoggerFactory.getLogger(SyncRecipesUseCase.class);
 
     private final ItemRepository itemRepository;
-    private final RecipeDataProvider recipeDataProvider;
+    private final List<RecipeDataProvider> recipeDataProviders;
     private final RecipeRepository recipeRepository;
 
     public SyncRecipesUseCase(
-            ItemRepository itemRepository,
-            RecipeDataProvider recipeDataProvider,
-            RecipeRepository recipeRepository) {
+        ItemRepository itemRepository,
+        List<RecipeDataProvider> recipeDataProviders,
+        RecipeRepository recipeRepository) {
         this.itemRepository = itemRepository;
-        this.recipeDataProvider = recipeDataProvider;
+        this.recipeDataProviders = recipeDataProviders;
         this.recipeRepository = recipeRepository;
     }
 
@@ -50,6 +50,11 @@ public class SyncRecipesUseCase implements SecuredUseCase {
     }
 
     public SyncReport execute(GameVersionData gameVersion) {
+
+        RecipeDataProvider recipeDataProvider = recipeDataProviders.stream()
+            .filter(p -> p.supports(gameVersion.getCode()))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("No RecipeDataProvider found for version: " + gameVersion.getCode()));
 
         // 1. Tous les items de la version
         List<Item> items = itemRepository.findAllByGameVersionId(gameVersion.getId());

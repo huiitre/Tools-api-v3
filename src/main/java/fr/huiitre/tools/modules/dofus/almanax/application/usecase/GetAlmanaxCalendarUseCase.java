@@ -30,7 +30,6 @@ import fr.huiitre.tools.modules.dofus.item.application.dto.ItemImageDto;
 import fr.huiitre.tools.modules.dofus.item.application.ports.ItemRepository;
 import fr.huiitre.tools.modules.dofus.item.application.service.ItemEnrichmentService;
 import fr.huiitre.tools.modules.dofus.sync.application.views.AssetImageUrlBuilder;
-import fr.huiitre.tools.modules.dofus.sync.application.views.AssetResolution;
 
 @Service
 @Transactional(readOnly = true)
@@ -104,10 +103,10 @@ public class GetAlmanaxCalendarUseCase implements SecuredUseCase {
                 .findByGameVersionIdAndItemIds(gameVersion.getId(), itemIds);
 
         // * on récupère toutes les zones par itemIds */
-        Map<Long, List<FarmZoneDto>> farmZonesByItemId = itemEnrichmentService.loadFarmZones(new ArrayList<>(itemIds));
+        Map<Long, List<FarmZoneDto>> farmZonesByItemId = itemEnrichmentService.loadFarmZones(new ArrayList<>(itemIds), gameVersion.getCode());
 
         // * on récupère toutes les images */
-        Map<Long, List<ItemImageDto>> imagesByItemId = itemEnrichmentService.loadItemImages(new ArrayList<>(itemIds));
+        Map<Long, List<ItemImageDto>> imagesByItemId = itemEnrichmentService.loadItemImages(new ArrayList<>(itemIds),gameVersion.getCode());
 
         // * on assemble les DTOs */
         List<AlmanaxDto> result = new ArrayList<>();

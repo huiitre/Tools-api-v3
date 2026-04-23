@@ -370,14 +370,14 @@ public class PostgresWorkshopRepository implements WorkshopRepository {
     }
 
     @Override
-    public Optional<Workshop> findById(Long id) {
+    public Optional<Workshop> findById(Long id, Long gameVersionId) {
         String sql = """
             SELECT id, name, is_active, is_pinned
             FROM tools_dofus.workshop
-            WHERE id = ?
+            WHERE id = ? AND game_version_id = ?
         """;
 
-        return jdbcTemplate.query(sql, WORKSHOP_ROW_MAPPER, id)
+        return jdbcTemplate.query(sql, WORKSHOP_ROW_MAPPER, id, gameVersionId)
             .stream()
             .findFirst();
     }

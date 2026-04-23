@@ -24,6 +24,11 @@ public class Dofus3RecipeDataProvider implements RecipeDataProvider {
     }
 
     @Override
+    public boolean supports(String gameVersionCode) {
+        return "dofus3".equals(gameVersionCode);
+    }
+
+    @Override
     public List<RecipeSyncData> fetchAll() {
 
         try {

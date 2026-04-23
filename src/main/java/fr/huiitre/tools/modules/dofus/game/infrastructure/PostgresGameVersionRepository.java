@@ -17,6 +17,26 @@ public class PostgresGameVersionRepository implements GameVersionRepository {
         }
 
         @Override
+        public Optional<GameVersionData> findByGameServerId(Long gameServerId) {
+            final String sql = """
+                SELECT gv.id, gv.code, gv.name
+                FROM tools_dofus.game_version gv
+                JOIN tools_dofus.game_server gs ON gs.game_version_id = gv.id
+                WHERE gs.id = ?
+            """;
+            return jdbcTemplate
+                    .query(
+                        sql,
+                        (rs, rowNum) -> new GameVersionData(
+                                rs.getLong("id"),
+                                rs.getString("name"),
+                                rs.getString("code")),
+                        gameServerId)
+                    .stream()
+                    .findFirst();
+        }
+
+        @Override
         public Optional<GameVersionData> findById(Long gameVersionId) {
                 final String sql = """
                                     SELECT id, code, name

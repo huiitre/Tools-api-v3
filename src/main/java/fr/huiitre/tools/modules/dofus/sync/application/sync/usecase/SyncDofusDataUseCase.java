@@ -19,6 +19,7 @@ public class SyncDofusDataUseCase implements SecuredUseCase {
     private final GameVersionRepository gameVersionRepository;
 
     private final SyncDofus3DataUseCase syncDofus3DataUseCase;
+    private final SyncRetroDataUseCase syncRetroDataUseCase;
 
     @Override
     public Optional<ModuleCode> requiredModule() {
@@ -32,9 +33,11 @@ public class SyncDofusDataUseCase implements SecuredUseCase {
 
     public SyncDofusDataUseCase(
             SyncDofus3DataUseCase syncDofus3DataUseCase,
+            SyncRetroDataUseCase syncRetroDataUseCase,
             GameVersionRepository gameVersionRepository) {
         this.syncDofus3DataUseCase = syncDofus3DataUseCase;
         this.gameVersionRepository = gameVersionRepository;
+        this.syncRetroDataUseCase = syncRetroDataUseCase;
     }
 
     public MailReport execute(
@@ -48,7 +51,8 @@ public class SyncDofusDataUseCase implements SecuredUseCase {
                 return syncDofus3DataUseCase.execute(gameVersion);
             }
             case "retro" -> {
-                throw new IllegalArgumentException("Unsupported game version: retro");
+                // throw new IllegalArgumentException("Unsupported game version: retro");
+                return syncRetroDataUseCase.execute(gameVersion);
             }
             default -> throw new IllegalArgumentException("Unsupported game version: " + gameVersion.getCode());
         }

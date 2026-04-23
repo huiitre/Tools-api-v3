@@ -50,7 +50,7 @@ public interface WorkshopRepository {
 
     void removeTagFromWorkshop(Long userId, Long workshopId, Long tagId);
 
-    Optional<Workshop> findById(Long id);
+    Optional<Workshop> findById(Long id, Long gameVersionId);
 
     Long findOwnerUserId(Long workshopId);
 }

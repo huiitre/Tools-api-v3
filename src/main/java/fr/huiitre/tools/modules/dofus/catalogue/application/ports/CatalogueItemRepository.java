@@ -10,12 +10,12 @@ public interface CatalogueItemRepository {
     public List<ItemDto> search(
             CatalogueSearchQuery query,
             Long userId,
-            Long gameServerId);
+            Long gameVersionId);
 
     public Long count(
             CatalogueSearchQuery query,
             Long userId,
-            Long gameServerId);
+            Long gameVersionId);
 
     public List<ItemDto> findRecipeByItemId(Long itemId);
 }

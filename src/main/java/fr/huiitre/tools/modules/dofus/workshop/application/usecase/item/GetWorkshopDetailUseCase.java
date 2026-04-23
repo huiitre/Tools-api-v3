@@ -15,6 +15,8 @@ import fr.huiitre.tools.modules.core.module.domain.ModuleCode;
 import fr.huiitre.tools.modules.core.role.domain.RoleCode;
 import fr.huiitre.tools.modules.core.security.application.ports.AuthenticatedUserProvider;
 import fr.huiitre.tools.modules.core.security.application.usecase.SecuredUseCase;
+import fr.huiitre.tools.modules.dofus.game.application.ports.GameVersionRepository;
+import fr.huiitre.tools.modules.dofus.game.application.view.GameVersionData;
 import fr.huiitre.tools.modules.dofus.item.application.dto.FarmZoneDto;
 import fr.huiitre.tools.modules.dofus.item.application.dto.ItemDto;
 import fr.huiitre.tools.modules.dofus.item.application.dto.ItemImageDto;
@@ -39,6 +41,7 @@ public class GetWorkshopDetailUseCase implements SecuredUseCase {
     private final RecipeRepository recipeRepository;
     private final ItemRepository itemRepository;
     private final ItemEnrichmentService itemEnrichmentService;
+    private final GameVersionRepository gameVersionRepository;
 
     @Override
     public Optional<ModuleCode> requiredModule() {
@@ -55,19 +58,24 @@ public class GetWorkshopDetailUseCase implements SecuredUseCase {
             WorkshopRepository workshopRepository,
             RecipeRepository recipeRepository,
             ItemRepository itemRepository,
-            ItemEnrichmentService itemEnrichmentService) {
+            ItemEnrichmentService itemEnrichmentService,
+            GameVersionRepository gameVersionRepository) {
         this.authenticatedUserProvider = authenticatedUserProvider;
         this.workshopRepository = workshopRepository;
         this.recipeRepository = recipeRepository;
         this.itemRepository = itemRepository;
         this.itemEnrichmentService = itemEnrichmentService;
+        this.gameVersionRepository = gameVersionRepository;
     }
 
     public WorkshopDetailResponse execute(Long workshopId, Long gameVersionId) {
 
+        GameVersionData gameVersion = gameVersionRepository.findById(gameVersionId)
+            .orElseThrow(() -> new IllegalArgumentException("Game version not found for id: " + gameVersionId));
+
         Long userId = authenticatedUserProvider.getUserId();
 
-        workshopRepository.findById(workshopId)
+        workshopRepository.findById(workshopId, gameVersion.getId())
             .orElseThrow(WorkshopNotFoundException::new);
 
         Long ownerUserId = workshopRepository.findOwnerUserId(workshopId);
@@ -108,9 +116,9 @@ public class GetWorkshopDetailUseCase implements SecuredUseCase {
 
         Map<Long, ItemDto> itemsById = itemRepository.findByGameVersionIdAndItemIds(gameVersionId, allItemIds);
         Map<Long, List<FarmZoneDto>> farmZonesByItemId = itemEnrichmentService
-                .loadFarmZones(new ArrayList<>(allItemIds));
+                .loadFarmZones(new ArrayList<>(allItemIds), gameVersion.getCode());
         Map<Long, List<ItemImageDto>> imagesByItemId = itemEnrichmentService
-                .loadItemImages(new ArrayList<>(allItemIds));
+                .loadItemImages(new ArrayList<>(allItemIds), gameVersion.getCode());
 
         List<WorkshopItemDetailDto> itemList = new ArrayList<>();
 

@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -22,6 +21,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 import fr.huiitre.tools.modules.core.filesystem.infrastructure.FileSystemChecker;
 import fr.huiitre.tools.modules.dofus.area.application.dto.AreaDto;
+import fr.huiitre.tools.modules.dofus.game.application.view.GameVersionData;
 import fr.huiitre.tools.modules.dofus.item.application.dto.FarmZoneDto;
 import fr.huiitre.tools.modules.dofus.item.application.dto.ItemDto;
 import fr.huiitre.tools.modules.dofus.item.application.dto.ItemImageDto;
@@ -126,8 +126,8 @@ public class PostgresItemRepository implements ItemRepository {
     }
 
     @Override
-    public boolean refreshImages(Long itemId, Long iconId) {
-        ImageExistence images = checkItemImagesExistence(iconId);
+    public boolean refreshImages(Long itemId, Long iconId, GameVersionData gameVersionData) {
+        ImageExistence images = checkItemImagesExistence(iconId, gameVersionData);
 
         final String deleteSql = """
                     DELETE FROM tools_dofus.item_image
@@ -155,7 +155,15 @@ public class PostgresItemRepository implements ItemRepository {
         return true;
     }
 
-    private ImageExistence checkItemImagesExistence(Long iconId) {
+    private ImageExistence checkItemImagesExistence(Long iconId, GameVersionData gameVersionData) {
+
+        if ("retro".equals(gameVersionData.getCode())) {
+            Path image = assetsBasePath.resolve(
+                    "tools_dofus/retro/img/items/" + iconId + ".svg");
+
+            boolean exists = FileSystemChecker.exists(image);
+            return new ImageExistence(exists, exists);
+        }
 
         Path image1x = assetsBasePath.resolve(
                 "tools_dofus/dofus3/img/item/1x/" + iconId + "-64.png");
