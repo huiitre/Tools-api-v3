@@ -9,6 +9,7 @@ import fr.huiitre.tools.modules.dofus.game.application.view.GameVersionData;
 import fr.huiitre.tools.modules.dofus.item.application.dto.FarmZoneDto;
 import fr.huiitre.tools.modules.dofus.item.application.dto.ItemDto;
 import fr.huiitre.tools.modules.dofus.item.application.dto.ItemImageDto;
+import fr.huiitre.tools.modules.dofus.item.application.dto.ItemLightDTO;
 import fr.huiitre.tools.modules.dofus.item.domain.Item;
 
 public interface ItemRepository {
@@ -28,6 +29,8 @@ public interface ItemRepository {
     List<ItemImageDto> findImageByItemIds(Collection<Long> itemIds);
 
     Map<Long, ItemDto> findByGameVersionIdAndItemIds(Long gameVersionId, Collection<Long> itemIds);
+
+    List<ItemLightDTO> findLightByAssetIds(Long gameVersionId, Collection<Long> assetIds);
 
     Map<Long, List<FarmZoneDto>> findFarmZonesByItemIds(Collection<Long> itemIds);
 

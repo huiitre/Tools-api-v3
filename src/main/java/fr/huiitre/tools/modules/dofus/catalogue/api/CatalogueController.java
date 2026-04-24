@@ -42,7 +42,6 @@ public class CatalogueController {
             @ModelAttribute CatalogueSearchQuery query,
             @RequestHeader(value = "X-Game-Serve-Id") Long gameServerId) {
 
-        System.out.println("Received search request: " + query + " for gameServerId: " + gameServerId);
         CatalogueSearchResponse response = searchCatalogueItemsUseCase.execute(query, gameServerId);
 
         return ResponseEntity.ok(response);

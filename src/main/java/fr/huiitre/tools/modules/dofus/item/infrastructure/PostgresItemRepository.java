@@ -25,6 +25,7 @@ import fr.huiitre.tools.modules.dofus.game.application.view.GameVersionData;
 import fr.huiitre.tools.modules.dofus.item.application.dto.FarmZoneDto;
 import fr.huiitre.tools.modules.dofus.item.application.dto.ItemDto;
 import fr.huiitre.tools.modules.dofus.item.application.dto.ItemImageDto;
+import fr.huiitre.tools.modules.dofus.item.application.dto.ItemLightDTO;
 import fr.huiitre.tools.modules.dofus.item.application.ports.ItemRepository;
 import fr.huiitre.tools.modules.dofus.item.domain.Item;
 import fr.huiitre.tools.modules.dofus.itemtype.application.view.ItemTypeDto;
@@ -299,20 +300,74 @@ public class PostgresItemRepository implements ItemRepository {
                 JOIN tools_dofus.item_type it
                     ON i.item_type_id = it.id
                     AND i.game_version_id = it.game_version_id
-                WHERE i.game_version_id = ?
-                AND i.id = ANY(?)
+                WHERE i.game_version_id = :gameVersionId
+                AND i.id = ANY(:itemIds)
                 """;
 
-        Long[] itemIdsArray = itemIds.toArray(new Long[0]);
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("gameVersionId", gameVersionId)
+                .addValue("itemIds", itemIds.toArray(new Long[0]));
 
-        List<ItemDto> items = jdbcTemplate.query(
+        List<ItemDto> items = namedParameterJdbcTemplate.query(
                 sql,
-                ITEM_VIEW_ROW_MAPPER,
-                gameVersionId,
-                itemIdsArray);
+                params,
+                ITEM_VIEW_ROW_MAPPER);
 
         return items.stream()
                 .collect(Collectors.toMap(ItemDto::getId, Function.identity()));
+    }
+
+    private static final RowMapper<ItemLightDTO> ITEM_LIGHT_ROW_MAPPER = (rs, rowNum) -> {
+
+        ItemTypeDto itemTypeDto = new ItemTypeDto(
+                rs.getLong("item_type_id"),
+                rs.getLong("item_type_asset_id"),
+                rs.getLong("item_type_game_version_id"),
+                rs.getString("item_type_name"));
+
+        return new ItemLightDTO(
+                rs.getLong("id"),
+                rs.getString("name"),
+                rs.getLong("level"),
+                rs.getLong("game_version_id"),
+                rs.getLong("asset_id"),
+                itemTypeDto,
+                List.of());
+    };
+
+    @Override
+    public List<ItemLightDTO> findLightByAssetIds(Long gameVersionId, Collection<Long> assetIds) {
+        if (assetIds == null || assetIds.isEmpty()) {
+            return List.of();
+        }
+
+        final String sql = """
+                SELECT
+                    i.id,
+                    i.asset_id,
+                    i.game_version_id,
+                    i.name,
+                    i.level,
+                    it.id AS item_type_id,
+                    it.asset_id AS item_type_asset_id,
+                    it.name AS item_type_name,
+                    it.game_version_id AS item_type_game_version_id
+                FROM tools_dofus.item i
+                JOIN tools_dofus.item_type it
+                    ON i.item_type_id = it.id
+                    AND i.game_version_id = it.game_version_id
+                WHERE i.game_version_id = :gameVersionId
+                AND i.asset_id = ANY(:assetIds)
+                """;
+
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("gameVersionId", gameVersionId)
+                .addValue("assetIds", assetIds.toArray(new Long[0]));
+
+        return namedParameterJdbcTemplate.query(
+                sql,
+                params,
+                ITEM_LIGHT_ROW_MAPPER);
     }
 
     @Override
