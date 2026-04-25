@@ -18,7 +18,8 @@ public class CorsConfig {
             "http://localhost:5173",
             "http://192.168.1.23:8090",
             "https://tools.huiitre.fr",
-            "https://qa.tools.huiitre.fr"
+            "https://qa.tools.huiitre.fr",
+            "app://." 
         ));
 
         cfg.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
@@ -26,9 +27,11 @@ public class CorsConfig {
             "Authorization",
             "Content-Type",
             "X-Game-Version-Id",
-            "X-Game-Serve-Id"
+            "X-Game-Serve-Id",
+            "*"
         ));
         cfg.setAllowCredentials(true);
+        cfg.setExposedHeaders(List.of("Set-Cookie"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", cfg);
