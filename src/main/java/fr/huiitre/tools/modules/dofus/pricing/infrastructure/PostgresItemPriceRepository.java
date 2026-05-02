@@ -107,7 +107,7 @@ public class PostgresItemPriceRepository implements ItemPriceRepository {
                 ========================= */
 
                 up.created_at AS user_price_created_at,
-                cp.avg_price AS community_average_price_created_at,
+                cp.created_at AS community_average_price_created_at,
                 lp.created_at AS last_updated_price_created_at
 
             FROM tools_dofus.item i
@@ -153,7 +153,7 @@ public class PostgresItemPriceRepository implements ItemPriceRepository {
             ========================= */
 
             LEFT JOIN LATERAL (
-                SELECT AVG(price) AS avg_price, MAX(created_at) AS created_at
+                SELECT AVG(NULLIF(price, 0)) AS avg_price, MAX(created_at) AS created_at
                 FROM tools_dofus.item_price_user
                 WHERE item_id = i.id
                 AND game_server_id = :serverId
@@ -253,7 +253,7 @@ public class PostgresItemPriceRepository implements ItemPriceRepository {
                     SELECT SUM(rr.quantity * p.avg_price) AS price
                     FROM tools_dofus.recipe rr
                     LEFT JOIN LATERAL (
-                        SELECT AVG(price) AS avg_price
+                        SELECT AVG(NULLIF(price, 0)) AS avg_price
                         FROM tools_dofus.item_price_user
                         WHERE item_id = rr.ingredient_id
                         AND game_server_id = :serverId
@@ -266,7 +266,7 @@ public class PostgresItemPriceRepository implements ItemPriceRepository {
                     FROM tools_dofus.recipe rr1
                     JOIN tools_dofus.recipe rr2 ON rr2.item_id = rr1.ingredient_id
                     LEFT JOIN LATERAL (
-                        SELECT AVG(price) AS avg_price
+                        SELECT AVG(NULLIF(price, 0)) AS avg_price
                         FROM tools_dofus.item_price_user
                         WHERE item_id = rr2.ingredient_id
                         AND game_server_id = :serverId
@@ -275,7 +275,7 @@ public class PostgresItemPriceRepository implements ItemPriceRepository {
                 ) lvl2 ON TRUE
 
                 LEFT JOIN LATERAL (
-                    SELECT AVG(price) AS avg_price
+                    SELECT AVG(NULLIF(price, 0)) AS avg_price
                     FROM tools_dofus.item_price_user
                     WHERE item_id = r.ingredient_id
                     AND game_server_id = :serverId
