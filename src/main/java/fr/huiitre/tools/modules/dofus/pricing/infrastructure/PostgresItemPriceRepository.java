@@ -1,6 +1,8 @@
 package fr.huiitre.tools.modules.dofus.pricing.infrastructure;
 
+import java.sql.Timestamp;
 import java.util.List;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +43,16 @@ public class PostgresItemPriceRepository implements ItemPriceRepository {
                 rs.getLong("craft_user_price"),
                 rs.getLong("craft_community_price"),
                 rs.getLong("craft_last_price"),
-                rs.getLong("craft_calculated_price")
+                rs.getLong("craft_calculated_price"),
+
+                Optional.ofNullable(rs.getTimestamp("user_price_created_at"))
+                    .map(Timestamp::toLocalDateTime).orElse(null),
+
+                Optional.ofNullable(rs.getTimestamp("community_average_price_created_at"))
+                    .map(Timestamp::toLocalDateTime).orElse(null),
+
+                Optional.ofNullable(rs.getTimestamp("last_updated_price_created_at"))
+                    .map(Timestamp::toLocalDateTime).orElse(null)
             );
         };
 
@@ -89,7 +100,15 @@ public class PostgresItemPriceRepository implements ItemPriceRepository {
                 (PU ou craft, peu importe la source)
                 ========================= */
 
-                CASE WHEN has_recipe THEN COALESCE(cbest.price, 0)::bigint ELSE 0 END AS craft_calculated_price
+                CASE WHEN has_recipe THEN COALESCE(cbest.price, 0)::bigint ELSE 0 END AS craft_calculated_price,
+
+                /* =========================
+                CREATED AT
+                ========================= */
+
+                up.created_at AS user_price_created_at,
+                cp.avg_price AS community_average_price_created_at,
+                lp.created_at AS last_updated_price_created_at
 
             FROM tools_dofus.item i
 
@@ -120,7 +139,7 @@ public class PostgresItemPriceRepository implements ItemPriceRepository {
             ========================= */
 
             LEFT JOIN LATERAL (
-                SELECT price
+                SELECT price, created_at
                 FROM tools_dofus.item_price_user
                 WHERE item_id = i.id
                 AND user_id = :userId
@@ -134,7 +153,7 @@ public class PostgresItemPriceRepository implements ItemPriceRepository {
             ========================= */
 
             LEFT JOIN LATERAL (
-                SELECT AVG(price) AS avg_price
+                SELECT AVG(price) AS avg_price, MAX(created_at) AS created_at
                 FROM tools_dofus.item_price_user
                 WHERE item_id = i.id
                 AND game_server_id = :serverId
@@ -145,7 +164,7 @@ public class PostgresItemPriceRepository implements ItemPriceRepository {
             ========================= */
 
             LEFT JOIN LATERAL (
-                SELECT price
+                SELECT price, created_at
                 FROM tools_dofus.item_price_user
                 WHERE item_id = i.id
                 AND game_server_id = :serverId

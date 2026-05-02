@@ -1,5 +1,7 @@
 package fr.huiitre.tools.modules.dofus.pricing.application.view;
 
+import java.time.LocalDateTime;
+
 public class ItemPriceDto {
 
     private final Long itemId;
@@ -16,6 +18,10 @@ public class ItemPriceDto {
     private final Long craftLastPrice;
     private final Long craftCalculatedPrice;
 
+    private final LocalDateTime userPriceCreatedAt;
+    private final LocalDateTime communityAveragePriceCreatedAt;
+    private final LocalDateTime lastUpdatedPriceCreatedAt;
+
     public ItemPriceDto(
         Long itemId,
         Long[] parentItemIds,
@@ -25,7 +31,10 @@ public class ItemPriceDto {
         Long craftUserPrice,
         Long craftCommunityPrice,
         Long craftLastPrice,
-        Long craftCalculatedPrice
+        Long craftCalculatedPrice,
+        LocalDateTime userPriceCreatedAt,
+        LocalDateTime communityAveragePriceCreatedAt,
+        LocalDateTime lastUpdatedPriceCreatedAt
     ) {
         this.itemId = itemId;
         this.parentItemIds = parentItemIds;
@@ -36,6 +45,9 @@ public class ItemPriceDto {
         this.craftCommunityPrice = craftCommunityPrice;
         this.craftLastPrice = craftLastPrice;
         this.craftCalculatedPrice = craftCalculatedPrice;
+        this.userPriceCreatedAt = userPriceCreatedAt;
+        this.communityAveragePriceCreatedAt = communityAveragePriceCreatedAt;
+        this.lastUpdatedPriceCreatedAt = lastUpdatedPriceCreatedAt;
     }
 
     public Long getItemId() {
@@ -72,5 +84,17 @@ public class ItemPriceDto {
 
     public Long getCraftCalculatedPrice() {
         return craftCalculatedPrice;
+    }
+
+    public LocalDateTime getUserPriceCreatedAt() {
+        return userPriceCreatedAt;
+    }
+
+    public LocalDateTime getCommunityAveragePriceCreatedAt() {
+        return communityAveragePriceCreatedAt;
+    }
+
+    public LocalDateTime getLastUpdatedPriceCreatedAt() {
+        return lastUpdatedPriceCreatedAt;
     }
 }
