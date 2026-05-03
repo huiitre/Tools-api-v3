@@ -40,4 +40,16 @@ Pragmatisme : Code prêt à l'emploi pour environnement Linux/Docker.
 
 [Architecture] Initialisation du squelette DDD Java 21.
 
-[Persistance] Référentiel principal défini sur Google Drive (Projets AI/Tools).
+[Feature] Gestion des liens externes (Dofusbook) sur les ateliers — COMPLÈTE.
+- Domaine : `WorkshopLink` (id, source, url, label, createdAt) intégré à l'agrégat `Workshop` via `addLink()` / `getLinks()`.
+- Enum `LinkSource` : DOFUSBOOK, CUSTOM. Extensible : ajouter un nouveau cas = créer un `@Service` implémentant `LinkSourceHandler`, rien d'autre à toucher.
+- Validation URL par source : `DofusbookLinkSourceHandler` (3 formats : d-bk.net short, dofusbook.net public, dofusbook.net private), `CustomLinkSourceHandler` (http/https uniquement, protège contre javascript:/data:/file://).
+- Résolution automatique du label à la création, label libre à l'édition.
+- Limite : 3 liens max par atelier (vérifié côté use case).
+- Table BDD : `tools_dofus.workshop_link` (à créer manuellement, pas de migration auto).
+- API complète :
+  - POST   /dofus/workshops/{id}/links       → 201 WorkshopLinkDto
+  - PUT    /dofus/workshops/{id}/links/{id}  → 200 WorkshopLinkDto
+  - DELETE /dofus/workshops/{id}/links/{id}  → 204
+- WorkshopDto et WorkshopDetailResponse exposent désormais la liste `links`.
+- État : Backend complet et testé, prêt pour intégration Front.

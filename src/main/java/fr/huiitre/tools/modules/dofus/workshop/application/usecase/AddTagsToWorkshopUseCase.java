@@ -12,6 +12,7 @@ import fr.huiitre.tools.modules.core.role.domain.RoleCode;
 import fr.huiitre.tools.modules.core.security.application.ports.AuthenticatedUserProvider;
 import fr.huiitre.tools.modules.core.security.application.usecase.SecuredUseCase;
 import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopDto;
+import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopLinkDto;
 import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopTagDto;
 import fr.huiitre.tools.modules.dofus.workshop.application.exception.WorkshopNotFoundException;
 import fr.huiitre.tools.modules.dofus.workshop.application.repository.WorkshopRepository;
@@ -57,11 +58,16 @@ public class AddTagsToWorkshopUseCase implements SecuredUseCase {
             .map(tag -> new WorkshopTagDto(tag.getId(), tag.getName(), tag.getColor()))
             .collect(Collectors.toList());
 
+        List<WorkshopLinkDto> linksDto = workshop.getLinks().stream()
+            .map(link -> new WorkshopLinkDto(link.getId(), link.getSource(), link.getUrl(), link.getLabel()))
+            .toList();
+
         return new WorkshopDto(
             workshop.getId(),
             workshop.getName(),
             workshop.isActive(),
             tagsDto,
+            linksDto,
             workshop.isPinned()
         );
     }

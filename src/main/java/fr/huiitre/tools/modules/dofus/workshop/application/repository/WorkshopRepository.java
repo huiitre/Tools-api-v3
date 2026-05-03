@@ -1,11 +1,13 @@
 package fr.huiitre.tools.modules.dofus.workshop.application.repository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import fr.huiitre.tools.modules.dofus.workshop.domain.Workshop;
 import fr.huiitre.tools.modules.dofus.workshop.domain.WorkshopItem;
 import fr.huiitre.tools.modules.dofus.workshop.domain.WorkshopItemIngredient;
+import fr.huiitre.tools.modules.dofus.workshop.domain.WorkshopLink;
 import fr.huiitre.tools.modules.dofus.workshop.domain.WorkshopTag;
 
 public interface WorkshopRepository {
@@ -30,6 +32,10 @@ public interface WorkshopRepository {
 
     List<WorkshopItemIngredient> findAllIngredientsByUserIdAndWorkshopItemId(Long userId, Long workshopItemId);
 
+    List<WorkshopLink> findAllLinksByUserIdAndWorkshopId(Long userId, Long workshopId);
+
+    Map<Long, List<WorkshopLink>> findAllLinksByUserIdGroupedByWorkshopId(Long userId);
+
     Long addItemToWorkshop(Long userId, Long workshopId, WorkshopItem workshopItem);
 
     void addIngredients(Long userId, List<WorkshopItemIngredient> ingredients);
@@ -49,6 +55,14 @@ public interface WorkshopRepository {
     void addTagsToWorkshop(Long userId, Long workshopId, List<Long> tagIds);
 
     void removeTagFromWorkshop(Long userId, Long workshopId, Long tagId);
+
+    Long addLink(Long userId, Long workshopId, WorkshopLink link);
+
+    Optional<WorkshopLink> findLinkByIdAndWorkshopId(Long userId, Long workshopId, Long linkId);
+
+    void updateLink(Long userId, Long workshopId, Long linkId, String url, String label);
+
+    int deleteLink(Long userId, Long workshopId, Long linkId);
 
     Optional<Workshop> findById(Long id, Long gameVersionId);
 

@@ -27,8 +27,10 @@ import fr.huiitre.tools.modules.dofus.recipe.domain.Recipe;
 import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopDetailResponse;
 import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopIngredientDetailDto;
 import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopItemDetailDto;
+import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopLinkDto;
 import fr.huiitre.tools.modules.dofus.workshop.application.exception.WorkshopNotFoundException;
 import fr.huiitre.tools.modules.dofus.workshop.application.repository.WorkshopRepository;
+import fr.huiitre.tools.modules.dofus.workshop.domain.Workshop;
 import fr.huiitre.tools.modules.dofus.workshop.domain.WorkshopItem;
 import fr.huiitre.tools.modules.dofus.workshop.domain.WorkshopItemIngredient;
 
@@ -75,7 +77,7 @@ public class GetWorkshopDetailUseCase implements SecuredUseCase {
 
         Long userId = authenticatedUserProvider.getUserId();
 
-        workshopRepository.findById(workshopId, gameVersion.getId())
+        Workshop workshopDomain = workshopRepository.findById(workshopId, gameVersion.getId())
             .orElseThrow(WorkshopNotFoundException::new);
 
         Long ownerUserId = workshopRepository.findOwnerUserId(workshopId);
@@ -208,7 +210,11 @@ public class GetWorkshopDetailUseCase implements SecuredUseCase {
             itemList.add(itemDetail);
         }
 
-        return new WorkshopDetailResponse(itemList, isOwner);
+        List<WorkshopLinkDto> linksDto = workshopDomain.getLinks().stream()
+            .map(link -> new WorkshopLinkDto(link.getId(), link.getSource(), link.getUrl(), link.getLabel()))
+            .toList();
+
+        return new WorkshopDetailResponse(itemList, linksDto, isOwner);
     }
 
     private Long calculateParentMultiplier(

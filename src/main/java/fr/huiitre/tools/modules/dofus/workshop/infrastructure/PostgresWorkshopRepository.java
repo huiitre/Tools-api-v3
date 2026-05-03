@@ -2,7 +2,10 @@ package fr.huiitre.tools.modules.dofus.workshop.infrastructure;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
@@ -10,9 +13,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 import fr.huiitre.tools.modules.dofus.workshop.application.repository.WorkshopRepository;
+import fr.huiitre.tools.modules.dofus.workshop.domain.LinkSource;
 import fr.huiitre.tools.modules.dofus.workshop.domain.Workshop;
 import fr.huiitre.tools.modules.dofus.workshop.domain.WorkshopItem;
 import fr.huiitre.tools.modules.dofus.workshop.domain.WorkshopItemIngredient;
+import fr.huiitre.tools.modules.dofus.workshop.domain.WorkshopLink;
 import fr.huiitre.tools.modules.dofus.workshop.domain.WorkshopTag;
 
 public class PostgresWorkshopRepository implements WorkshopRepository {
@@ -121,7 +126,14 @@ public class PostgresWorkshopRepository implements WorkshopRepository {
 
         return jdbcTemplate.query(sql, WORKSHOP_ROW_MAPPER, workshopId, userId)
             .stream()
-            .findFirst();
+            .findFirst()
+            .map(workshop -> Workshop.rehydrate(
+                workshop.getId(),
+                workshop.getName(),
+                workshop.isActive(),
+                workshop.isPinned(),
+                findAllLinksByUserIdAndWorkshopId(userId, workshopId)
+            ));
     }
 
     @Override
@@ -359,6 +371,105 @@ public class PostgresWorkshopRepository implements WorkshopRepository {
     }
 
     @Override
+    public Long addLink(Long userId, Long workshopId, WorkshopLink link) {
+        String sql = """
+            INSERT INTO tools_dofus.workshop_link (workshop_id, source, url, label, created_at)
+            SELECT ?, ?, ?, ?, ?
+            FROM tools_dofus.workshop w
+            WHERE w.id = ? AND w.user_id = ?
+            RETURNING id
+        """;
+
+        return jdbcTemplate.queryForObject(
+            sql,
+            Long.class,
+            workshopId,
+            link.getSource().name(),
+            link.getUrl(),
+            link.getLabel(),
+            link.getCreatedAt(),
+            workshopId,
+            userId
+        );
+    }
+
+    @Override
+    public List<WorkshopLink> findAllLinksByUserIdAndWorkshopId(Long userId, Long workshopId) {
+        String sql = """
+            SELECT wl.id, wl.source, wl.url, wl.label, wl.created_at
+            FROM tools_dofus.workshop_link wl
+            JOIN tools_dofus.workshop w ON w.id = wl.workshop_id
+            WHERE wl.workshop_id = ? AND w.user_id = ?
+            ORDER BY wl.created_at ASC
+        """;
+
+        return jdbcTemplate.query(sql, WORKSHOP_LINK_ROW_MAPPER, workshopId, userId);
+    }
+
+    @Override
+    public Map<Long, List<WorkshopLink>> findAllLinksByUserIdGroupedByWorkshopId(Long userId) {
+        String sql = """
+            SELECT wl.id, wl.source, wl.url, wl.label, wl.created_at, wl.workshop_id
+            FROM tools_dofus.workshop_link wl
+            JOIN tools_dofus.workshop w ON w.id = wl.workshop_id
+            WHERE w.user_id = ?
+            ORDER BY wl.created_at ASC
+        """;
+
+        Map<Long, List<WorkshopLink>> result = new HashMap<>();
+        jdbcTemplate.query(sql, rs -> {
+            Long workshopId = rs.getLong("workshop_id");
+            WorkshopLink link = WorkshopLink.rehydrate(
+                rs.getLong("id"),
+                LinkSource.valueOf(rs.getString("source")),
+                rs.getString("url"),
+                rs.getString("label"),
+                rs.getTimestamp("created_at").toLocalDateTime()
+            );
+            result.computeIfAbsent(workshopId, k -> new ArrayList<>()).add(link);
+        }, userId);
+        return result;
+    }
+
+    @Override
+    public int deleteLink(Long userId, Long workshopId, Long linkId) {
+        String sql = """
+            DELETE FROM tools_dofus.workshop_link
+            WHERE id = ? AND workshop_id = ? AND workshop_id IN (
+                SELECT id FROM tools_dofus.workshop WHERE id = ? AND user_id = ?
+            )
+        """;
+
+        return jdbcTemplate.update(sql, linkId, workshopId, workshopId, userId);
+    }
+
+    @Override
+    public Optional<WorkshopLink> findLinkByIdAndWorkshopId(Long userId, Long workshopId, Long linkId) {
+        String sql = """
+            SELECT wl.id, wl.source, wl.url, wl.label, wl.created_at
+            FROM tools_dofus.workshop_link wl
+            JOIN tools_dofus.workshop w ON w.id = wl.workshop_id
+            WHERE wl.id = ? AND wl.workshop_id = ? AND w.user_id = ?
+        """;
+
+        return jdbcTemplate.query(sql, WORKSHOP_LINK_ROW_MAPPER, linkId, workshopId, userId)
+            .stream()
+            .findFirst();
+    }
+
+    @Override
+    public void updateLink(Long userId, Long workshopId, Long linkId, String url, String label) {
+        String sql = """
+            UPDATE tools_dofus.workshop_link SET url = ?, label = ?
+            WHERE id = ? AND workshop_id = ? AND workshop_id IN (
+                SELECT id FROM tools_dofus.workshop WHERE id = ? AND user_id = ?
+            )
+        """;
+
+        jdbcTemplate.update(sql, url, label, linkId, workshopId, workshopId, userId);
+    }
+
+    @Override
     public Long findOwnerUserId(Long workshopId) {
         String sql = """
             SELECT user_id
@@ -372,14 +483,21 @@ public class PostgresWorkshopRepository implements WorkshopRepository {
     @Override
     public Optional<Workshop> findById(Long id, Long gameVersionId) {
         String sql = """
-            SELECT id, name, is_active, is_pinned
+            SELECT id, name, is_active, is_pinned, user_id
             FROM tools_dofus.workshop
             WHERE id = ? AND game_version_id = ?
         """;
 
-        return jdbcTemplate.query(sql, WORKSHOP_ROW_MAPPER, id, gameVersionId)
-            .stream()
-            .findFirst();
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            Long ownerId = rs.getLong("user_id");
+            return Workshop.rehydrate(
+                rs.getLong("id"),
+                rs.getString("name"),
+                rs.getBoolean("is_active"),
+                rs.getBoolean("is_pinned"),
+                findAllLinksByUserIdAndWorkshopId(ownerId, id)
+            );
+        }, id, gameVersionId).stream().findFirst();
     }
 
     private static final RowMapper<WorkshopItemIngredient> WORKSHOP_ITEM_INGREDIENT_ROW_MAPPER = (rs, rowNum) -> WorkshopItemIngredient.rehydrate(
@@ -394,7 +512,8 @@ public class PostgresWorkshopRepository implements WorkshopRepository {
         rs.getLong("id"),
         rs.getString("name"),
         rs.getBoolean("is_active"),
-        rs.getBoolean("is_pinned")
+        rs.getBoolean("is_pinned"),
+        null
     );
     
     private static final RowMapper<WorkshopTag> WORKSHOP_TAG_ROW_MAPPER = (rs, rowNum) -> WorkshopTag.rehydrate(
@@ -407,5 +526,13 @@ public class PostgresWorkshopRepository implements WorkshopRepository {
         rs.getLong("id"),
         rs.getLong("item_id"),
         rs.getLong("quantity")
+    );
+
+    private static final RowMapper<WorkshopLink> WORKSHOP_LINK_ROW_MAPPER = (rs, rowNum) -> WorkshopLink.rehydrate(
+        rs.getLong("id"),
+        LinkSource.valueOf(rs.getString("source")),
+        rs.getString("url"),
+        rs.getString("label"),
+        rs.getTimestamp("created_at").toLocalDateTime()
     );
 }

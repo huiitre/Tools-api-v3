@@ -2,6 +2,8 @@ package fr.huiitre.tools.modules.dofus.workshop.domain;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.List;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Tag;
@@ -91,7 +93,7 @@ class WorkshopTest {
         @DisplayName("Vérifier que la reconstitution avec des données valides reconstruit correctement l’objet")
         void rehydrate_with_valid_data_should_reconstruct_workshop(String validName) {
 
-            Workshop workshop = Workshop.rehydrate(10L, validName, true, true);
+            Workshop workshop = Workshop.rehydrate(10L, validName, true, true, List.of());
 
             assertEquals(validName, workshop.getName());
             assertTrue(workshop.isActive());
@@ -104,7 +106,7 @@ class WorkshopTest {
         @DisplayName("Vérifier que la reconstitution avec un nom invalide lève une exception")
         void rehydrate_with_invalid_name_should_throw_exception(String invalidName) {
 
-            assertThrows(IllegalArgumentException.class, () -> Workshop.rehydrate(10L, invalidName, true, true));
+            assertThrows(IllegalArgumentException.class, () -> Workshop.rehydrate(10L, invalidName, true, true, List.of()));
         }
     }
 }

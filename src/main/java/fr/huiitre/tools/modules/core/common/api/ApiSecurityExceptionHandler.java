@@ -1,15 +1,20 @@
 package fr.huiitre.tools.modules.core.common.api;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 
 import fr.huiitre.tools.modules.core.common.application.exception.ApplicationException;
 import fr.huiitre.tools.modules.core.security.application.exception.ForbiddenException;
@@ -25,6 +30,29 @@ public class ApiSecurityExceptionHandler {
 
     public ApiSecurityExceptionHandler(Environment env) {
         this.env = env;
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, Object>> handleNotReadable(
+            HttpMessageNotReadableException ex,
+            HttpServletRequest request) {
+        String message = "Corps de la requête invalide.";
+        if (ex.getCause() instanceof InvalidFormatException ife
+                && ife.getTargetType() != null
+                && ife.getTargetType().isEnum()) {
+            String accepted = Arrays.stream(ife.getTargetType().getEnumConstants())
+                .map(Object::toString)
+                .collect(Collectors.joining(", "));
+            message = "Valeur invalide '" + ife.getValue() + "'. Valeurs acceptées : " + accepted + ".";
+        }
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Map.of(
+                        "timestamp", Instant.now().toString(),
+                        "status", HttpStatus.BAD_REQUEST.value(),
+                        "error", "Bad Request",
+                        "message", message,
+                        "path", request.getRequestURI()));
     }
 
     @ExceptionHandler(ForbiddenException.class)

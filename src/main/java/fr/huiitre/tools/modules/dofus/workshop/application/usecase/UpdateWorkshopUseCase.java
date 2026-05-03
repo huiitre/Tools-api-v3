@@ -12,6 +12,7 @@ import fr.huiitre.tools.modules.core.security.application.ports.AuthenticatedUse
 import fr.huiitre.tools.modules.core.security.application.usecase.SecuredUseCase;
 import fr.huiitre.tools.modules.dofus.workshop.api.dto.UpdateWorkshopRequest;
 import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopDto;
+import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopLinkDto;
 import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopTagDto;
 import fr.huiitre.tools.modules.dofus.workshop.application.exception.WorkshopNotFoundException;
 import fr.huiitre.tools.modules.dofus.workshop.application.repository.WorkshopRepository;
@@ -74,11 +75,16 @@ public class UpdateWorkshopUseCase implements SecuredUseCase {
                 .map(tag -> new WorkshopTagDto(tag.getId(), tag.getName(), tag.getColor()))
                 .toList();
 
+        List<WorkshopLinkDto> linksDto = current.getLinks().stream()
+                .map(link -> new WorkshopLinkDto(link.getId(), link.getSource(), link.getUrl(), link.getLabel()))
+                .toList();
+
         return new WorkshopDto(
             current.getId(),
             current.getName(),
             current.isActive(),
             tagsDto,
+            linksDto,
             current.isPinned()
         );
     }

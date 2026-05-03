@@ -69,6 +69,7 @@ public class CreateWorkshopUseCase implements SecuredUseCase {
             workshop.getName(),
             workshop.isActive(),
             List.of(),
+            List.of(),
             workshop.isPinned()
         );
     }

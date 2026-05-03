@@ -2,7 +2,6 @@ package fr.huiitre.tools.modules.dofus.workshop.api;
 
 import java.util.List;
 
-import org.hibernate.sql.Delete;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -10,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,18 +17,22 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.nimbusds.oauth2.sdk.Role;
-
 import fr.huiitre.tools.modules.core.common.api.RequiredRole;
 import fr.huiitre.tools.modules.core.role.domain.RoleCode;
 import fr.huiitre.tools.modules.dofus.item.application.dto.ItemDto;
+import fr.huiitre.tools.modules.dofus.workshop.api.dto.AddWorkshopLinkRequest;
+import fr.huiitre.tools.modules.dofus.workshop.api.dto.UpdateWorkshopLinkRequest;
 import fr.huiitre.tools.modules.dofus.workshop.api.dto.CreateWorkshopRequest;
 import fr.huiitre.tools.modules.dofus.workshop.api.dto.UpdateWorkshopRequest;
 import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopDetailResponse;
 import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopDto;
+import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopLinkDto;
 import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopIngredientDetailDto;
 import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopItemDetailDto;
 import fr.huiitre.tools.modules.dofus.workshop.application.usecase.AddTagsToWorkshopUseCase;
+import fr.huiitre.tools.modules.dofus.workshop.application.usecase.AddWorkshopLinkUseCase;
+import fr.huiitre.tools.modules.dofus.workshop.application.usecase.DeleteWorkshopLinkUseCase;
+import fr.huiitre.tools.modules.dofus.workshop.application.usecase.UpdateWorkshopLinkUseCase;
 import fr.huiitre.tools.modules.dofus.workshop.application.usecase.CreateWorkshopUseCase;
 import fr.huiitre.tools.modules.dofus.workshop.application.usecase.DeleteWorkshopUseCase;
 import fr.huiitre.tools.modules.dofus.workshop.application.usecase.ListWorkshopsUseCase;
@@ -63,6 +67,9 @@ public class WorkshopController {
     private final UpdateIngredientQuantityObtainedUseCase updateIngredientQuantityObtainedUseCase;
     private final AddTagsToWorkshopUseCase addTagsToWorkshopUseCase;
     private final RemoveTagFromWorkshopUseCase removeTagFromWorkshopUseCase;
+    private final AddWorkshopLinkUseCase addWorkshopLinkUseCase;
+    private final UpdateWorkshopLinkUseCase updateWorkshopLinkUseCase;
+    private final DeleteWorkshopLinkUseCase deleteWorkshopLinkUseCase;
 
     public WorkshopController(
         CreateWorkshopUseCase createWorkshopUseCase,
@@ -78,7 +85,10 @@ public class WorkshopController {
         UncraftIngredientUseCase uncraftIngredientUseCase,
         UpdateIngredientQuantityObtainedUseCase updateIngredientQuantityObtainedUseCase,
         AddTagsToWorkshopUseCase addTagsToWorkshopUseCase,
-        RemoveTagFromWorkshopUseCase removeTagFromWorkshopUseCase
+        RemoveTagFromWorkshopUseCase removeTagFromWorkshopUseCase,
+        AddWorkshopLinkUseCase addWorkshopLinkUseCase,
+        UpdateWorkshopLinkUseCase updateWorkshopLinkUseCase,
+        DeleteWorkshopLinkUseCase deleteWorkshopLinkUseCase
     ) {
         this.createWorkshopUseCase = createWorkshopUseCase;
         this.updateWorkshopUseCase = updateWorkshopUseCase;
@@ -94,6 +104,9 @@ public class WorkshopController {
         this.updateIngredientQuantityObtainedUseCase = updateIngredientQuantityObtainedUseCase;
         this.addTagsToWorkshopUseCase = addTagsToWorkshopUseCase;
         this.removeTagFromWorkshopUseCase = removeTagFromWorkshopUseCase;
+        this.addWorkshopLinkUseCase = addWorkshopLinkUseCase;
+        this.updateWorkshopLinkUseCase = updateWorkshopLinkUseCase;
+        this.deleteWorkshopLinkUseCase = deleteWorkshopLinkUseCase;
     }
 
     @RequiredRole(RoleCode.USER)
@@ -224,5 +237,32 @@ public class WorkshopController {
             @PathVariable Long workshopId,
             @PathVariable Long tagId) {
         return removeTagFromWorkshopUseCase.execute(workshopId, tagId);
+    }
+
+    @RequiredRole(RoleCode.USER)
+    @PostMapping("/{workshopId}/links")
+    @ResponseStatus(HttpStatus.CREATED)
+    public WorkshopLinkDto addWorkshopLink(
+            @PathVariable Long workshopId,
+            @RequestBody AddWorkshopLinkRequest request) {
+        return addWorkshopLinkUseCase.execute(workshopId, request);
+    }
+
+    @RequiredRole(RoleCode.USER)
+    @DeleteMapping("/{workshopId}/links/{linkId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteWorkshopLink(
+            @PathVariable Long workshopId,
+            @PathVariable Long linkId) {
+        deleteWorkshopLinkUseCase.execute(workshopId, linkId);
+    }
+
+    @RequiredRole(RoleCode.USER)
+    @PutMapping("/{workshopId}/links/{linkId}")
+    public WorkshopLinkDto updateWorkshopLink(
+            @PathVariable Long workshopId,
+            @PathVariable Long linkId,
+            @RequestBody UpdateWorkshopLinkRequest request) {
+        return updateWorkshopLinkUseCase.execute(workshopId, linkId, request);
     }
 }

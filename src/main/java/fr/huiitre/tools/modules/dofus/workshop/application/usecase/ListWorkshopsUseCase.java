@@ -2,6 +2,7 @@ package fr.huiitre.tools.modules.dofus.workshop.application.usecase;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -12,9 +13,11 @@ import fr.huiitre.tools.modules.core.security.application.usecase.SecuredUseCase
 import fr.huiitre.tools.modules.core.module.domain.ModuleCode;
 import fr.huiitre.tools.modules.core.role.domain.RoleCode;
 import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopDto;
+import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopLinkDto;
 import fr.huiitre.tools.modules.dofus.workshop.application.dto.WorkshopTagDto;
 import fr.huiitre.tools.modules.dofus.workshop.application.repository.WorkshopRepository;
 import fr.huiitre.tools.modules.dofus.workshop.domain.Workshop;
+import fr.huiitre.tools.modules.dofus.workshop.domain.WorkshopLink;
 import fr.huiitre.tools.modules.dofus.workshop.domain.WorkshopTag;
 
 @Service
@@ -49,6 +52,8 @@ public class ListWorkshopsUseCase implements SecuredUseCase {
 
         List<Workshop> workshops = workshopRepository.findAllByUserIdAndGameVersionId(userId, gameVersionId);
 
+        Map<Long, List<WorkshopLink>> linksByWorkshopId = workshopRepository.findAllLinksByUserIdGroupedByWorkshopId(userId);
+
         List<WorkshopDto> workshopsDto = new ArrayList<>();
 
         for (Workshop workshop : workshops) {
@@ -65,12 +70,17 @@ public class ListWorkshopsUseCase implements SecuredUseCase {
                     })
                     .toList();
 
+            List<WorkshopLinkDto> linksDto = linksByWorkshopId.getOrDefault(workshop.getId(), List.of()).stream()
+                .map(link -> new WorkshopLinkDto(link.getId(), link.getSource(), link.getUrl(), link.getLabel()))
+                .toList();
+
             workshopsDto.add(
                 new WorkshopDto(
                     workshop.getId(),
                     workshop.getName(),
                     workshop.isActive(),
                     tagsDto,
+                    linksDto,
                     workshop.isPinned()
                 )
             );
