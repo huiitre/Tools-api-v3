@@ -5,5 +5,6 @@ public enum ModuleCode {
     TEST,
     HEALTH,
     TODOLIST,
-    DOFUS
+    DOFUS,
+    RIOT
 }
