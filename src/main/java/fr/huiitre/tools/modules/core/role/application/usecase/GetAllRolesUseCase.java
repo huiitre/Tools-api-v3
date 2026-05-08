@@ -16,7 +16,7 @@ public class GetAllRolesUseCase implements SecuredUseCase {
 
     @Override
     public RoleCode requiredRole() {
-        return RoleCode.TECH;
+        return RoleCode.ADMIN;
     }
 
     private final RoleRepository roleRepository;

@@ -51,4 +51,14 @@ public class PostgresUserRoleRepository implements UserRoleRepository {
                 ROLE_VIEW_ROW_MAPPER,
                 userId);
     }
+
+    @Override
+    public void deleteAllByUserId(Long userId) {
+        final String sql = """
+                    DELETE FROM tools_core.user_role
+                    WHERE user_id = ?
+                """;
+
+        jdbcTemplate.update(sql, userId);
+    }
 }

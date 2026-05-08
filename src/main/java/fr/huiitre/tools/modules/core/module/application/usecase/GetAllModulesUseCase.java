@@ -16,7 +16,7 @@ public class GetAllModulesUseCase implements SecuredUseCase {
 
     @Override
     public RoleCode requiredRole() {
-        return RoleCode.TECH;
+        return RoleCode.ADMIN;
     }
 
     private final ModuleRepository moduleRepository;

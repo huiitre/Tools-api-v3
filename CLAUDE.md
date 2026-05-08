@@ -80,7 +80,49 @@ Routes :
 WorkshopDto et WorkshopDetailResponse exposent la liste links.
 État : Backend complet, prêt pour intégration Front.
 
-6. Discovery Log
+6. Module Riot — Valorant
+
+Routes :
+  POST /riot/valorant/refresh-token → 200 { accessToken, refreshToken }
+
+Fonctionnement :
+  - Reçoit un refreshToken en body, appelle auth.riotgames.com/token.
+  - client_id hardcodé : prod-xsso-playvalorant (public client, pas de secret).
+  - Retourne le nouveau accessToken + refreshToken (null si Riot n'en émet pas de nouveau).
+  - Use case requiert ModuleCode.RIOT + RoleCode.READ_ONLY.
+
+Adapter : RiotAuthHttpAdapter — POST form-urlencoded, ParameterizedTypeReference<Map<String,Object>>.
+Config : RiotConfig (aucune propriété externe, URL et client_id hardcodés).
+
+7. Module Admin — Gestion utilisateurs & stats
+
+Nouvelles routes (toutes requièrent RoleCode.ADMIN minimum) :
+  GET  /users                  → List<UserAdminView> (id, email, name, active, createdAt, avatarUrl, roles[id])
+  GET  /users/{userId}         → UserProfileDto (id, email, name, userType, active, roles[], modules[])
+  PUT  /users/{userId}/role    → 204 — body : { "roleId": Long }
+  GET  /admin/stats            → AdminStatsView (totalUsers, activeUsers, newUsersThisWeek, usersPerModule[])
+
+Architecture :
+  - AdminUserController (/users) + AdminStatsController (/admin).
+  - Use cases : ListUsersUseCase, GetUserDetailUseCase, SetUserGlobalRoleUseCase, GetAdminStatsUseCase.
+  - AdminStatsRepository port + PostgresAdminStatsRepository (3 requêtes SQL distinctes).
+  - Config : AdminConfig wire PostgresAdminStatsRepository.
+
+Modifications des repositories existants :
+  - UserRepository + PostgresUserRepository : findAllForAdmin() — JOIN users + user_role + role + user_auth_provider (avatarUrl Google) en une requête, pattern ResultSetExtractor LinkedHashMap.
+  - UserRoleRepository + PostgresUserRoleRepository : deleteAllByUserId() — utilisé par SetUserGlobalRoleUseCase (delete + insert = remplacement atomique du rôle global).
+
+SetUserGlobalRoleUseCase : valide que user ET role existent, puis replace le rôle global (deleteAll + save).
+  - Prend roleId (Long) en body, pattern identique à ChangeUserModuleRoleRequest.
+
+Notes sécurité :
+  - @RequiredRole sur les controllers est décoratif (aucun interceptor ne le lit).
+  - La sécurité réelle est assurée par UseCaseAuthorizationAspect (intercepte execute()).
+  - Spring Security bloque les anonymes avant même d'atteindre les use cases (.anyRequest().authenticated()).
+
+8. Discovery Log
 
 [Architecture] Initialisation du squelette DDD Java 21.
 [Feature] Workshop Links — backend complet (voir section 5).
+[Feature] Riot/Valorant refresh token — backend complet (voir section 6).
+[Feature] Admin routes (users + stats) — backend complet (voir section 7).

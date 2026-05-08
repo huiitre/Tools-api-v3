@@ -30,9 +30,11 @@ import fr.huiitre.tools.modules.core.role.domain.RoleCode;
 import fr.huiitre.tools.modules.core.user_module.application.command.GrantUserModuleAccessCommand;
 import fr.huiitre.tools.modules.core.user_module.application.command.RevokeUserModuleAccessCommand;
 import fr.huiitre.tools.modules.core.user_module.application.usecase.ChangeUserModuleRoleUseCase;
+import fr.huiitre.tools.modules.core.user_module.application.usecase.GetModuleUsersUseCase;
 import fr.huiitre.tools.modules.core.user_module.application.usecase.GetUserModulesUseCase;
 import fr.huiitre.tools.modules.core.user_module.application.usecase.GrantUserModuleAccessUseCase;
 import fr.huiitre.tools.modules.core.user_module.application.usecase.RevokeUserModuleAccessUseCase;
+import fr.huiitre.tools.modules.core.user_module.application.view.ModuleUserView;
 import fr.huiitre.tools.modules.core.user_module.application.view.UserModuleView;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
@@ -51,6 +53,7 @@ public class ModuleController {
     private final RevokeUserModuleAccessUseCase revokeUserModuleAccessUseCase;
     private final GetAllModulesUseCase getAllModulesUseCase;
     private final GetUserModulesUseCase getUserModulesUseCase;
+    private final GetModuleUsersUseCase getModuleUsersUseCase;
 
     public ModuleController(
             CreateModuleUseCase createModuleUseCase,
@@ -60,7 +63,8 @@ public class ModuleController {
             GrantUserModuleAccessUseCase grantUserModuleAccessUseCase,
             RevokeUserModuleAccessUseCase revokeUserModuleAccessUseCase,
             GetAllModulesUseCase getAllModulesUseCase,
-            GetUserModulesUseCase getUserModulesUseCase) {
+            GetUserModulesUseCase getUserModulesUseCase,
+            GetModuleUsersUseCase getModuleUsersUseCase) {
         this.createModuleUseCase = createModuleUseCase;
         this.deleteModuleUseCase = deleteModuleUseCase;
         this.updateModuleUseCase = updateModuleUseCase;
@@ -69,6 +73,7 @@ public class ModuleController {
         this.revokeUserModuleAccessUseCase = revokeUserModuleAccessUseCase;
         this.getAllModulesUseCase = getAllModulesUseCase;
         this.getUserModulesUseCase = getUserModulesUseCase;
+        this.getModuleUsersUseCase = getModuleUsersUseCase;
     }
 
     @RequiredRole(RoleCode.TECH)
@@ -142,5 +147,11 @@ public class ModuleController {
     @GetMapping("/users/{userId}")
     public List<UserModuleView> getUserModules(@PathVariable Long userId) {
         return getUserModulesUseCase.execute(userId);
+    }
+
+    @RequiredRole(RoleCode.ADMIN)
+    @GetMapping("/{moduleId}/users")
+    public List<ModuleUserView> getModuleUsers(@PathVariable Long moduleId) {
+        return getModuleUsersUseCase.execute(moduleId);
     }
 }

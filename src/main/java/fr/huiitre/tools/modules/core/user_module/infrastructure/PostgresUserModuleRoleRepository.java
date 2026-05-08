@@ -9,6 +9,7 @@ import java.util.Optional;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import fr.huiitre.tools.modules.core.user_module.application.ports.UserModuleRoleRepository;
+import fr.huiitre.tools.modules.core.user_module.application.view.ModuleUserView;
 import fr.huiitre.tools.modules.core.user_module.application.view.UserModuleView;
 import fr.huiitre.tools.modules.core.role.api.view.RoleView;
 import fr.huiitre.tools.modules.core.user_module.domain.UserModuleRole;
@@ -146,5 +147,27 @@ public class PostgresUserModuleRoleRepository implements UserModuleRoleRepositor
                 userId);
 
         return new ArrayList<>(moduleById.values());
+    }
+
+    @Override
+    public List<ModuleUserView> findAllByModuleId(Long moduleId) {
+        final String sql = """
+                    SELECT u.id AS user_id, u.email, u.name, r.id AS role_id, r.code AS role_code
+                    FROM tools_core.user_module_role umr
+                    INNER JOIN tools_core.users u ON u.id = umr.user_id
+                    INNER JOIN tools_core.role r ON r.id = umr.role_id
+                    WHERE umr.module_id = ?
+                    ORDER BY u.name
+                """;
+
+        return jdbcTemplate.query(
+                sql,
+                (rs, rowNum) -> new ModuleUserView(
+                        rs.getLong("user_id"),
+                        rs.getString("email"),
+                        rs.getString("name"),
+                        rs.getLong("role_id"),
+                        rs.getString("role_code")),
+                moduleId);
     }
 }

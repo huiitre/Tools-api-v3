@@ -34,22 +34,38 @@ Charbon : Rigueur pédagogique absolue dans les explications techniques.
 
 Pragmatisme : Code prêt à l'emploi pour environnement Linux/Docker.
 
-4. Discovery Log (Auto-Updated)
+4. Stack réelle (à jour)
 
-<!-- L'agent CLI consigne ici ses découvertes techniques via edit_file -->
+Stack : Java 21, Spring Boot, JDBC (JdbcTemplate — pas d'ORM Hibernate).
+Pas de Flyway/Liquibase — schéma BDD géré manuellement.
+Chaque use case est un @Service implémentant SecuredUseCase (AOP intercepte execute()).
+Sécurité : Spring Security (.anyRequest().authenticated()) + UseCaseAuthorizationAspect.
+@RequiredRole sur les controllers est décoratif — la vraie sécurité est dans les use cases.
+
+5. Discovery Log
 
 [Architecture] Initialisation du squelette DDD Java 21.
 
-[Feature] Gestion des liens externes (Dofusbook) sur les ateliers — COMPLÈTE.
-- Domaine : `WorkshopLink` (id, source, url, label, createdAt) intégré à l'agrégat `Workshop` via `addLink()` / `getLinks()`.
-- Enum `LinkSource` : DOFUSBOOK, CUSTOM. Extensible : ajouter un nouveau cas = créer un `@Service` implémentant `LinkSourceHandler`, rien d'autre à toucher.
-- Validation URL par source : `DofusbookLinkSourceHandler` (3 formats : d-bk.net short, dofusbook.net public, dofusbook.net private), `CustomLinkSourceHandler` (http/https uniquement, protège contre javascript:/data:/file://).
-- Résolution automatique du label à la création, label libre à l'édition.
-- Limite : 3 liens max par atelier (vérifié côté use case).
-- Table BDD : `tools_dofus.workshop_link` (à créer manuellement, pas de migration auto).
-- API complète :
-  - POST   /dofus/workshops/{id}/links       → 201 WorkshopLinkDto
-  - PUT    /dofus/workshops/{id}/links/{id}  → 200 WorkshopLinkDto
-  - DELETE /dofus/workshops/{id}/links/{id}  → 204
-- WorkshopDto et WorkshopDetailResponse exposent désormais la liste `links`.
-- État : Backend complet et testé, prêt pour intégration Front.
+[Feature] Workshop Links — COMPLÈTE.
+- WorkshopLink (id, source, url, label, createdAt) dans l'agrégat Workshop.
+- Enum LinkSource : DOFUSBOOK, CUSTOM. Extensible via @Service LinkSourceHandler.
+- Validation URL par source, label auto-résolu à la création, libre à l'édition.
+- Limite : 3 liens max par atelier.
+- Table : tools_dofus.workshop_link.
+- Routes : POST/PUT/DELETE /dofus/workshops/{id}/links[/{id}].
+
+[Feature] Riot/Valorant refresh token — COMPLÈTE.
+- Route : POST /riot/valorant/refresh-token → { accessToken, refreshToken }.
+- client_id hardcodé : prod-xsso-playvalorant (pas de secret).
+- Appel POST form-urlencoded vers auth.riotgames.com/token.
+- ModuleCode.RIOT ajouté à l'enum ModuleCode.
+- Config : RiotConfig, adapter : RiotAuthHttpAdapter.
+
+[Feature] Admin — gestion utilisateurs & stats — COMPLÈTE.
+- GET  /users                → List<UserAdminView> avec avatarUrl + roles[id] (rôle par id).
+- GET  /users/{userId}       → UserProfileDto complet (roles + modules).
+- PUT  /users/{userId}/role  → body { "roleId": Long } — remplace le rôle global.
+- GET  /admin/stats          → { totalUsers, activeUsers, newUsersThisWeek, usersPerModule[] }.
+- UserRepository.findAllForAdmin() : JOIN users + user_role + role + user_auth_provider en 1 requête.
+- UserRoleRepository.deleteAllByUserId() : utilisé pour le remplacement atomique du rôle global.
+- Config : AdminConfig wire PostgresAdminStatsRepository.

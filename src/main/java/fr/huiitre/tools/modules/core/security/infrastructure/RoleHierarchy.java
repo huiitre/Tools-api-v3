@@ -13,8 +13,8 @@ public final class RoleHierarchy {
         LEVELS.put(RoleCode.READ_ONLY, 1);
         LEVELS.put(RoleCode.USER, 2);
         LEVELS.put(RoleCode.MODERATOR, 3);
-        LEVELS.put(RoleCode.ADMIN, 4);
-        LEVELS.put(RoleCode.TECH, 5);
+        LEVELS.put(RoleCode.ADMIN, 5);
+        LEVELS.put(RoleCode.TECH, 4);
         LEVELS.put(RoleCode.OWNER, 6);
     }
 

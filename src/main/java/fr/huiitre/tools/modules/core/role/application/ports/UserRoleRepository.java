@@ -10,4 +10,6 @@ public interface UserRoleRepository {
     void save(UserRole userRole);
 
     List<RoleView> findAllByUserId(Long userId);
+
+    void deleteAllByUserId(Long userId);
 }
