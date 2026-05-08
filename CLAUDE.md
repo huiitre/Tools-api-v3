@@ -82,17 +82,57 @@ WorkshopDto et WorkshopDetailResponse exposent la liste links.
 
 6. Module Riot — Valorant
 
-Routes :
+6a. Auth
   POST /riot/valorant/refresh-token → 200 { accessToken, refreshToken }
-
-Fonctionnement :
   - Reçoit un refreshToken en body, appelle auth.riotgames.com/token.
   - client_id hardcodé : prod-xsso-playvalorant (public client, pas de secret).
   - Retourne le nouveau accessToken + refreshToken (null si Riot n'en émet pas de nouveau).
   - Use case requiert ModuleCode.RIOT + RoleCode.READ_ONLY.
+  Adapter : RiotAuthHttpAdapter — POST form-urlencoded, ParameterizedTypeReference<Map<String,Object>>.
+  Config : RiotConfig (aucune propriété externe, URL et client_id hardcodés).
 
-Adapter : RiotAuthHttpAdapter — POST form-urlencoded, ParameterizedTypeReference<Map<String,Object>>.
-Config : RiotConfig (aucune propriété externe, URL et client_id hardcodés).
+6b. Skins — COMPLÈTE (2026-05-08)
+  Routes :
+    GET    /riot/valorant/skins              → List<ValorantSkinView> (READ_ONLY)
+    GET    /riot/valorant/my-skins           → List<ValorantUserSkinView> (READ_ONLY)
+    POST   /riot/valorant/my-skins           → 201 ValorantUserSkinView — body : { "skinId": Long } (USER)
+    DELETE /riot/valorant/my-skins/{skinId}  → 204 (USER)
+    GET    /riot/valorant/watchlist          → List<ValorantWatchlistEntryView> (READ_ONLY)
+    POST   /riot/valorant/watchlist          → 201 ValorantWatchlistEntryView — body : { "skinId": Long } (USER)
+    DELETE /riot/valorant/watchlist/{skinId} → 204 (USER)
+
+  Table BDD : tools_riot.valorant_weapon_skins (id, asset_id UUID, name, icon_url, tier_uuid UUID, content_tier_uuid UUID)
+  Ports : ValorantSkinRepository, ValorantUserSkinRepository, ValorantWatchlistRepository
+  Config : RiotConfig wire les 3 repos Postgres.
+
+6c. Sync — COMPLÈTE (2026-05-08)
+  Route :
+    POST /riot/valorant/sync/skins → 200 ValorantSyncReport { created, updated, deleted } (TECH)
+
+  Architecture :
+    modules/riot/valorant/sync/
+    ├── api/         ValorantSyncController
+    ├── application/ ValorantSkinDataProvider (port — source externe)
+    │                ValorantSkinSyncRepository (port — DB)
+    │                ValorantSkinSyncData (DTO entrant depuis le provider)
+    │                ValorantSyncReport (record résultat)
+    │                SyncValorantSkinsUseCase (RIOT + TECH)
+    └── infrastructure/ ValorantApiSkinDataProvider (appelle valorant-api.com)
+                        PostgresValorantSkinSyncRepository
+
+  Logique de synchro (SyncValorantSkinsUseCase) :
+    - Fetch depuis API → compare avec DB (clé : asset_id UUID).
+    - Crée les skins absents, met à jour les modifiés, supprime ceux disparus de l'API.
+    - Retourne { created, updated, deleted }.
+
+  Adapter HTTP (ValorantApiSkinDataProvider) :
+    - URL : https://valorant-api.com/v1/weapons/skins?language=fr-FR
+    - GET via RestTemplate + ParameterizedTypeReference<Map<String,Object>>.
+    - Mapping : uuid→assetId, displayName→name, displayIcon (fallback levels[0].displayIcon)→iconUrl,
+                themeUuid→tierUuid, contentTierUuid→contentTierUuid.
+
+  Extensibilité : pour changer de source, implémenter ValorantSkinDataProvider et repointer RiotSyncConfig.
+  Config : RiotSyncConfig (séparé de RiotConfig).
 
 7. Module Admin — Gestion utilisateurs & stats
 
@@ -120,9 +160,39 @@ Notes sécurité :
   - La sécurité réelle est assurée par UseCaseAuthorizationAspect (intercepte execute()).
   - Spring Security bloque les anonymes avant même d'atteindre les use cases (.anyRequest().authenticated()).
 
-8. Discovery Log
+8. Sécurité — Hiérarchie des rôles (à jour)
+
+Fichier : modules/core/security/infrastructure/RoleHierarchy.java
+Ordre actuel (du plus bas au plus haut) :
+  READ_ONLY (1) < USER (2) < MODERATOR (3) < TECH (4) < ADMIN (5) < OWNER (6)
+
+ADMIN est au-dessus de TECH. OWNER n'est requis par aucun use case actuellement.
+@RequiredRole sur les controllers est décoratif — seul UseCaseAuthorizationAspect enforce réellement.
+Spring Security bloque les anonymes (.anyRequest().authenticated()) avant d'atteindre les use cases.
+
+Routes accessibles à partir de ADMIN (minimum) :
+  - Toute la gestion des modules (GET/POST/PUT/DELETE /modules, /modules/{id}/users, etc.)
+  - Toute la gestion des users admin (/users, /admin/stats)
+  - Synchro Dofus (TECH suffit, mais ADMIN passe aussi depuis l'inversion)
+
+9. Module Admin — Routes complètes (à jour 2026-05-08)
+
+  GET  /users                      → List<UserAdminView> (id, email, name, active, createdAt, avatarUrl, roles[Long])
+  GET  /users/{userId}             → UserProfileDto (id, email, name, userType, active, roles[], modules[])
+  PUT  /users/{userId}/role        → 204 — body : { "roleId": Long } — remplace le rôle global
+  GET  /admin/stats                → AdminStatsView (totalUsers, activeUsers, newUsersThisWeek, usersPerModule[])
+  GET  /modules/{moduleId}/users   → List<ModuleUserView> (userId, email, name, roleId, roleCode)
+
+UserAdminView : classe simple, roles = List<Long> (IDs), avatarUrl via LEFT JOIN user_auth_provider GOOGLE.
+ModuleUserView : classe simple, une ligne par user, RowMapper simple (pas de N+1, 1 role par user par module).
+UserModuleRoleRepository.findAllByModuleId() : JOIN user_module_role + users + role WHERE module_id = ?
+
+10. Discovery Log
 
 [Architecture] Initialisation du squelette DDD Java 21.
 [Feature] Workshop Links — backend complet (voir section 5).
-[Feature] Riot/Valorant refresh token — backend complet (voir section 6).
-[Feature] Admin routes (users + stats) — backend complet (voir section 7).
+[Feature] Riot/Valorant refresh token — backend complet (voir section 6a).
+[Feature] Admin routes (users + stats + module users) — backend complet (voir sections 7 et 9).
+[Sécurité] Hiérarchie rôles inversée ADMIN/TECH — ADMIN (5) > TECH (4) (voir section 8).
+[Feature] Riot/Valorant skins + my-skins + watchlist — backend complet (voir section 6b).
+[Feature] Riot/Valorant sync skins — backend complet (voir section 6c).
