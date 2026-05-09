@@ -1,17 +1,20 @@
 package fr.huiitre.tools.config.riot;
 
-import fr.huiitre.tools.modules.riot.valorant.application.ports.RiotAuthPort;
-import fr.huiitre.tools.modules.riot.valorant.application.ports.ValorantSkinRepository;
-import fr.huiitre.tools.modules.riot.valorant.application.ports.ValorantUserSkinRepository;
-import fr.huiitre.tools.modules.riot.valorant.application.ports.ValorantWatchlistRepository;
-import fr.huiitre.tools.modules.riot.valorant.infrastructure.PostgresValorantSkinRepository;
-import fr.huiitre.tools.modules.riot.valorant.infrastructure.PostgresValorantUserSkinRepository;
-import fr.huiitre.tools.modules.riot.valorant.infrastructure.PostgresValorantWatchlistRepository;
-import fr.huiitre.tools.modules.riot.valorant.infrastructure.RiotAuthHttpAdapter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.client.RestTemplate;
+
+import fr.huiitre.tools.modules.riot.valorant.application.ports.RiotAuthPort;
+import fr.huiitre.tools.modules.riot.valorant.application.ports.ValorantBundleRepository;
+import fr.huiitre.tools.modules.riot.valorant.application.ports.ValorantSkinRepository;
+import fr.huiitre.tools.modules.riot.valorant.application.ports.ValorantUserSkinRepository;
+import fr.huiitre.tools.modules.riot.valorant.application.ports.ValorantWatchlistRepository;
+import fr.huiitre.tools.modules.riot.valorant.infrastructure.PostgresValorantBundleRepository;
+import fr.huiitre.tools.modules.riot.valorant.infrastructure.PostgresValorantSkinRepository;
+import fr.huiitre.tools.modules.riot.valorant.infrastructure.PostgresValorantUserSkinRepository;
+import fr.huiitre.tools.modules.riot.valorant.infrastructure.PostgresValorantWatchlistRepository;
+import fr.huiitre.tools.modules.riot.valorant.infrastructure.RiotAuthHttpAdapter;
 
 @Configuration
 public class RiotConfig {
@@ -24,6 +27,11 @@ public class RiotConfig {
     @Bean
     public ValorantSkinRepository valorantSkinRepository(JdbcTemplate jdbcTemplate) {
         return new PostgresValorantSkinRepository(jdbcTemplate);
+    }
+
+    @Bean
+    public ValorantBundleRepository valorantBundleRepository(JdbcTemplate jdbcTemplate) {
+        return new PostgresValorantBundleRepository(jdbcTemplate);
     }
 
     @Bean

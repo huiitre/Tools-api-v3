@@ -1,24 +1,44 @@
 package fr.huiitre.tools.config.riot;
 
-import fr.huiitre.tools.modules.riot.valorant.sync.application.ValorantSkinDataProvider;
-import fr.huiitre.tools.modules.riot.valorant.sync.application.ValorantSkinSyncRepository;
-import fr.huiitre.tools.modules.riot.valorant.sync.infrastructure.PostgresValorantSkinSyncRepository;
-import fr.huiitre.tools.modules.riot.valorant.sync.infrastructure.ValorantApiSkinDataProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.web.client.RestTemplate;
+
+import fr.huiitre.tools.modules.riot.sync.application.ValorantBundleDataProvider;
+import fr.huiitre.tools.modules.riot.sync.application.ValorantBundleSyncRepository;
+import fr.huiitre.tools.modules.riot.sync.application.ValorantSkinDataProvider;
+import fr.huiitre.tools.modules.riot.sync.application.ValorantSkinSyncRepository;
+import fr.huiitre.tools.modules.riot.sync.infrastructure.PostgresValorantBundleSyncRepository;
+import fr.huiitre.tools.modules.riot.sync.infrastructure.PostgresValorantSkinSyncRepository;
+import fr.huiitre.tools.modules.riot.sync.infrastructure.ValorantLocalAssetsReader;
+import fr.huiitre.tools.modules.riot.sync.infrastructure.ValorantLocalBundleDataProvider;
+import fr.huiitre.tools.modules.riot.sync.infrastructure.ValorantLocalSkinDataProvider;
 
 @Configuration
 public class RiotSyncConfig {
 
     @Bean
-    public ValorantSkinDataProvider valorantSkinDataProvider() {
-        return new ValorantApiSkinDataProvider(new RestTemplate());
+    public ValorantSkinDataProvider valorantSkinDataProvider(
+            ValorantLocalAssetsReader assetsReader,
+            @Value("${app.assets.base-url}") String assetsBaseUrl) {
+        return new ValorantLocalSkinDataProvider(assetsReader, assetsBaseUrl);
     }
 
     @Bean
     public ValorantSkinSyncRepository valorantSkinSyncRepository(JdbcTemplate jdbcTemplate) {
         return new PostgresValorantSkinSyncRepository(jdbcTemplate);
+    }
+
+    @Bean
+    public ValorantBundleDataProvider valorantBundleDataProvider(
+            ValorantLocalAssetsReader assetsReader,
+            @Value("${app.assets.base-url}") String assetsBaseUrl) {
+        return new ValorantLocalBundleDataProvider(assetsReader, assetsBaseUrl);
+    }
+
+    @Bean
+    public ValorantBundleSyncRepository valorantBundleSyncRepository(JdbcTemplate jdbcTemplate) {
+        return new PostgresValorantBundleSyncRepository(jdbcTemplate);
     }
 }

@@ -1,4 +1,4 @@
-package fr.huiitre.tools.modules.riot.valorant.sync.application;
+package fr.huiitre.tools.modules.riot.sync.application;
 
 import fr.huiitre.tools.modules.core.module.domain.ModuleCode;
 import fr.huiitre.tools.modules.core.role.domain.RoleCode;

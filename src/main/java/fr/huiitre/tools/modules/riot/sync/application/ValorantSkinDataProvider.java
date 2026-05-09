@@ -1,4 +1,4 @@
-package fr.huiitre.tools.modules.riot.valorant.sync.application;
+package fr.huiitre.tools.modules.riot.sync.application;
 
 import java.util.List;
 
