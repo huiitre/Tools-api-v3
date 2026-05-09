@@ -1,12 +1,6 @@
 package fr.huiitre.tools.modules.riot.sync.application;
 
-import fr.huiitre.tools.modules.core.module.domain.ModuleCode;
-import fr.huiitre.tools.modules.core.role.domain.RoleCode;
-import fr.huiitre.tools.modules.core.security.application.usecase.SecuredUseCase;
-import fr.huiitre.tools.modules.riot.valorant.application.view.ValorantSkinView;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -15,18 +9,29 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import fr.huiitre.tools.modules.core.module.domain.ModuleCode;
+import fr.huiitre.tools.modules.core.role.domain.RoleCode;
+import fr.huiitre.tools.modules.core.security.application.usecase.SecuredUseCase;
+import fr.huiitre.tools.modules.riot.valorant.application.view.ValorantSkinView;
+
 @Service
 @Transactional
 public class SyncValorantSkinsUseCase implements SecuredUseCase {
 
     private final ValorantSkinDataProvider skinDataProvider;
     private final ValorantSkinSyncRepository skinSyncRepository;
+    private final ValorantSkinLevelSyncRepository levelSyncRepository;
 
     public SyncValorantSkinsUseCase(
             ValorantSkinDataProvider skinDataProvider,
-            ValorantSkinSyncRepository skinSyncRepository) {
+            ValorantSkinSyncRepository skinSyncRepository,
+            ValorantSkinLevelSyncRepository levelSyncRepository) {
         this.skinDataProvider = skinDataProvider;
         this.skinSyncRepository = skinSyncRepository;
+        this.levelSyncRepository = levelSyncRepository;
     }
 
     @Override
@@ -49,6 +54,7 @@ public class SyncValorantSkinsUseCase implements SecuredUseCase {
                 .map(ValorantSkinSyncData::getAssetId)
                 .collect(Collectors.toSet());
 
+        Map<UUID, Long> skinAssetIdToDbId = new HashMap<>();
         int created = 0;
         int updated = 0;
         int deleted = 0;
@@ -57,10 +63,13 @@ public class SyncValorantSkinsUseCase implements SecuredUseCase {
             ValorantSkinView existing = currentByAssetId.get(ext.getAssetId());
 
             if (existing == null) {
-                skinSyncRepository.save(ext);
+                Long newId = skinSyncRepository.save(ext);
+                skinAssetIdToDbId.put(ext.getAssetId(), newId);
                 created++;
                 continue;
             }
+
+            skinAssetIdToDbId.put(ext.getAssetId(), existing.id());
 
             boolean changed = !Objects.equals(existing.name(), ext.getName())
                     || !Objects.equals(existing.iconUrl(), ext.getIconUrl())
@@ -80,6 +89,21 @@ public class SyncValorantSkinsUseCase implements SecuredUseCase {
             }
         }
 
+        syncLevels(external, skinAssetIdToDbId);
+
         return new ValorantSyncReport(created, updated, deleted);
+    }
+
+    private void syncLevels(List<ValorantSkinSyncData> external, Map<UUID, Long> skinAssetIdToDbId) {
+        levelSyncRepository.deleteAll();
+
+        for (ValorantSkinSyncData skin : external) {
+            Long skinId = skinAssetIdToDbId.get(skin.getAssetId());
+            if (skinId == null) continue;
+
+            for (ValorantSkinLevelSyncData level : skin.getLevels()) {
+                levelSyncRepository.save(skinId, level);
+            }
+        }
     }
 }

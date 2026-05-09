@@ -1,5 +1,6 @@
 package fr.huiitre.tools.modules.riot.sync.application;
 
+import java.util.List;
 import java.util.UUID;
 
 public class ValorantSkinSyncData {
@@ -9,13 +10,15 @@ public class ValorantSkinSyncData {
     private final String iconUrl;
     private final UUID tierUuid;
     private final UUID contentTierUuid;
+    private final List<ValorantSkinLevelSyncData> levels;
 
-    public ValorantSkinSyncData(UUID assetId, String name, String iconUrl, UUID tierUuid, UUID contentTierUuid) {
+    public ValorantSkinSyncData(UUID assetId, String name, String iconUrl, UUID tierUuid, UUID contentTierUuid, List<ValorantSkinLevelSyncData> levels) {
         this.assetId = assetId;
         this.name = name;
         this.iconUrl = iconUrl;
         this.tierUuid = tierUuid;
         this.contentTierUuid = contentTierUuid;
+        this.levels = levels;
     }
 
     public UUID getAssetId() { return assetId; }
@@ -23,4 +26,5 @@ public class ValorantSkinSyncData {
     public String getIconUrl() { return iconUrl; }
     public UUID getTierUuid() { return tierUuid; }
     public UUID getContentTierUuid() { return contentTierUuid; }
+    public List<ValorantSkinLevelSyncData> getLevels() { return levels; }
 }

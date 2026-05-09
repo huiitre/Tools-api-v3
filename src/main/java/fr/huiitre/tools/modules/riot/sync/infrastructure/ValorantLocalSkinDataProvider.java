@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import fr.huiitre.tools.modules.riot.sync.application.ValorantSkinDataProvider;
+import fr.huiitre.tools.modules.riot.sync.application.ValorantSkinLevelSyncData;
 import fr.huiitre.tools.modules.riot.sync.application.ValorantSkinSyncData;
 
 public class ValorantLocalSkinDataProvider implements ValorantSkinDataProvider {
@@ -34,11 +35,12 @@ public class ValorantLocalSkinDataProvider implements ValorantSkinDataProvider {
                 for (JsonNode skin : weapon.path("skins")) {
                     UUID assetId = UUID.fromString(skin.get("uuid").asText());
                     String name = skin.path("displayName").asText(null);
-                    String iconUrl = resolveIconUrl(assetId, skin);
+                    String iconUrl = resolveSkinIconUrl(assetId, skin);
                     UUID tierUuid = parseUuid(skin.path("themeUuid").asText(null));
                     UUID contentTierUuid = parseUuid(skin.path("contentTierUuid").asText(null));
+                    List<ValorantSkinLevelSyncData> levels = parseLevels(skin.path("levels"));
 
-                    result.add(new ValorantSkinSyncData(assetId, name, iconUrl, tierUuid, contentTierUuid));
+                    result.add(new ValorantSkinSyncData(assetId, name, iconUrl, tierUuid, contentTierUuid, levels));
                 }
             }
 
@@ -49,7 +51,25 @@ public class ValorantLocalSkinDataProvider implements ValorantSkinDataProvider {
         }
     }
 
-    private String resolveIconUrl(UUID assetId, JsonNode skin) {
+    private List<ValorantSkinLevelSyncData> parseLevels(JsonNode levelsNode) {
+        List<ValorantSkinLevelSyncData> levels = new ArrayList<>();
+        if (!levelsNode.isArray()) return levels;
+
+        for (int i = 0; i < levelsNode.size(); i++) {
+            JsonNode level = levelsNode.get(i);
+            UUID levelAssetId = UUID.fromString(level.get("uuid").asText());
+            String name = level.path("displayName").asText(null);
+            String levelItem = level.path("levelItem").asText(null);
+            String displayIconUrl = resolveLevelIconUrl(levelAssetId, level);
+            String streamedVideoUrl = level.path("streamedVideo").asText(null);
+
+            levels.add(new ValorantSkinLevelSyncData(levelAssetId, i, name, levelItem, displayIconUrl, streamedVideoUrl));
+        }
+
+        return levels;
+    }
+
+    private String resolveSkinIconUrl(UUID assetId, JsonNode skin) {
         String displayIcon = skin.path("displayIcon").asText(null);
         if (displayIcon != null && !displayIcon.isBlank()) {
             return assetsBaseUrl + "/tools_riot/valorant/img/weaponskins/" + assetId + "/displayicon.png";
@@ -63,6 +83,14 @@ public class ValorantLocalSkinDataProvider implements ValorantSkinDataProvider {
             }
         }
 
+        return null;
+    }
+
+    private String resolveLevelIconUrl(UUID levelAssetId, JsonNode level) {
+        String displayIcon = level.path("displayIcon").asText(null);
+        if (displayIcon != null && !displayIcon.isBlank()) {
+            return assetsBaseUrl + "/tools_riot/valorant/img/weaponskinlevels/" + levelAssetId + "/displayicon.png";
+        }
         return null;
     }
 

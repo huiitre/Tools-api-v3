@@ -8,8 +8,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import fr.huiitre.tools.modules.riot.sync.application.ValorantBundleDataProvider;
 import fr.huiitre.tools.modules.riot.sync.application.ValorantBundleSyncRepository;
 import fr.huiitre.tools.modules.riot.sync.application.ValorantSkinDataProvider;
+import fr.huiitre.tools.modules.riot.sync.application.ValorantSkinLevelSyncRepository;
 import fr.huiitre.tools.modules.riot.sync.application.ValorantSkinSyncRepository;
 import fr.huiitre.tools.modules.riot.sync.infrastructure.PostgresValorantBundleSyncRepository;
+import fr.huiitre.tools.modules.riot.sync.infrastructure.PostgresValorantSkinLevelSyncRepository;
 import fr.huiitre.tools.modules.riot.sync.infrastructure.PostgresValorantSkinSyncRepository;
 import fr.huiitre.tools.modules.riot.sync.infrastructure.ValorantLocalAssetsReader;
 import fr.huiitre.tools.modules.riot.sync.infrastructure.ValorantLocalBundleDataProvider;
@@ -35,6 +37,11 @@ public class RiotSyncConfig {
             ValorantLocalAssetsReader assetsReader,
             @Value("${app.assets.base-url}") String assetsBaseUrl) {
         return new ValorantLocalBundleDataProvider(assetsReader, assetsBaseUrl);
+    }
+
+    @Bean
+    public ValorantSkinLevelSyncRepository valorantSkinLevelSyncRepository(JdbcTemplate jdbcTemplate) {
+        return new PostgresValorantSkinLevelSyncRepository(jdbcTemplate);
     }
 
     @Bean

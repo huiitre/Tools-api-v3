@@ -10,6 +10,7 @@ import org.springframework.jdbc.core.RowMapper;
 import java.util.List;
 import java.util.UUID;
 
+
 public class PostgresValorantSkinSyncRepository implements ValorantSkinSyncRepository {
 
     private final JdbcTemplate jdbcTemplate;
@@ -24,7 +25,8 @@ public class PostgresValorantSkinSyncRepository implements ValorantSkinSyncRepos
             rs.getString("name"),
             rs.getString("icon_url"),
             rs.getObject("tier_uuid", UUID.class),
-            rs.getObject("content_tier_uuid", UUID.class));
+            rs.getObject("content_tier_uuid", UUID.class),
+            List.of());
 
     @Override
     public List<ValorantSkinView> findAll() {
