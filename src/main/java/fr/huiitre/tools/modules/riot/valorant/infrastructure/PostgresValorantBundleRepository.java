@@ -43,4 +43,14 @@ public class PostgresValorantBundleRepository implements ValorantBundleRepositor
                 """;
         return jdbcTemplate.query(sql, ROW_MAPPER, id).stream().findFirst();
     }
+
+    @Override
+    public Optional<ValorantBundleView> findByAssetId(UUID assetId) {
+        final String sql = """
+                SELECT id, asset_id, name, banner_url
+                FROM tools_riot.valorant_bundles
+                WHERE asset_id = ?
+                """;
+        return jdbcTemplate.query(sql, ROW_MAPPER, assetId).stream().findFirst();
+    }
 }
