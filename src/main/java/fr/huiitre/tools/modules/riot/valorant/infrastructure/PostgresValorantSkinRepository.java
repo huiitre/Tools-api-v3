@@ -21,7 +21,7 @@ public class PostgresValorantSkinRepository implements ValorantSkinRepository {
     }
 
     private static final String SELECT_WITH_LEVELS = """
-            SELECT s.id, s.asset_id, s.name, s.icon_url, s.tier_uuid, s.content_tier_uuid,
+            SELECT s.id, s.asset_id, s.name, s.icon_url, s.tier_uuid, s.content_tier_uuid, s.weapon_id,
                    l.asset_id AS level_asset_id, l.level_index, l.display_icon_url, l.streamed_video_url
             FROM tools_riot.valorant_weapon_skins s
             LEFT JOIN tools_riot.valorant_skin_levels l ON l.skin_id = s.id
@@ -51,6 +51,7 @@ public class PostgresValorantSkinRepository implements ValorantSkinRepository {
                             rs.getString("icon_url"),
                             rs.getObject("tier_uuid", UUID.class),
                             rs.getObject("content_tier_uuid", UUID.class),
+                            rs.getObject("weapon_id", Long.class),
                             new ArrayList<>()));
                     lastSkinId = skinId;
                 }
@@ -80,12 +81,74 @@ public class PostgresValorantSkinRepository implements ValorantSkinRepository {
     }
 
     @Override
+    public Optional<ValorantSkinView> findByAssetId(UUID assetId) {
+        final String sql = SELECT_WITH_LEVELS + "WHERE s.asset_id = ? ORDER BY l.level_index";
+        return buildSingle(sql, assetId);
+    }
+
+    @Override
     public Optional<ValorantSkinView> findByLevelAssetId(UUID levelAssetId) {
         final String sql = SELECT_WITH_LEVELS + """
                 WHERE s.id = (SELECT skin_id FROM tools_riot.valorant_skin_levels WHERE asset_id = ?)
                 ORDER BY l.level_index
                 """;
         return buildSingle(sql, levelAssetId);
+    }
+
+    @Override
+    public List<ValorantSkinView> findAllByWeaponId(Long weaponId) {
+        final String sql = SELECT_WITH_LEVELS + "WHERE s.weapon_id = ? ORDER BY s.name, l.level_index";
+        return buildMany(sql, weaponId);
+    }
+
+    @Override
+    public List<ValorantSkinView> findAllByTierUuid(UUID tierUuid) {
+        final String sql = SELECT_WITH_LEVELS + "WHERE s.tier_uuid = ? ORDER BY s.name, l.level_index";
+        return buildMany(sql, tierUuid);
+    }
+
+    private List<ValorantSkinView> buildMany(String sql, Object param) {
+        return jdbcTemplate.query(sql, rs -> {
+            LinkedHashMap<Long, ValorantSkinView> map = new LinkedHashMap<>();
+            List<ValorantSkinLevelView> levels = new ArrayList<>();
+            long lastSkinId = -1;
+
+            while (rs.next()) {
+                long skinId = rs.getLong("id");
+
+                if (skinId != lastSkinId) {
+                    if (lastSkinId != -1) {
+                        rebuildLast(map, lastSkinId, levels);
+                        levels = new ArrayList<>();
+                    }
+                    map.put(skinId, new ValorantSkinView(
+                            skinId,
+                            rs.getObject("asset_id", UUID.class),
+                            rs.getString("name"),
+                            rs.getString("icon_url"),
+                            rs.getObject("tier_uuid", UUID.class),
+                            rs.getObject("content_tier_uuid", UUID.class),
+                            rs.getObject("weapon_id", Long.class),
+                            new ArrayList<>()));
+                    lastSkinId = skinId;
+                }
+
+                String levelAssetIdStr = rs.getString("level_asset_id");
+                if (levelAssetIdStr != null) {
+                    levels.add(new ValorantSkinLevelView(
+                            UUID.fromString(levelAssetIdStr),
+                            rs.getInt("level_index"),
+                            rs.getString("display_icon_url"),
+                            rs.getString("streamed_video_url")));
+                }
+            }
+
+            if (lastSkinId != -1) {
+                rebuildLast(map, lastSkinId, levels);
+            }
+
+            return new ArrayList<>(map.values());
+        }, param);
     }
 
     private Optional<ValorantSkinView> buildSingle(String sql, Object param) {
@@ -102,6 +165,7 @@ public class PostgresValorantSkinRepository implements ValorantSkinRepository {
                             rs.getString("icon_url"),
                             rs.getObject("tier_uuid", UUID.class),
                             rs.getObject("content_tier_uuid", UUID.class),
+                            rs.getObject("weapon_id", Long.class),
                             levels);
                 }
 
@@ -123,6 +187,6 @@ public class PostgresValorantSkinRepository implements ValorantSkinRepository {
         ValorantSkinView prev = map.get(skinId);
         map.put(skinId, new ValorantSkinView(
                 prev.id(), prev.assetId(), prev.name(), prev.iconUrl(),
-                prev.tierUuid(), prev.contentTierUuid(), List.copyOf(levels)));
+                prev.tierUuid(), prev.contentTierUuid(), prev.weaponId(), List.copyOf(levels)));
     }
 }

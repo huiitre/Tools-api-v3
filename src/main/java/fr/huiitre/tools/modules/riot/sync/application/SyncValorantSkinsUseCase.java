@@ -44,7 +44,7 @@ public class SyncValorantSkinsUseCase implements SecuredUseCase {
         return RoleCode.TECH;
     }
 
-    public ValorantSyncReport execute() {
+    public ValorantSyncReport execute(Map<UUID, Long> weaponAssetIdToDbId) {
         List<ValorantSkinSyncData> external = skinDataProvider.fetchAll();
 
         Map<UUID, ValorantSkinView> currentByAssetId = skinSyncRepository.findAll().stream()
@@ -60,10 +60,11 @@ public class SyncValorantSkinsUseCase implements SecuredUseCase {
         int deleted = 0;
 
         for (ValorantSkinSyncData ext : external) {
+            Long weaponId = weaponAssetIdToDbId.get(ext.getWeaponAssetId());
             ValorantSkinView existing = currentByAssetId.get(ext.getAssetId());
 
             if (existing == null) {
-                Long newId = skinSyncRepository.save(ext);
+                Long newId = skinSyncRepository.save(ext, weaponId);
                 skinAssetIdToDbId.put(ext.getAssetId(), newId);
                 created++;
                 continue;
@@ -74,10 +75,11 @@ public class SyncValorantSkinsUseCase implements SecuredUseCase {
             boolean changed = !Objects.equals(existing.name(), ext.getName())
                     || !Objects.equals(existing.iconUrl(), ext.getIconUrl())
                     || !Objects.equals(existing.tierUuid(), ext.getTierUuid())
-                    || !Objects.equals(existing.contentTierUuid(), ext.getContentTierUuid());
+                    || !Objects.equals(existing.contentTierUuid(), ext.getContentTierUuid())
+                    || !Objects.equals(existing.weaponId(), weaponId);
 
             if (changed) {
-                skinSyncRepository.update(existing.id(), ext);
+                skinSyncRepository.update(existing.id(), ext, weaponId);
                 updated++;
             }
         }

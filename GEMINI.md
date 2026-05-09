@@ -65,28 +65,63 @@ Hiérarchie des rôles (RoleHierarchy.java) :
 - ModuleCode.RIOT ajouté à l'enum ModuleCode.
 - Config : RiotConfig, adapter : RiotAuthHttpAdapter.
 
-[Feature] Riot/Valorant skins + my-skins + watchlist — COMPLÈTE (2026-05-08).
-- GET  /riot/valorant/skins              → List<ValorantSkinView> (READ_ONLY).
-- GET  /riot/valorant/my-skins           → List<ValorantUserSkinView> (READ_ONLY).
-- POST /riot/valorant/my-skins           → 201 — body : { "skinId": Long } (USER).
-- DELETE /riot/valorant/my-skins/{skinId} → 204 (USER).
-- GET  /riot/valorant/watchlist          → List<ValorantWatchlistEntryView> (READ_ONLY).
-- POST /riot/valorant/watchlist          → 201 — body : { "skinId": Long } (USER).
-- DELETE /riot/valorant/watchlist/{skinId} → 204 (USER).
-- Table BDD : tools_riot.valorant_weapon_skins (id, asset_id UUID, name, icon_url, tier_uuid UUID, content_tier_uuid UUID).
-- Ports : ValorantSkinRepository, ValorantUserSkinRepository, ValorantWatchlistRepository. Config : RiotConfig.
+[Feature] Riot/Valorant skins — COMPLÈTE (2026-05-09).
+- GET  /riot/valorant/skins                          → List<ValorantSkinView> avec levels[] (READ_ONLY).
+- GET  /riot/valorant/skins/{id}                     → ValorantSkinView (READ_ONLY).
+- GET  /riot/valorant/skins/by-asset/{assetId}       → ValorantSkinView (READ_ONLY).
+- GET  /riot/valorant/skins/by-level/{levelAssetId}  → ValorantSkinView (READ_ONLY).
+- GET  /riot/valorant/skins/by-theme/{themeUuid}     → List<ValorantSkinView> (READ_ONLY).
+- GET  /riot/valorant/my-skins                       → List<ValorantUserSkinView> (READ_ONLY).
+- POST /riot/valorant/my-skins                       → 201 — body : { "skinId": Long } (USER).
+- DELETE /riot/valorant/my-skins/{skinId}            → 204 (USER).
+- GET  /riot/valorant/watchlist                      → List<ValorantWatchlistEntryView> (READ_ONLY).
+- POST /riot/valorant/watchlist                      → 201 — body : { "skinId": Long } (USER).
+- DELETE /riot/valorant/watchlist/{skinId}           → 204 (USER).
+- Tables BDD : tools_riot.valorant_weapon_skins (+ weapon_id FK) + tools_riot.valorant_skin_levels.
+- ValorantSkinView : (id, assetId, name, iconUrl, tierUuid, contentTierUuid, weaponId, levels[]).
+- by-theme/{themeUuid} = tous les skins d'une collection (tier_uuid en base = themeUuid Riot).
+- Ports : ValorantSkinRepository (findAll, findById, findByAssetId, findByLevelAssetId,
+    findAllByWeaponId, findAllByTierUuid), ValorantUserSkinRepository, ValorantWatchlistRepository.
 
-[Feature] Riot/Valorant sync skins — COMPLÈTE (2026-05-08).
-- Route : POST /riot/valorant/sync/skins → { created, updated, deleted } (TECH + RIOT).
-- Architecture : modules/riot/valorant/sync/ — api / application / infrastructure.
-- Port ValorantSkinDataProvider (interface) → adapter ValorantApiSkinDataProvider.
-  URL : https://valorant-api.com/v1/weapons/skins?language=fr-FR.
-  Mapping : uuid→assetId, displayName→name, displayIcon/levels[0].displayIcon→iconUrl,
-            themeUuid→tierUuid, contentTierUuid→contentTierUuid.
-- Port ValorantSkinSyncRepository → PostgresValorantSkinSyncRepository (même table).
-- Logique : fetch API → upsert (créer/mettre à jour) + supprimer ce qui n'existe plus.
-- Extensibilité : implémenter ValorantSkinDataProvider + repointer RiotSyncConfig.
+[Feature] Riot/Valorant sync — COMPLÈTE (2026-05-09, étendu armes).
+- Route : POST /riot/valorant/sync → ValorantGlobalSyncReport { weapons, skins, bundles } (TECH + RIOT).
+- Ordre : weapons → skins (avec weaponAssetIdToDbId map) → bundles.
+- SyncValorantWeaponsUseCase retourne ValorantWeaponSyncResult (report + Map<UUID,Long>).
+- SyncValorantSkinsUseCase.execute(Map<UUID,Long>) résout weapon_id par skin, inclus dans détection changement.
+- Sources locales :
+    ValorantLocalWeaponDataProvider lit weapons.json → itère data[] (strip EEquippableCategory::).
+    ValorantLocalSkinDataProvider lit weapons.json → itère data[].skins[] (passe weaponAssetId).
+    ValorantLocalBundleDataProvider lit bundles.json.
+    ValorantLocalAssetsReader (@Component) lit depuis {assets.base-path}/tools_riot/valorant/.
+  Fallback skins : ValorantApiSkinDataProvider (pointer RiotSyncConfig pour switcher).
+- Assets locaux :
+    img/weapons/{uuid}/displayicon.png
+    img/weaponskins/{uuid}/displayicon.png
+    img/weaponskinlevels/{uuid}/displayicon.png
+    img/bundles/{uuid}/displayicon2.png
 - Config : RiotSyncConfig (séparé de RiotConfig).
+
+[Feature] Riot/Valorant weapons — COMPLÈTE (2026-05-09).
+- GET /riot/valorant/weapons            → List<ValorantWeaponView> (READ_ONLY).
+- GET /riot/valorant/weapons/{id}       → ValorantWeaponView (READ_ONLY).
+- GET /riot/valorant/weapons/{id}/skins → List<ValorantSkinView> avec levels[] (READ_ONLY).
+- Table : tools_riot.valorant_weapons (id, asset_id UUID, name, category, default_skin_asset_id UUID,
+    display_icon_url, created_at, updated_at).
+  category strippée du préfixe Unreal Engine (ex: "Rifle", "Heavy", "Sidearm").
+  default_skin_asset_id : non FK pour éviter référence circulaire.
+- Port : ValorantWeaponRepository (findAll, findById). Config : RiotConfig.
+
+[Feature] Riot/Valorant bundles — COMPLÈTE (2026-05-09).
+- GET /riot/valorant/bundles                    → List<ValorantBundleView> (READ_ONLY).
+- GET /riot/valorant/bundles/{id}               → ValorantBundleView (READ_ONLY).
+- GET /riot/valorant/bundles/by-asset/{assetId} → ValorantBundleView (READ_ONLY).
+- Table : tools_riot.valorant_bundles (id, asset_id UUID, name, banner_url, created_at, updated_at).
+- Port : ValorantBundleRepository (findAll, findById, findByAssetId). Config : RiotConfig.
+
+[Feature] Riot/Valorant version — COMPLÈTE (2026-05-09).
+- GET /riot/valorant/version → Map<String,Object> contenu de data dans version.json (READ_ONLY).
+- Fournit riotClientVersion à injecter dans X-Riot-ClientVersion des appels storefront.
+- Port : ValorantVersionProvider → ValorantLocalVersionProvider (lit version.json, extrait data).
 
 [Feature] Admin — gestion utilisateurs, stats & module users — COMPLÈTE.
 - GET  /users                    → List<UserAdminView> (id, email, name, active, createdAt, avatarUrl, roles[Long]).

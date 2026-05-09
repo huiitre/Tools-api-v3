@@ -26,22 +26,23 @@ public class PostgresValorantSkinSyncRepository implements ValorantSkinSyncRepos
             rs.getString("icon_url"),
             rs.getObject("tier_uuid", UUID.class),
             rs.getObject("content_tier_uuid", UUID.class),
+            rs.getObject("weapon_id", Long.class),
             List.of());
 
     @Override
     public List<ValorantSkinView> findAll() {
         final String sql = """
-                SELECT id, asset_id, name, icon_url, tier_uuid, content_tier_uuid
+                SELECT id, asset_id, name, icon_url, tier_uuid, content_tier_uuid, weapon_id
                 FROM tools_riot.valorant_weapon_skins
                 """;
         return jdbcTemplate.query(sql, ROW_MAPPER);
     }
 
     @Override
-    public Long save(ValorantSkinSyncData data) {
+    public Long save(ValorantSkinSyncData data, Long weaponId) {
         final String sql = """
-                INSERT INTO tools_riot.valorant_weapon_skins (asset_id, name, icon_url, tier_uuid, content_tier_uuid)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO tools_riot.valorant_weapon_skins (asset_id, name, icon_url, tier_uuid, content_tier_uuid, weapon_id)
+                VALUES (?, ?, ?, ?, ?, ?)
                 RETURNING id
                 """;
         return jdbcTemplate.queryForObject(sql, Long.class,
@@ -49,14 +50,15 @@ public class PostgresValorantSkinSyncRepository implements ValorantSkinSyncRepos
                 data.getName(),
                 data.getIconUrl(),
                 data.getTierUuid(),
-                data.getContentTierUuid());
+                data.getContentTierUuid(),
+                weaponId);
     }
 
     @Override
-    public void update(Long id, ValorantSkinSyncData data) {
+    public void update(Long id, ValorantSkinSyncData data, Long weaponId) {
         final String sql = """
                 UPDATE tools_riot.valorant_weapon_skins
-                SET name = ?, icon_url = ?, tier_uuid = ?, content_tier_uuid = ?
+                SET name = ?, icon_url = ?, tier_uuid = ?, content_tier_uuid = ?, weapon_id = ?
                 WHERE id = ?
                 """;
         jdbcTemplate.update(sql,
@@ -64,6 +66,7 @@ public class PostgresValorantSkinSyncRepository implements ValorantSkinSyncRepos
                 data.getIconUrl(),
                 data.getTierUuid(),
                 data.getContentTierUuid(),
+                weaponId,
                 id);
     }
 

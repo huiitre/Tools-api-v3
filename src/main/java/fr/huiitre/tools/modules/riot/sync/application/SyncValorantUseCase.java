@@ -13,12 +13,15 @@ import fr.huiitre.tools.modules.core.security.application.usecase.SecuredUseCase
 @Transactional
 public class SyncValorantUseCase implements SecuredUseCase {
 
+    private final SyncValorantWeaponsUseCase syncWeaponsUseCase;
     private final SyncValorantSkinsUseCase syncSkinsUseCase;
     private final SyncValorantBundlesUseCase syncBundlesUseCase;
 
     public SyncValorantUseCase(
+            SyncValorantWeaponsUseCase syncWeaponsUseCase,
             SyncValorantSkinsUseCase syncSkinsUseCase,
             SyncValorantBundlesUseCase syncBundlesUseCase) {
+        this.syncWeaponsUseCase = syncWeaponsUseCase;
         this.syncSkinsUseCase = syncSkinsUseCase;
         this.syncBundlesUseCase = syncBundlesUseCase;
     }
@@ -34,8 +37,9 @@ public class SyncValorantUseCase implements SecuredUseCase {
     }
 
     public ValorantGlobalSyncReport execute() {
-        ValorantSyncReport skins = syncSkinsUseCase.execute();
+        ValorantWeaponSyncResult weaponsResult = syncWeaponsUseCase.execute();
+        ValorantSyncReport skins = syncSkinsUseCase.execute(weaponsResult.weaponAssetIdToDbId());
         ValorantSyncReport bundles = syncBundlesUseCase.execute();
-        return new ValorantGlobalSyncReport(skins, bundles);
+        return new ValorantGlobalSyncReport(weaponsResult.report(), skins, bundles);
     }
 }

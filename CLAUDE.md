@@ -91,48 +91,140 @@ WorkshopDto et WorkshopDetailResponse exposent la liste links.
   Adapter : RiotAuthHttpAdapter — POST form-urlencoded, ParameterizedTypeReference<Map<String,Object>>.
   Config : RiotConfig (aucune propriété externe, URL et client_id hardcodés).
 
-6b. Skins — COMPLÈTE (2026-05-08)
+6b. Skins — COMPLÈTE (2026-05-09)
   Routes :
-    GET    /riot/valorant/skins              → List<ValorantSkinView> (READ_ONLY)
-    GET    /riot/valorant/my-skins           → List<ValorantUserSkinView> (READ_ONLY)
-    POST   /riot/valorant/my-skins           → 201 ValorantUserSkinView — body : { "skinId": Long } (USER)
-    DELETE /riot/valorant/my-skins/{skinId}  → 204 (USER)
-    GET    /riot/valorant/watchlist          → List<ValorantWatchlistEntryView> (READ_ONLY)
-    POST   /riot/valorant/watchlist          → 201 ValorantWatchlistEntryView — body : { "skinId": Long } (USER)
-    DELETE /riot/valorant/watchlist/{skinId} → 204 (USER)
+    GET    /riot/valorant/skins                          → List<ValorantSkinView> avec levels[] (READ_ONLY)
+    GET    /riot/valorant/skins/{id}                     → ValorantSkinView (READ_ONLY)
+    GET    /riot/valorant/skins/by-asset/{assetId}       → ValorantSkinView (READ_ONLY)
+    GET    /riot/valorant/skins/by-level/{levelAssetId}  → ValorantSkinView (READ_ONLY)
+    GET    /riot/valorant/skins/by-theme/{themeUuid}     → List<ValorantSkinView> (READ_ONLY)
+    GET    /riot/valorant/my-skins                       → List<ValorantUserSkinView> (READ_ONLY)
+    POST   /riot/valorant/my-skins                       → 201 ValorantUserSkinView — body : { "skinId": Long } (USER)
+    DELETE /riot/valorant/my-skins/{skinId}              → 204 (USER)
+    GET    /riot/valorant/watchlist                      → List<ValorantWatchlistEntryView> (READ_ONLY)
+    POST   /riot/valorant/watchlist                      → 201 ValorantWatchlistEntryView — body : { "skinId": Long } (USER)
+    DELETE /riot/valorant/watchlist/{skinId}             → 204 (USER)
 
-  Table BDD : tools_riot.valorant_weapon_skins (id, asset_id UUID, name, icon_url, tier_uuid UUID, content_tier_uuid UUID)
-  Ports : ValorantSkinRepository, ValorantUserSkinRepository, ValorantWatchlistRepository
-  Config : RiotConfig wire les 3 repos Postgres.
+  Tables BDD :
+    tools_riot.valorant_weapon_skins (id, asset_id UUID, name, icon_url, tier_uuid UUID, content_tier_uuid UUID,
+                                      weapon_id FK → valorant_weapons.id)
+    tools_riot.valorant_skin_levels  (id, skin_id FK, asset_id UUID, level_index INT, name, level_item,
+                                      display_icon_url, streamed_video_url, created_at, updated_at)
 
-6c. Sync — COMPLÈTE (2026-05-08)
+  Note tier_uuid : stocke le themeUuid de l'API Riot (UUID du thème/collection), pas le tier de rareté.
+    Le vrai tier de rareté est content_tier_uuid. Le lien skins↔bundle se fait via l'API Riot en live,
+    pas en DB (Riot retourne les level UUIDs dans le storefront, on les résout via by-level).
+
+  ValorantSkinView : (id, assetId, name, iconUrl, tierUuid, contentTierUuid, weaponId, levels[])
+    - weaponId permet de relier directement un skin à son arme parente.
+    - by-theme/{themeUuid} retourne tous les skins d'une même collection (themeUuid = tier_uuid en base).
+
+  Ports : ValorantSkinRepository (findAll, findById, findByAssetId, findByLevelAssetId,
+                                   findAllByWeaponId, findAllByTierUuid),
+          ValorantUserSkinRepository, ValorantWatchlistRepository.
+  Config : RiotConfig wire les repos Postgres.
+
+6c. Bundles — COMPLÈTE (2026-05-09)
+  Routes :
+    GET /riot/valorant/bundles                    → List<ValorantBundleView> (READ_ONLY)
+    GET /riot/valorant/bundles/{id}               → ValorantBundleView (READ_ONLY)
+    GET /riot/valorant/bundles/by-asset/{assetId} → ValorantBundleView (READ_ONLY)
+
+  Table BDD : tools_riot.valorant_bundles (id, asset_id UUID, name, banner_url, created_at, updated_at)
+  Port : ValorantBundleRepository (findAll, findById, findByAssetId).
+  Config : RiotConfig wire PostgresValorantBundleRepository.
+
+6d. Version — COMPLÈTE (2026-05-09)
   Route :
-    POST /riot/valorant/sync/skins → 200 ValorantSyncReport { created, updated, deleted } (TECH)
+    GET /riot/valorant/version → Map<String,Object> contenu de data dans version.json (READ_ONLY)
 
-  Architecture :
-    modules/riot/valorant/sync/
-    ├── api/         ValorantSyncController
-    ├── application/ ValorantSkinDataProvider (port — source externe)
-    │                ValorantSkinSyncRepository (port — DB)
-    │                ValorantSkinSyncData (DTO entrant depuis le provider)
-    │                ValorantSyncReport (record résultat)
-    │                SyncValorantSkinsUseCase (RIOT + TECH)
-    └── infrastructure/ ValorantApiSkinDataProvider (appelle valorant-api.com)
-                        PostgresValorantSkinSyncRepository
+  Utilité : fournit riotClientVersion (ex: "release-09.08-shipping-28-2638874")
+    à injecter dans le header X-Riot-ClientVersion des appels storefront Riot.
+  Port : ValorantVersionProvider → ValorantLocalVersionProvider (lit version.json).
+  Config : RiotConfig wire ValorantLocalVersionProvider(ValorantLocalAssetsReader).
 
-  Logique de synchro (SyncValorantSkinsUseCase) :
-    - Fetch depuis API → compare avec DB (clé : asset_id UUID).
-    - Crée les skins absents, met à jour les modifiés, supprime ceux disparus de l'API.
-    - Retourne { created, updated, deleted }.
+6e. Sync — COMPLÈTE (2026-05-09)
+  Route :
+    POST /riot/valorant/sync → 200 ValorantGlobalSyncReport { weapons, skins, bundles } (TECH)
 
-  Adapter HTTP (ValorantApiSkinDataProvider) :
-    - URL : https://valorant-api.com/v1/weapons/skins?language=fr-FR
-    - GET via RestTemplate + ParameterizedTypeReference<Map<String,Object>>.
-    - Mapping : uuid→assetId, displayName→name, displayIcon (fallback levels[0].displayIcon)→iconUrl,
-                themeUuid→tierUuid, contentTierUuid→contentTierUuid.
+  Ordre d'exécution : weapons → skins (avec weaponAssetIdToDbId map) → bundles.
 
-  Extensibilité : pour changer de source, implémenter ValorantSkinDataProvider et repointer RiotSyncConfig.
+  Architecture (modules/riot/sync/) :
+    api/         ValorantSyncController
+    application/ SyncValorantUseCase          (point d'entrée — RIOT + TECH)
+                 SyncValorantWeaponsUseCase    (RIOT + TECH — retourne ValorantWeaponSyncResult)
+                 SyncValorantSkinsUseCase      (RIOT + TECH — prend Map<UUID,Long> weaponAssetIdToDbId)
+                 SyncValorantBundlesUseCase    (RIOT + TECH)
+                 ValorantWeaponDataProvider    (port — source armes)
+                 ValorantSkinDataProvider      (port — source skins)
+                 ValorantBundleDataProvider    (port — source bundles)
+                 ValorantWeaponSyncRepository  (port DB armes)
+                 ValorantSkinSyncRepository    (port DB skins — save/update prennent Long weaponId)
+                 ValorantSkinLevelSyncRepository (port DB levels — deleteAll + save)
+                 ValorantBundleSyncRepository  (port DB bundles)
+                 ValorantWeaponSyncData
+                 ValorantWeaponSyncResult      (record : ValorantSyncReport + Map<UUID,Long>)
+                 ValorantSkinSyncData          (avec weaponAssetId + List<ValorantSkinLevelSyncData>)
+                 ValorantBundleSyncData
+                 ValorantSkinLevelSyncData
+                 ValorantSyncReport / ValorantGlobalSyncReport
+    infrastructure/
+                 ValorantLocalAssetsReader     (@Component — lit depuis tools_riot/valorant/)
+                 ValorantLocalWeaponDataProvider (lit weapons.json, itère data[], strip EEquippableCategory::)
+                 ValorantLocalSkinDataProvider (lit weapons.json, itère data[].skins[], passe weaponAssetId)
+                 ValorantLocalBundleDataProvider (lit bundles.json)
+                 ValorantApiSkinDataProvider   (fallback — appelle valorant-api.com)
+                 PostgresValorantWeaponSyncRepository
+                 PostgresValorantSkinSyncRepository
+                 PostgresValorantSkinLevelSyncRepository
+                 PostgresValorantBundleSyncRepository
+
+  Logique sync weapons :
+    - Fetch weapons.json → itère data[] (les armes, pas les skins).
+    - Compare avec DB (clé : asset_id). Crée / met à jour / supprime.
+    - Retourne weaponAssetIdToDbId Map<UUID, Long> pour la sync skins.
+    - category : strip préfixe "EEquippableCategory::" → stocke "Rifle", "Heavy", etc.
+    - displayIconUrl : img/weapons/{uuid}/displayicon.png.
+
+  Logique sync skins :
+    - Fetch weapons.json → itère data[].skins[] (pas data[] qui sont les armes).
+    - Compare avec DB (clé : asset_id). Crée / met à jour / supprime.
+    - weapon_id résolu depuis weaponAssetIdToDbId à chaque skin.
+    - Détection de changement inclut weaponId (null → FK = trigger update).
+    - Après sync skins : deleteAll levels puis réinsère tous les levels de tous les skins.
+    - skinAssetIdToDbId map trackée pendant la boucle pour éviter un round-trip DB.
+
+  Logique sync bundles :
+    - Fetch bundles.json → itère data[].
+    - Compare avec DB (clé : asset_id). Crée / met à jour / supprime.
+
+  Assets locaux (NAS) :
+    Base : {tools.assets.base-path}/tools_riot/valorant/
+    Fichiers JSON : weapons.json, bundles.json, version.json
+    Images :
+      img/weapons/{uuid}/displayicon.png
+      img/weaponskins/{uuid}/displayicon.png
+      img/weaponskinlevels/{uuid}/displayicon.png
+      img/bundles/{uuid}/displayicon2.png
+      img/weaponskinchromas/ (non utilisé actuellement)
+    URL publique : {app.assets.base-url}/tools_riot/valorant/img/...
+    Vidéos (streamedVideo) : URL CDN Riot conservée telle quelle, non téléchargée.
+
   Config : RiotSyncConfig (séparé de RiotConfig).
+
+6f. Weapons — COMPLÈTE (2026-05-09)
+  Routes :
+    GET /riot/valorant/weapons              → List<ValorantWeaponView> (READ_ONLY)
+    GET /riot/valorant/weapons/{id}         → ValorantWeaponView (READ_ONLY)
+    GET /riot/valorant/weapons/{id}/skins   → List<ValorantSkinView> avec levels[] (READ_ONLY)
+
+  Table BDD : tools_riot.valorant_weapons (id, asset_id UUID, name, category, default_skin_asset_id UUID,
+                                           display_icon_url, created_at, updated_at)
+    - category : valeur strippée du préfixe Unreal Engine (ex: "Rifle", "Heavy", "Sidearm").
+    - default_skin_asset_id : UUID du skin par défaut (non FK pour éviter référence circulaire).
+
+  ValorantWeaponView : (id, assetId, name, category, defaultSkinAssetId, displayIconUrl)
+  Ports : ValorantWeaponRepository (findAll, findById). Config : RiotConfig.
 
 7. Module Admin — Gestion utilisateurs & stats
 
@@ -195,4 +287,11 @@ UserModuleRoleRepository.findAllByModuleId() : JOIN user_module_role + users + r
 [Feature] Admin routes (users + stats + module users) — backend complet (voir sections 7 et 9).
 [Sécurité] Hiérarchie rôles inversée ADMIN/TECH — ADMIN (5) > TECH (4) (voir section 8).
 [Feature] Riot/Valorant skins + my-skins + watchlist — backend complet (voir section 6b).
-[Feature] Riot/Valorant sync skins — backend complet (voir section 6c).
+[Refactor] Riot/Valorant sync déplacé de modules/riot/valorant/sync/ vers modules/riot/sync/.
+[Feature] Riot/Valorant sync refactorisé — source locale (assets NAS) au lieu de valorant-api.com (voir section 6e).
+[Feature] Riot/Valorant sync generalisé — SyncValorantUseCase appelle skins + bundles (voir section 6e).
+[Feature] Riot/Valorant skin levels — sync + exposition dans ValorantSkinView + route by-level (voir sections 6b, 6e).
+[Feature] Riot/Valorant bundles — sync + routes GET (voir sections 6c, 6e).
+[Feature] Riot/Valorant version — GET /riot/valorant/version depuis version.json local (voir section 6d).
+[Feature] Riot/Valorant weapons — table + sync (weapons en premier, FK weapon_id sur skins) + routes GET (voir sections 6e, 6f).
+[Feature] Riot/Valorant skins — routes additionnelles : by-asset, by-theme, {id} (voir section 6b).

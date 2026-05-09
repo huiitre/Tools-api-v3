@@ -32,6 +32,7 @@ public class ValorantLocalSkinDataProvider implements ValorantSkinDataProvider {
             List<ValorantSkinSyncData> result = new ArrayList<>();
 
             for (JsonNode weapon : data) {
+                UUID weaponAssetId = UUID.fromString(weapon.get("uuid").asText());
                 for (JsonNode skin : weapon.path("skins")) {
                     UUID assetId = UUID.fromString(skin.get("uuid").asText());
                     String name = skin.path("displayName").asText(null);
@@ -40,7 +41,7 @@ public class ValorantLocalSkinDataProvider implements ValorantSkinDataProvider {
                     UUID contentTierUuid = parseUuid(skin.path("contentTierUuid").asText(null));
                     List<ValorantSkinLevelSyncData> levels = parseLevels(skin.path("levels"));
 
-                    result.add(new ValorantSkinSyncData(assetId, name, iconUrl, tierUuid, contentTierUuid, levels));
+                    result.add(new ValorantSkinSyncData(assetId, name, iconUrl, tierUuid, contentTierUuid, weaponAssetId, levels));
                 }
             }
 

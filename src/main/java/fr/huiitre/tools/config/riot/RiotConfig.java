@@ -12,10 +12,12 @@ import fr.huiitre.tools.modules.riot.valorant.application.ports.ValorantSkinRepo
 import fr.huiitre.tools.modules.riot.valorant.application.ports.ValorantUserSkinRepository;
 import fr.huiitre.tools.modules.riot.valorant.application.ports.ValorantVersionProvider;
 import fr.huiitre.tools.modules.riot.valorant.application.ports.ValorantWatchlistRepository;
+import fr.huiitre.tools.modules.riot.valorant.application.ports.ValorantWeaponRepository;
 import fr.huiitre.tools.modules.riot.valorant.infrastructure.PostgresValorantBundleRepository;
 import fr.huiitre.tools.modules.riot.valorant.infrastructure.PostgresValorantSkinRepository;
 import fr.huiitre.tools.modules.riot.valorant.infrastructure.PostgresValorantUserSkinRepository;
 import fr.huiitre.tools.modules.riot.valorant.infrastructure.PostgresValorantWatchlistRepository;
+import fr.huiitre.tools.modules.riot.valorant.infrastructure.PostgresValorantWeaponRepository;
 import fr.huiitre.tools.modules.riot.valorant.infrastructure.RiotAuthHttpAdapter;
 import fr.huiitre.tools.modules.riot.valorant.infrastructure.ValorantLocalVersionProvider;
 
@@ -40,6 +42,11 @@ public class RiotConfig {
     @Bean
     public ValorantVersionProvider valorantVersionProvider(ValorantLocalAssetsReader assetsReader) {
         return new ValorantLocalVersionProvider(assetsReader);
+    }
+
+    @Bean
+    public ValorantWeaponRepository valorantWeaponRepository(JdbcTemplate jdbcTemplate) {
+        return new PostgresValorantWeaponRepository(jdbcTemplate);
     }
 
     @Bean
